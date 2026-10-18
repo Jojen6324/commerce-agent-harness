@@ -15,6 +15,7 @@ from app.tools.permissions import WRITE_RISKS, assert_permitted
 
 class DelegateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    independent: bool = Field(default=False, description="仅当任务与其他委派无数据依赖时为true")
     agent: str = Field(pattern="^(knowledge|orders)$")
     goal: str = Field(min_length=1, max_length=2000)
     context: str = Field(default="", max_length=4000)

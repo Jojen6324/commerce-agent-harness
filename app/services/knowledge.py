@@ -3,16 +3,16 @@
 from app.agents.nodes.faithfulness import faithfulness_node
 from app.agents.nodes.generate import generate_node
 from app.agents.nodes.retrieval import retrieval_node
+from app.agents.state import AgentState
 from app.config.settings import Settings
 from app.core.enums import RetrievalStrategy
 from app.guardrails.hallucination import FaithfulnessChecker
-from app.providers.base import LLMProvider
 from app.retrieval.query_rewrite import QueryRewriter
 from app.retrieval.self_rag import SelfRAGLoop
 
 
 class KnowledgeService:
-    def __init__(self, retriever, reranker, llm: LLMProvider, settings: Settings):
+    def __init__(self, retriever, reranker, llm, settings: Settings):
         self.retriever, self.reranker = retriever, reranker
         self.llm, self.settings = llm, settings
 
@@ -38,7 +38,7 @@ class KnowledgeService:
         from app.schemas.retrieval import RetrievedChunk
 
         evidence = await self.retrieve_evidence(query, complex=complex)
-        state = {
+        state: AgentState = {
             "user_query": query,
             "strategy": RetrievalStrategy(evidence["strategy"]),
             "retrieved_chunks": [RetrievedChunk.model_validate(c) for c in evidence["chunks"]],

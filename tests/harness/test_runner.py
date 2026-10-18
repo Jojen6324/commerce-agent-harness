@@ -70,7 +70,10 @@ async def test_truncated_or_malformed_calls_never_execute():
 async def test_repeated_calls_stop_without_progress():
     llm = SimpleNamespace(
         generate=AsyncMock(
-            return_value=LLMResponse("", tool_calls=[call()], finish_reason="tool_calls")
+            side_effect=[
+                LLMResponse("", tool_calls=[call(call_id=f"c{i}")], finish_reason="tool_calls")
+                for i in range(3)
+            ]
         )
     )
     executor = SimpleNamespace(

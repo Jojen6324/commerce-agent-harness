@@ -10,6 +10,7 @@ from app.core.exceptions import GuardrailError, InvalidRequestError, RateLimitEr
 from app.core.ids import new_id
 from app.guardrails.injection import detect_prompt_injection
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
+from app.harness.delegation import DelegationService
 from app.harness.executor import ToolExecutor
 from app.harness.runner import AgentRunner, AgentSpec
 from app.harness.validation import AnswerValidator
@@ -58,8 +59,13 @@ class ChatService:
             frozenset([*self.registry.names(), "load_skill", "read_artifact"]),
             max_steps=settings.max_agent_steps,
         )
-        self._locks = {}
-        self._pending_actions = {}
+        if settings.agent_delegation_enabled:
+            self.executor.delegate = DelegationService(self.runner, self.executor, self.store)
+            self.spec = AgentSpec(
+                "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
+            )
+        self._locks: dict[str, asyncio.Lock] = {}
+        self._pending_actions: dict = {}
 
     async def chat(self, request: ChatRequest, *, trace_id: str, emit=None) -> ChatResponse:
         if not await self._rate_limiter.allow(f"user:{request.user_id}"):
@@ -195,7 +201,7 @@ class ChatService:
         }
 
     async def stream(self, request: ChatRequest, *, trace_id: str):
-        queue = asyncio.Queue()
+        queue: asyncio.Queue = asyncio.Queue()
 
         async def work():
             try:

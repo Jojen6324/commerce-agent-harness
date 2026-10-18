@@ -2,13 +2,17 @@
 
 import asyncio
 import json
+import time
 
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import update
 
-from app.core.exceptions import InvalidRequestError, ToolPermissionError
+from app.core.enums import ToolRisk
+from app.core.exceptions import AppError, InvalidRequestError, ToolPermissionError
 from app.core.ids import new_id
 from app.core.request_scope import request_session
 from app.harness.budget import current_budget
+from app.repositories.models import ActionRow
 from app.schemas.chat import ActionProposal
 from app.tools.permissions import WRITE_RISKS, assert_permitted
 
@@ -27,7 +31,7 @@ class ToolExecutor:
         self.delegate = None
         self.artifacts = None
 
-    async def execute(self, name, arguments, context, spec, *, confirmed=False):
+    async def execute(self, name, arguments, context, spec, *, confirmed=False, transaction=None):
         budget = current_budget.get()
         if budget:
             budget.reserve_tool()
@@ -57,29 +61,129 @@ class ToolExecutor:
         # Model-provided identity is never authoritative.
         if "user_id" in args:
             args["user_id"] = context.user_id
-        async with request_session(self.session_factory) as db:
+
+        async def perform(db):
             if "order_id" in args:
                 from app.repositories.order_repository import OrderRepository
 
-                await OrderRepository(db).get_visible_order(args["order_id"], context.user_id)
+                order = await OrderRepository(db).get_visible_order(
+                    args["order_id"], context.user_id
+                )
+                if name == "cancel_order" and order.status.value not in ("created", "paid"):
+                    raise InvalidRequestError("该订单已发货或状态不允许取消，请核对订单状态。")
+                if name in (
+                    "create_refund_request",
+                    "create_return_request",
+                ) and order.status.value in ("cancelled", "refunded", "refunding"):
+                    raise InvalidRequestError("当前订单状态不支持重复售后申请。")
+            if tool.risk == ToolRisk.EXTERNAL and name not in (
+                "mcp_store_hours",
+                "mcp_warehouse_cutoff",
+                "escalate_to_human",
+            ):
+                raise ToolPermissionError("未声明只读能力的外部HTTP工具不可自动执行。")
             if tool.risk in WRITE_RISKS and not confirmed:
+                labels = {
+                    "cancel_order": "取消订单",
+                    "create_return_request": "提交退货申请",
+                    "create_refund_request": "提交退款申请",
+                }
                 action = ActionProposal(
                     action_id=new_id("act_"),
                     tool_name=name,
                     arguments=args,
                     risk=tool.risk,
-                    summary=f"请确认执行 {name}：{json.dumps(args,ensure_ascii=False)}",
+                    summary=f"请确认{labels.get(name,name)}：{json.dumps(args,ensure_ascii=False)}",
                 )
+                db.add(
+                    ActionRow(
+                        action_id=action.action_id,
+                        user_id=context.user_id,
+                        session_id=context.session_id,
+                        tool_name=name,
+                        arguments_json=json.dumps(args, sort_keys=True, ensure_ascii=False),
+                        proposal_json=action.model_dump_json(),
+                        status="pending",
+                        expires_epoch=int(time.time()) + 900,
+                        idempotency_key=action.action_id,
+                    )
+                )
+                await db.commit()
                 return {
                     "pending_action": action.model_dump(mode="json"),
                     "status": "awaiting_confirmation",
                 }
             assert_permitted(tool, confirmed=confirmed)
+            if confirmed and transaction is None:
+                raise ToolPermissionError("写入必须通过持久化Action确认入口。")
             async with asyncio.timeout(self.timeout):
                 result = await tool.run(args, context)
-            if confirmed:
-                await db.commit()
-        return result.model_dump(mode="json")
+            return result.model_dump(mode="json")
+
+        if transaction is not None:
+            return await perform(transaction)
+        async with request_session(self.session_factory) as db:
+            return await perform(db)
+
+    async def confirm(self, action_id, context, spec):
+        # Claim, local business mutation and result commit atomically. No model call.
+        async with request_session(self.session_factory) as db:
+            claimed = await db.execute(
+                update(ActionRow)
+                .where(
+                    ActionRow.action_id == action_id,
+                    ActionRow.user_id == context.user_id,
+                    ActionRow.session_id == context.session_id,
+                    ActionRow.status == "pending",
+                    ActionRow.expires_epoch >= int(time.time()),
+                )
+                .values(status="executing")
+            )
+            action = await db.get(ActionRow, action_id)
+            if (
+                not action
+                or action.user_id != context.user_id
+                or action.session_id != context.session_id
+            ):
+                raise InvalidRequestError("待确认操作不存在或不属于当前会话。")
+            if claimed.rowcount != 1:
+                if action.status in ("succeeded", "failed"):
+                    return json.loads(action.result_json)
+                raise InvalidRequestError("待确认操作已过期或正在执行，请查询状态。")
+            args = json.loads(action.arguments_json)
+            context = context.model_copy(
+                update={"confirmed_action_id": action_id, "idempotency_key": action.idempotency_key}
+            )
+            try:
+                async with db.begin_nested():
+                    result = await self.execute(
+                        action.tool_name, args, context, spec, confirmed=True, transaction=db
+                    )
+                    if not result.get("success"):
+                        raise InvalidRequestError("业务操作未成功")
+                label = (
+                    "已取消"
+                    if action.tool_name == "cancel_order"
+                    else "申请已提交，尚不代表退款完成"
+                )
+                response = {
+                    "answer": f"订单 {args.get('order_id','')} {label}。",
+                    "observations": [
+                        {"name": action.tool_name, "arguments": args, "output": result}
+                    ],
+                    "status": "completed",
+                }
+                action.status = "succeeded"
+            except AppError:
+                response = {
+                    "answer": "业务校验未通过，操作未执行。请核对订单当前状态。",
+                    "observations": [],
+                    "status": "denied",
+                }
+                action.status = "failed"
+            action.result_json = json.dumps(response, ensure_ascii=False)
+            await db.commit()
+            return response
 
     def schemas(self, spec):
         schemas = [t.openai_schema() for t in self.registry.all() if t.name in spec.tools]

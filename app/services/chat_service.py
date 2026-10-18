@@ -65,7 +65,6 @@ class ChatService:
                 "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
             )
         self._locks: dict[str, asyncio.Lock] = {}
-        self._pending_actions: dict = {}
 
     async def chat(self, request: ChatRequest, *, trace_id: str, emit=None) -> ChatResponse:
         if not await self._rate_limiter.allow(f"user:{request.user_id}"):
@@ -125,8 +124,6 @@ class ChatService:
                 if result.get("pending_action")
                 else None
             )
-            if pending:
-                self._pending_actions[pending.action_id] = (context, pending, time.time() + 900)
             citations = {}
             for observation in result.get("observations", []):
                 data = observation["output"].get("output", observation["output"])
@@ -179,26 +176,7 @@ class ChatService:
         return response
 
     async def _confirm(self, request, context):
-        pending = self._pending_actions.get(request.confirm_action_id)
-        if (
-            not pending
-            or pending[0].user_id != context.user_id
-            or pending[0].session_id != context.session_id
-            or pending[2] < time.time()
-        ):
-            raise InvalidRequestError("待确认操作不存在或已过期，请重新发起。")
-        action = pending[1]
-        context.confirmed_action_id = action.action_id
-        context.idempotency_key = action.action_id
-        result = await self.executor.execute(
-            action.tool_name, action.arguments, context, self.spec, confirmed=True
-        )
-        self._pending_actions.pop(action.action_id, None)
-        label = "已取消" if action.tool_name == "cancel_order" else "申请已提交，尚不代表退款完成"
-        return {
-            "answer": f"订单 {action.arguments.get('order_id','')} {label}。",
-            "observations": [{"name": action.tool_name, "output": result}],
-        }
+        return await self.executor.confirm(request.confirm_action_id, context, self.spec)
 
     async def stream(self, request: ChatRequest, *, trace_id: str):
         queue: asyncio.Queue = asyncio.Queue()

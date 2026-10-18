@@ -12,7 +12,9 @@ from app.guardrails.injection import detect_prompt_injection
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
 from app.harness.executor import ToolExecutor
 from app.harness.runner import AgentRunner, AgentSpec
+from app.harness.validation import AnswerValidator
 from app.providers.fake import OfflineLLMProvider
+from app.repositories.runtime import RuntimeStore
 from app.repositories.session_repository import SessionRepository
 from app.schemas.chat import ActionProposal, ChatRequest, ChatResponse
 from app.schemas.common import LatencyBreakdown
@@ -48,6 +50,9 @@ class ChatService:
         self.registry.register(PolicyAnswerTool(self.knowledge))
         self.executor = ToolExecutor(self.registry, session_factory, settings.agent_tool_timeout)
         self.runner = AgentRunner(self.provider, self.executor, settings)
+        self.store = RuntimeStore(session_factory)
+        self.executor.artifacts = self.store
+        self.validator = AnswerValidator(self.provider)
         self.spec = AgentSpec(
             "main",
             frozenset([*self.registry.names(), "load_skill", "read_artifact"]),
@@ -81,6 +86,7 @@ class ChatService:
             max_tools=self._settings.max_tool_calls,
             max_tokens=self._settings.agent_total_tokens,
         )
+        facts = await self.store.facts(context)
         token = current_budget.set(budget)
         try:
             detect_prompt_injection(request.message)
@@ -94,8 +100,20 @@ class ChatService:
                         self.spec,
                         history=history,
                         summary=summary,
+                        facts=facts,
                         emit=emit,
                     )
+            if not request.confirm_action_id:
+                result = await self.validator.validate(request.message, result)
+                await self.store.record(result, context)
+            for observation in result.get("observations", []):
+                args = observation.get("arguments", {})
+                if "order_id" in args:
+                    facts["last_order"] = {
+                        "order_id": args["order_id"],
+                        "source": observation["name"],
+                    }
+            await self.store.save_facts(context, facts)
             pending = (
                 ActionProposal.model_validate(result["pending_action"])
                 if result.get("pending_action")
@@ -143,6 +161,14 @@ class ChatService:
             repo = SessionRepository(db)
             await repo.append_message(session_id, "user", request.message)
             await repo.append_message(session_id, "assistant", response.answer)
+            # Deterministic running summary supplements, never replaces, structured facts.
+            excerpt = "\n".join(m.content for m in history[-6:])
+            await repo.save_summary(
+                session_id,
+                (summary + "\n" + excerpt + "\n" + request.message + "\n" + response.answer)[
+                    -4000:
+                ],
+            )
             await db.commit()
         return response
 

@@ -45,7 +45,7 @@ def test_empty_message_is_invalid_request() -> None:
         assert body["trace_id"]
 
 
-def test_chat_stream_emits_token_and_node_events() -> None:
+def test_chat_stream_emits_progress_then_validated_answer() -> None:
     with _client() as client:
         with client.stream(
             "POST",
@@ -56,7 +56,7 @@ def test_chat_stream_emits_token_and_node_events() -> None:
             payloads = [line for line in response.iter_lines() if line]
     joined = "\n".join(payloads)
     assert "started" in joined
-    assert "token" in joined or "node" in joined
+    assert "validation" in joined
     assert "done" in joined
     data_lines = [line[5:].strip() for line in payloads if line.startswith("data:")]
     parsed = [
@@ -67,7 +67,8 @@ def test_chat_stream_emits_token_and_node_events() -> None:
     assert any(item.get("event") == "answer" for item in parsed)
     final = next(item["data"] for item in parsed if item.get("event") == "answer")
     tokens = "".join(item["text"] for item in parsed if item.get("event") == "token")
-    assert tokens == final["answer"]
+    assert not tokens  # Final answers are not advertised as native token streaming.
+    assert final["answer"]
     assert '"label":"faq_policy"' not in joined
 
 

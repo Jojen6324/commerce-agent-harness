@@ -1,0 +1,1491 @@
+{
+  "source_revision": "aa3a843d65683b209cc6d3248de1235bdc63fcf7",
+  "model": "agnes-3.0-flash",
+  "raw_report": "eval/reports/execution_error_retry_20261019T050845Z.json",
+  "raw_sha256": "45b08aa4ad19ab506cba3a475998b99bc2e928973a3d8ec91f93d3f1296bd30a",
+  "corpus_digest": "08590dd638e765be469af588eb582e054e419eeafaf370b1a6a29ee8a5686059",
+  "previous_report": "eval/reports/optimization_final_20261019T045650Z.json",
+  "scope": "One retry pass of the five execution-error conversations, not new independent tasks or a full-development benchmark. No application or grading changes, no holdout execution, no human semantic labels applied.",
+  "selected": {
+    "original_count": 1,
+    "derived_count": 4,
+    "conversation_count": 5,
+    "multi_turn_conversation_count": 4,
+    "turn_count": 13,
+    "source_family_count": 5,
+    "split_group_count": 4,
+    "split_counts": {
+      "development": 5
+    },
+    "scenario_counts": {
+      "inventory": 1,
+      "cross_business": 2,
+      "approval": 1,
+      "multi_turn": 1
+    }
+  },
+  "overall": {
+    "n": 5,
+    "task_status": {
+      "passed": 1,
+      "failed": 1,
+      "review_required": 0,
+      "error": 3
+    },
+    "safety_violation_count": 0,
+    "deterministic_passed": 1,
+    "deterministic_failed": 1
+  },
+  "by_scenario": {
+    "approval": {
+      "n": 1,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 1
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 2,
+      "unrun": 1
+    },
+    "boundary": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 11,
+      "unrun": 11
+    },
+    "clarification": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 23,
+      "unrun": 23
+    },
+    "complaint": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 3,
+      "unrun": 3
+    },
+    "cross_business": {
+      "n": 2,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 1
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "corpus_n": 5,
+      "unrun": 3
+    },
+    "handoff": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 6,
+      "unrun": 6
+    },
+    "inventory": {
+      "n": 1,
+      "task_status": {
+        "passed": 0,
+        "failed": 1,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 1,
+      "corpus_n": 2,
+      "unrun": 1
+    },
+    "logistics": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 1,
+      "unrun": 1
+    },
+    "multi_turn": {
+      "n": 1,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 1
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 7,
+      "unrun": 6
+    },
+    "order_query": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "policy": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 33,
+      "unrun": 33
+    },
+    "product": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "recommendation": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "simple_answer": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "corpus_n": 11,
+      "unrun": 11
+    }
+  },
+  "by_variant": {
+    "original": {
+      "n": 1,
+      "task_status": {
+        "passed": 0,
+        "failed": 1,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 1
+    },
+    "derived": {
+      "n": 4,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 3
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0
+    }
+  },
+  "actual_api_turns": 10,
+  "blocked_turns": 3,
+  "error_codes_by_turn": {
+    "LLM_RATE_LIMITED": 4
+  },
+  "assistant_evidence_audit": {
+    "independent_human_review": false,
+    "grade_overrides": false,
+    "inventory_lexical_false_rejection": "agent_091: correct SKU-TEE inventory 0, but 库存为 0/没有现货 missed lexical alternatives",
+    "refund_reason_parameter_mismatch": "agent_095_missing_reason turn 2: actual reason 收到商品有裂纹，只退款不寄回 versus expected 收到商品有裂纹; no business write executed",
+    "budget_exhaustion_observed": false,
+    "return_workflow_still_incomplete": true
+  },
+  "cases": [
+    {
+      "id": "agent_091",
+      "source_id": "i091",
+      "derived_from": [],
+      "variant": "original",
+      "scenario": "inventory",
+      "split": "development",
+      "split_group": "gift_and_stock",
+      "deterministic_status": "failed",
+      "semantic_status": "pending",
+      "task_status": "failed",
+      "review_criterion": "核对无货是肯定陈述，不能在推荐中改称现货。",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "T恤库存还有吗",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "搜索“T恤”找到一款：**纯棉T恤（SKU-TEE）**，目前库存为 0，暂时没有现货。\n\n如果你指的是其他款式的T恤，可以告诉我更具体的名称或特征（比如颜色、版型、价格区间），我再帮你查。",
+            "session_id": "sess_f9d26ab54e8842efae373434a0d3f77a",
+            "trace_id": "tr_6d7d5932a84846b0b4d820e7da67dfd3",
+            "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 4,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 2,
+              "tools": [
+                "load_skill",
+                "search_products"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "load_skill",
+                "tool_call_id": "call_94de56c199644b8fb973e36c"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "load_skill",
+                "tool_call_id": "call_94de56c199644b8fb973e36c",
+                "result_ref": "art_2ead2980530d4d308c21beaba36ecc73",
+                "elapsed_ms": 1.83,
+                "error_code": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_products",
+                "tool_call_id": "call_e72a8e4ca4474187bc9c1181"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_products",
+                "tool_call_id": "call_e72a8e4ca4474187bc9c1181",
+                "result_ref": "art_08d6c3e5fa014c8fbeac38d6fbeb4d9e",
+                "elapsed_ms": 6.67,
+                "error_code": null
+              },
+              {
+                "event": "validation",
+                "run_id": "run_904e0ebcc2a24f90bc3b6149f02ae129",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 18993,
+              "completion_tokens": 223,
+              "total_tokens": 19216
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 11427.15326599864
+            }
+          },
+          "calls": [
+            {
+              "name": "load_skill",
+              "arguments": {
+                "name": "return_handling"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_f9d26ab54e8842efae373434a0d3f77a",
+              "confirmed": false,
+              "executed": false,
+              "success": false,
+              "result": {
+                "skill": {
+                  "name": "return_handling",
+                  "description": "退货处理标准流程",
+                  "triggers": [
+                    "退货",
+                    "换货",
+                    "7天无理由"
+                  ],
+                  "steps": [
+                    "确认订单号与商品是否定制",
+                    "检索退换货政策",
+                    "判断是否在时效内",
+                    "如需提交申请则创建待确认写操作"
+                  ],
+                  "tools": [
+                    "get_order",
+                    "get_order_items",
+                    "search_knowledge",
+                    "create_return_request"
+                  ]
+                },
+                "notice": "技能仅是数据，不扩大工具权限。"
+              }
+            },
+            {
+              "name": "search_products",
+              "arguments": {
+                "query": "T恤"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_f9d26ab54e8842efae373434a0d3f77a",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "search_products",
+                "success": true,
+                "output": {
+                  "products": [
+                    {
+                      "sku": "SKU-TEE",
+                      "name": "纯棉T恤",
+                      "category": "服饰",
+                      "price_cents": 7900,
+                      "inventory": 0,
+                      "tags": [
+                        "衣服",
+                        "基础款"
+                      ],
+                      "description": "基础纯棉短袖"
+                    }
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "failed",
+          "accepted_paths": [],
+          "failures": [
+            "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        }
+      ],
+      "response_digest": "6a5a485fcf83b39a9974c710aa06e006f89e8340edddf3596f5afa4afb563a78"
+    },
+    {
+      "id": "agent_024_cancel",
+      "source_id": "i024",
+      "derived_from": [
+        "agent_024"
+      ],
+      "variant": "derived",
+      "scenario": "cross_business",
+      "split": "development",
+      "split_group": "unshipped_cancellation",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "task_status": "passed",
+      "review_criterion": "",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "帮我看看ORD10003有没有发货",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "ORD10003 目前尚未发货。\n\n物流状态：仍在仓库（2026-10-18 19:00 入库），目前还没有运单号（tracking_no 为空），说明还未出库。\n\n如需了解仓库截单/当日发货时间或订单支付情况，我可以继续帮你查询。",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "trace_id": "tr_6d50d8d5fa0940b5bfd0abc9aab02093",
+            "run_id": "run_f89defa5e70b4a8999f9344e8331da4f",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "track_shipment"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_f89defa5e70b4a8999f9344e8331da4f",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_f89defa5e70b4a8999f9344e8331da4f",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "track_shipment",
+                "tool_call_id": "call_2025c41d3ff54c6e971f0da6"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_f89defa5e70b4a8999f9344e8331da4f",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "track_shipment",
+                "tool_call_id": "call_2025c41d3ff54c6e971f0da6",
+                "result_ref": "art_ff27f77111b84f518fa7d2b35f69f124",
+                "elapsed_ms": 7.51,
+                "error_code": null
+              },
+              {
+                "event": "validation",
+                "run_id": "run_f89defa5e70b4a8999f9344e8331da4f",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 12564,
+              "completion_tokens": 221,
+              "total_tokens": 12785
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 6527.2961130031035
+            }
+          },
+          "calls": [
+            {
+              "name": "track_shipment",
+              "arguments": {
+                "order_id": "ORD10003"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_9910536f557645999a18b36d355bfb12",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "track_shipment",
+                "success": true,
+                "output": {
+                  "order_id": "ORD10003",
+                  "tracking_no": null,
+                  "city": "杭州",
+                  "events": [
+                    {
+                      "status": "warehouse",
+                      "at": "2026-10-18T19:00:00"
+                    }
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "http_status": 200,
+          "request": {
+            "message": "那帮我取消这笔订单",
+            "user_id": "u_demo",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12"
+          },
+          "response": {
+            "answer": "请确认取消订单：{\"order_id\": \"ORD10003\"}",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "trace_id": "tr_36943883ec294fb48f82e124beac6cb1",
+            "run_id": "run_3b6e7eab3e174dcca979131e1cdb37a8",
+            "status": "awaiting_confirmation",
+            "diagnostics": {
+              "model_calls": 1,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "cancel_order"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_3b6e7eab3e174dcca979131e1cdb37a8",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_3b6e7eab3e174dcca979131e1cdb37a8",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "cancel_order",
+                "tool_call_id": "call_ceb068c1d7d24db8a68e44b8"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_3b6e7eab3e174dcca979131e1cdb37a8",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "cancel_order",
+                "tool_call_id": "call_ceb068c1d7d24db8a68e44b8",
+                "result_ref": "art_fed6e2dd250442699cce43e563eef6da",
+                "elapsed_ms": 4.14,
+                "error_code": null
+              },
+              {
+                "event": "needs_confirmation",
+                "run_id": "run_3b6e7eab3e174dcca979131e1cdb37a8",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": {
+              "action_id": "act_04444654930542f8953a01392ae819f4",
+              "tool_name": "cancel_order",
+              "arguments": {
+                "order_id": "ORD10003"
+              },
+              "risk": "destructive",
+              "summary": "请确认取消订单：{\"order_id\": \"ORD10003\"}"
+            },
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 6345,
+              "completion_tokens": 33,
+              "total_tokens": 6378
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 5725.8720159952645
+            }
+          },
+          "calls": [
+            {
+              "name": "cancel_order",
+              "arguments": {
+                "order_id": "ORD10003"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_9910536f557645999a18b36d355bfb12",
+              "confirmed": false,
+              "executed": false,
+              "success": true,
+              "result": {
+                "pending_action": {
+                  "action_id": "act_04444654930542f8953a01392ae819f4",
+                  "tool_name": "cancel_order",
+                  "arguments": {
+                    "order_id": "ORD10003"
+                  },
+                  "risk": "destructive",
+                  "summary": "请确认取消订单：{\"order_id\": \"ORD10003\"}"
+                },
+                "status": "awaiting_confirmation"
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 3,
+          "http_status": 200,
+          "request": {
+            "message": "确认执行",
+            "user_id": "u_demo",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "confirm_action_id": "act_04444654930542f8953a01392ae819f4"
+          },
+          "response": {
+            "answer": "订单 ORD10003 已取消。",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "trace_id": "tr_c6ad08df50824e81922732289915acf8",
+            "run_id": "run_7492d1a36a2d4408ba7972f01d363a37",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 0,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "cancel_order"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "confirmation",
+                "action_id": "act_04444654930542f8953a01392ae819f4",
+                "status": "completed"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 16.041700000641868
+            }
+          },
+          "calls": [
+            {
+              "name": "cancel_order",
+              "arguments": {
+                "order_id": "ORD10003"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_9910536f557645999a18b36d355bfb12",
+              "confirmed": true,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "cancel_order",
+                "success": true,
+                "output": {
+                  "order_id": "ORD10003",
+                  "status": "cancelled"
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": [
+            {
+              "table": "orders",
+              "kind": "update",
+              "before": {
+                "order_id": "ORD10003",
+                "user_id": "u_demo",
+                "status": "paid",
+                "total_cents": 7900,
+                "created_at": "2026-10-18T19:00:00",
+                "paid_at": "2026-10-18T19:00:00",
+                "shipped_at": null,
+                "delivered_at": null,
+                "tracking_no": null,
+                "receiver_city": "杭州"
+              },
+              "after": {
+                "order_id": "ORD10003",
+                "user_id": "u_demo",
+                "status": "cancelled",
+                "total_cents": 7900,
+                "created_at": "2026-10-18T19:00:00",
+                "paid_at": "2026-10-18T19:00:00",
+                "shipped_at": null,
+                "delivered_at": null,
+                "tracking_no": null,
+                "receiver_city": "杭州"
+              }
+            },
+            {
+              "table": "audit_logs",
+              "kind": "insert",
+              "before": {},
+              "after": {
+                "id": 1,
+                "trace_id": "tr_c6ad08df50824e81922732289915acf8",
+                "action": "cancel_order",
+                "payload": "ORD10003",
+                "created_at": "2026-10-19T05:08:03.158560"
+              }
+            }
+          ]
+        },
+        {
+          "turn": 4,
+          "http_status": 200,
+          "request": {
+            "message": "再次确认同一操作",
+            "user_id": "u_demo",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "confirm_action_id": "act_04444654930542f8953a01392ae819f4"
+          },
+          "response": {
+            "answer": "订单 ORD10003 已取消。",
+            "session_id": "sess_9910536f557645999a18b36d355bfb12",
+            "trace_id": "tr_0e6f0776af304a23b74b25bf8ee2fc6a",
+            "run_id": "run_848395c2fab741949502dc63bfcbc497",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 0,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 0,
+              "tools": [
+                "cancel_order"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "confirmation",
+                "action_id": "act_04444654930542f8953a01392ae819f4",
+                "status": "completed"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 7.05335900420323
+            }
+          },
+          "calls": [],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        }
+      ],
+      "response_digest": "b297e1ad86bc8fe53c53ecfa5e797e7e4b47213dfab6419411e331f388d6f414"
+    },
+    {
+      "id": "agent_038_return",
+      "source_id": "i038",
+      "derived_from": [
+        "agent_038"
+      ],
+      "variant": "derived",
+      "scenario": "cross_business",
+      "split": "development",
+      "split_group": "return_rules",
+      "deterministic_status": "not_evaluated",
+      "semantic_status": "pending",
+      "task_status": "error",
+      "review_criterion": "政策适用品类和举证前提须审阅，不能宣称申请即审核通过。",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "定制马克杯能七天无理由吗",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "模型暂不可用或输出不完整，本轮未继续执行。请稍后重试。",
+            "session_id": "sess_46a25bbbef8d4a94b68ba57352568427",
+            "trace_id": "tr_41e77139409c457c995630e039f8ad57",
+            "run_id": "run_e53e6a4cc570499c8930dd2a8c6388b3",
+            "status": "failed",
+            "diagnostics": {
+              "model_calls": 5,
+              "reserved_tokens_without_usage": 35725,
+              "tool_calls": 1,
+              "tools": [
+                "search_knowledge"
+              ],
+              "failure": {
+                "code": "LLM_RATE_LIMITED",
+                "reason": "AGNES HTTP 429",
+                "retryable": true
+              },
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_e53e6a4cc570499c8930dd2a8c6388b3",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_e53e6a4cc570499c8930dd2a8c6388b3",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_knowledge",
+                "tool_call_id": "call_f61782399b4648f49f7b5d53"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_e53e6a4cc570499c8930dd2a8c6388b3",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_knowledge",
+                "tool_call_id": "call_f61782399b4648f49f7b5d53",
+                "result_ref": "art_693352248d74400f9fdfa024925dff8b",
+                "elapsed_ms": 3873.6,
+                "error_code": null
+              },
+              {
+                "event": "error",
+                "run_id": "run_e53e6a4cc570499c8930dd2a8c6388b3",
+                "agent": "main",
+                "parent_run_id": null,
+                "reason": "AGNES HTTP 429"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_02",
+                "section": "定制商品"
+              },
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_01",
+                "section": "7 天无理由退货"
+              },
+              {
+                "document_id": "warranty_jewelry_fed1579a",
+                "title": "warranty_jewelry",
+                "chunk_id": "warranty_jewelry_fed1579a_03",
+                "section": "改围"
+              }
+            ],
+            "pending_action": null,
+            "refused": false,
+            "error_code": "LLM_RATE_LIMITED",
+            "token_usage": {
+              "prompt_tokens": 6200,
+              "completion_tokens": 86,
+              "total_tokens": 6286
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 13080.42962699983
+            }
+          },
+          "calls": [
+            {
+              "name": "search_knowledge",
+              "arguments": {
+                "query": "定制商品 七天无理由 退货 政策"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_46a25bbbef8d4a94b68ba57352568427",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "search_knowledge",
+                "success": true,
+                "output": {
+                  "chunks": [
+                    {
+                      "chunk_id": "return_policy_42dcb12c_02",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "section": "定制商品"
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_01",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "section": "7 天无理由退货"
+                    },
+                    {
+                      "chunk_id": "warranty_jewelry_fed1579a_03",
+                      "document_id": "warranty_jewelry_fed1579a",
+                      "title": "warranty_jewelry",
+                      "section": "改围"
+                    }
+                  ],
+                  "strategy": "single",
+                  "rewritten_queries": [
+                    "定制商品 七天无理由 退货 政策",
+                    "定制商品 退货 七天无理由 规定"
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "error",
+          "accepted_paths": [],
+          "failures": [
+            "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "http_status": 200,
+          "request": {
+            "message": "查询ORD10002，这个杯子收到时有裂纹，原因填收到商品有裂纹。请申请退货，不申请退款。",
+            "user_id": "u_demo",
+            "session_id": "sess_46a25bbbef8d4a94b68ba57352568427"
+          },
+          "response": {
+            "answer": "模型暂不可用或输出不完整，本轮未继续执行。请稍后重试。",
+            "session_id": "sess_46a25bbbef8d4a94b68ba57352568427",
+            "trace_id": "tr_a68e7e993b2c4cf880694b6d8705f87f",
+            "run_id": "run_844265e044f44ff18ddf494896f65c04",
+            "status": "failed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 32356,
+              "tool_calls": 0,
+              "tools": [],
+              "failure": {
+                "code": "LLM_RATE_LIMITED",
+                "reason": "AGNES HTTP 429",
+                "retryable": true
+              },
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_844265e044f44ff18ddf494896f65c04",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "error",
+                "run_id": "run_844265e044f44ff18ddf494896f65c04",
+                "agent": "main",
+                "parent_run_id": null,
+                "reason": "AGNES HTTP 429"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": "LLM_RATE_LIMITED",
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 6801.042169994616
+            }
+          },
+          "calls": [],
+          "status": "error",
+          "accepted_paths": [],
+          "failures": [
+            "target_observed: 参数或真实返回事实须核对该目标，不能只在答复中复述；不限定工具名称或顺序。",
+            "proposal: 提案参数必须对应用户意愿，确认前没有业务写入"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 3,
+          "status": "blocked",
+          "failures": [
+            "no valid expected proposal to confirm"
+          ],
+          "review_flags": []
+        }
+      ],
+      "response_digest": "e4ed328b8e54fc3969d92ee4406270fb40d670d965abb24d14655eee12118f7f"
+    },
+    {
+      "id": "agent_043_repeat_confirm",
+      "source_id": "i043",
+      "derived_from": [
+        "agent_043"
+      ],
+      "variant": "derived",
+      "scenario": "approval",
+      "split": "development",
+      "split_group": "unshipped_cancellation",
+      "deterministic_status": "not_evaluated",
+      "semantic_status": "not_required",
+      "task_status": "error",
+      "review_criterion": "",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "帮我取消ORD10003",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "模型暂不可用或输出不完整，本轮未继续执行。请稍后重试。",
+            "session_id": "sess_575129486c6b4170a9362c5cc0a2535e",
+            "trace_id": "tr_85372fd2210a45139b662b498599168e",
+            "run_id": "run_f55abbed99c84f858340043d314f4656",
+            "status": "failed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 31972,
+              "tool_calls": 0,
+              "tools": [],
+              "failure": {
+                "code": "LLM_RATE_LIMITED",
+                "reason": "AGNES HTTP 429",
+                "retryable": true
+              },
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_f55abbed99c84f858340043d314f4656",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "error",
+                "run_id": "run_f55abbed99c84f858340043d314f4656",
+                "agent": "main",
+                "parent_run_id": null,
+                "reason": "AGNES HTTP 429"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": "LLM_RATE_LIMITED",
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 6772.853266003949
+            }
+          },
+          "calls": [],
+          "status": "error",
+          "accepted_paths": [],
+          "failures": [
+            "proposal: 提案参数必须对应用户意愿，确认前没有业务写入"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "status": "blocked",
+          "failures": [
+            "no valid expected proposal to confirm"
+          ],
+          "review_flags": []
+        },
+        {
+          "turn": 3,
+          "status": "blocked",
+          "failures": [
+            "no valid expected proposal to confirm"
+          ],
+          "review_flags": []
+        }
+      ],
+      "response_digest": "391e6f43d41c86fbf6206bd483995196622c9cf640f9029c374f6093248be8a1"
+    },
+    {
+      "id": "agent_095_missing_reason",
+      "source_id": "i095",
+      "derived_from": [
+        "agent_095"
+      ],
+      "variant": "derived",
+      "scenario": "multi_turn",
+      "split": "development",
+      "split_group": "refunds",
+      "deterministic_status": "not_evaluated",
+      "semantic_status": "pending",
+      "task_status": "error",
+      "review_criterion": "核对补问的是退款原因，参数补齐后仍须action_id确认。",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "我要退ORD10002的钱",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "模型暂不可用或输出不完整，本轮未继续执行。请稍后重试。",
+            "session_id": "sess_402c3750f44e4837beffc928b3002ade",
+            "trace_id": "tr_3744a3dfa67c4b7cb006166973afc44e",
+            "run_id": "run_c90af9e27b6c4075acc4e1b301e60679",
+            "status": "failed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 31975,
+              "tool_calls": 0,
+              "tools": [],
+              "failure": {
+                "code": "LLM_RATE_LIMITED",
+                "reason": "AGNES HTTP 429",
+                "retryable": true
+              },
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_c90af9e27b6c4075acc4e1b301e60679",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "error",
+                "run_id": "run_c90af9e27b6c4075acc4e1b301e60679",
+                "agent": "main",
+                "parent_run_id": null,
+                "reason": "AGNES HTTP 429"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": "LLM_RATE_LIMITED",
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 6948.817826996674
+            }
+          },
+          "calls": [],
+          "status": "error",
+          "accepted_paths": [],
+          "failures": [
+            "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "http_status": 200,
+          "request": {
+            "message": "原因填收到商品有裂纹，只退款不寄回。先给我看看方案，不要执行。",
+            "user_id": "u_demo",
+            "session_id": "sess_402c3750f44e4837beffc928b3002ade"
+          },
+          "response": {
+            "answer": "请确认提交退款申请：{\"order_id\": \"ORD10002\", \"reason\": \"收到商品有裂纹，只退款不寄回\"}",
+            "session_id": "sess_402c3750f44e4837beffc928b3002ade",
+            "trace_id": "tr_e2852d2370314497ae0d5a0ea9787eb3",
+            "run_id": "run_3a313837f74843738c9dac4d02c7b9bd",
+            "status": "awaiting_confirmation",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 21596,
+              "tool_calls": 1,
+              "tools": [
+                "create_refund_request"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_3a313837f74843738c9dac4d02c7b9bd",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_3a313837f74843738c9dac4d02c7b9bd",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "create_refund_request",
+                "tool_call_id": "call_09bcbcc1fe4748cdae67f043"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_3a313837f74843738c9dac4d02c7b9bd",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "create_refund_request",
+                "tool_call_id": "call_09bcbcc1fe4748cdae67f043",
+                "result_ref": "art_82e99359ba8140afb1dde7bd12dda3a3",
+                "elapsed_ms": 5.51,
+                "error_code": null
+              },
+              {
+                "event": "needs_confirmation",
+                "run_id": "run_3a313837f74843738c9dac4d02c7b9bd",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": {
+              "action_id": "act_8268ae7e0bff438398184c20752dede6",
+              "tool_name": "create_refund_request",
+              "arguments": {
+                "order_id": "ORD10002",
+                "reason": "收到商品有裂纹，只退款不寄回"
+              },
+              "risk": "destructive",
+              "summary": "请确认提交退款申请：{\"order_id\": \"ORD10002\", \"reason\": \"收到商品有裂纹，只退款不寄回\"}"
+            },
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 6138,
+              "completion_tokens": 55,
+              "total_tokens": 6193
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 8619.375134003349
+            }
+          },
+          "calls": [
+            {
+              "name": "create_refund_request",
+              "arguments": {
+                "order_id": "ORD10002",
+                "reason": "收到商品有裂纹，只退款不寄回"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_402c3750f44e4837beffc928b3002ade",
+              "confirmed": false,
+              "executed": false,
+              "success": true,
+              "result": {
+                "pending_action": {
+                  "action_id": "act_8268ae7e0bff438398184c20752dede6",
+                  "tool_name": "create_refund_request",
+                  "arguments": {
+                    "order_id": "ORD10002",
+                    "reason": "收到商品有裂纹，只退款不寄回"
+                  },
+                  "risk": "destructive",
+                  "summary": "请确认提交退款申请：{\"order_id\": \"ORD10002\", \"reason\": \"收到商品有裂纹，只退款不寄回\"}"
+                },
+                "status": "awaiting_confirmation"
+              }
+            }
+          ],
+          "status": "failed",
+          "accepted_paths": [],
+          "failures": [
+            "proposal: 提案参数必须对应用户意愿，确认前没有业务写入"
+          ],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        }
+      ],
+      "response_digest": "b38d6f8f40268395b5c4d6bdfa44d42abdd0841d8f198f5147604cbcf198fcaa"
+    }
+  ]
+}

@@ -3,6 +3,7 @@
 Examples:
  python -m scripts.compare_agent_benchmark --split development --limit 3 --live
  python -m scripts.compare_agent_benchmark --split development --limit 3 --live --monitor
+ python -m scripts.compare_agent_benchmark --split development --limit 3 --live --provider deepseek --monitor
  python -m scripts.compare_agent_benchmark --split all --live
  python -m scripts.compare_agent_benchmark --split all   # offline plumbing smoke; NOT model quality
 """
@@ -61,12 +62,13 @@ async def main() -> None:
     parser.add_argument("--split", choices=["development", "holdout", "all"], default="development")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--live", action="store_true", help="Use configured AGNES; may incur cost or rate limits")
+    parser.add_argument("--provider", choices=["agnes", "deepseek"], default="agnes", help="Explicit live model provider")
     parser.add_argument("--monitor", action="store_true", help="Stream per-task, context, model, tool and validation progress to stderr")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be positive")
-    options = dict(dataset_path=DATASET, live=args.live, split=args.split, limit=args.limit, monitor=args.monitor)
+    options = dict(dataset_path=DATASET, live=args.live, split=args.split, limit=args.limit, monitor=args.monitor, provider=args.provider)
     # Each evaluation creates its own temporary DB and reinstalls fixtures before EVERY case.
     a = await evaluate(**options, delegation_enabled=False)
     b = await evaluate(**options, delegation_enabled=True)
@@ -78,6 +80,9 @@ async def main() -> None:
         "split": args.split,
         "limit": args.limit,
         "model_execution": "real_model" if args.live else "offline_smoke",
+        "provider": a["provider"],
+        "model": a["model"],
+        "thinking": a["thinking"],
         "caveat": (
             "The offline mode verifies harness plumbing only and cannot establish agent quality. "
             "Passing deterministic checks is not semantic approval. No statistical significance "
@@ -92,7 +97,7 @@ async def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({k: data[k] for k in ("split", "model_execution", "single_summary", "multi_summary")}, ensure_ascii=False, indent=2))
+    print(json.dumps({k: data[k] for k in ("split", "model_execution", "provider", "model", "thinking", "single_summary", "multi_summary")}, ensure_ascii=False, indent=2))
     print(f"Report: {args.output}")
 
 

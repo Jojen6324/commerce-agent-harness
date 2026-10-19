@@ -91,7 +91,7 @@ def artifact_digest(output, ref, *, max_chars=6000):
 
 
 class ContextBuilder:
-    def __init__(self, limit=20_000, reserve=1200):
+    def __init__(self, limit=32_000, reserve=1200):
         self.limit, self.reserve = limit, reserve
 
     def estimate(self, messages, tools):

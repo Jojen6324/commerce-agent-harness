@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     agnes: SecretStr = SecretStr("")
     agnes_base_url: str = "https://apihub.agnes-ai.com/v1"
     agnes_model: str = "agnes-3.0-flash"
-    agent_context_tokens: int = 20_000
+    agent_context_tokens: int = 32_000
     agent_total_tokens: int = 80_000
     agent_model_calls: int = 24
     agent_deadline_seconds: float = 300

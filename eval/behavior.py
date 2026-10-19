@@ -105,6 +105,7 @@ async def evaluate(
     dataset_path=None,
     delegation_enabled=None,
     monitor=False,
+    provider="agnes",
 ):
     # Keep the locked 116-task historical corpus unchanged; opt in to new benchmarks.
     if dataset_path is None:
@@ -133,6 +134,8 @@ async def evaluate(
         selected = selected[:limit]
     if not selected:
         raise ValueError("no tasks selected")
+    if provider not in ("agnes", "deepseek"):
+        raise ValueError("provider must be agnes or deepseek")
     results = []
     monitor_events = []
     arm = "multi" if delegation_enabled else "single" if delegation_enabled is not None else "default"
@@ -249,9 +252,18 @@ async def evaluate(
             rate_limit_per_minute=max(60, sum(len(t.turns) for t in selected) * 2),
         )
         if not live:
-            settings = settings.model_copy(update={"agnes": SecretStr("")})
-        if live and not settings.agnes.get_secret_value():
+            settings = settings.model_copy(
+                update={"agnes": SecretStr(""), "deepseek_api_key": SecretStr("")}
+            )
+        elif provider == "agnes" and not settings.agnes.get_secret_value():
             raise RuntimeError("AGNES binding required for live evaluation")
+        elif provider == "deepseek":
+            if not settings.deepseek_api_key.get_secret_value():
+                raise RuntimeError("DeepSeek binding required for live evaluation")
+            # Explicit selection prevents an AGNES binding from taking priority.
+            settings = settings.model_copy(
+                update={"agnes": SecretStr(""), "deepseek_thinking": "disabled"}
+            )
         if delegation_enabled is not None:
             settings = settings.model_copy(update={"agent_delegation_enabled": delegation_enabled})
         c = await container_factory(settings)
@@ -440,6 +452,11 @@ async def evaluate(
         "schema_version": 1,
         "corpus_digest": digest,
         "mode": "real_model" if live else "deterministic_offline",
+        "provider": provider if live else "offline",
+        "model": (
+            settings.agnes_model if live and provider == "agnes" else settings.deepseek_model
+        ) if live else "offline",
+        "thinking": settings.deepseek_thinking if live and provider == "deepseek" else None,
         "selected_split": split,
         "corpus": corpus_summary(all_tasks),
         "selected": corpus_summary(selected),

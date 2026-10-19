@@ -7,6 +7,22 @@ from pydantic import SecretStr
 from app.config.settings import Settings
 from app.core.exceptions import LLMProviderError
 from app.providers.deepseek import DeepSeekProvider
+from app.services.container import build_llm_provider
+
+
+@pytest.mark.asyncio
+async def test_container_selects_deepseek_when_agnes_is_cleared():
+    settings = Settings(
+        app_env="development",
+        agnes=SecretStr(""),
+        deepseek_api_key=SecretStr("test-only"),
+        deepseek_thinking="disabled",
+    )
+    provider = build_llm_provider(settings)
+    try:
+        assert isinstance(provider, DeepSeekProvider)
+    finally:
+        await provider.aclose()
 
 
 @pytest.mark.asyncio

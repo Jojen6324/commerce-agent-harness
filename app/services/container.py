@@ -11,6 +11,7 @@ from app.mcp.adapter import merge_mcp_tools
 from app.mcp.runtime import LOCAL_CATALOG
 from app.providers.agnes import AgnesProvider
 from app.providers.base import LLMProvider
+from app.providers.deepseek import DeepSeekProvider
 from app.providers.embeddings import build_embedding_provider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.reranker import CrossEncoderRerankProvider
@@ -25,6 +26,17 @@ from app.services.seed import seed_demo_data
 from app.tools.factory import build_tool_registry
 
 logger = logging.getLogger(__name__)
+
+
+def build_llm_provider(settings: Settings) -> LLMProvider:
+    """Choose the configured model backend; AGNES stays the default priority."""
+    if settings.app_env == "testing":
+        return OfflineLLMProvider()
+    if settings.agnes.get_secret_value():
+        return AgnesProvider(settings)
+    if settings.deepseek_api_key.get_secret_value():
+        return DeepSeekProvider(settings)
+    return OfflineLLMProvider()
 
 
 class AppContainer:
@@ -93,11 +105,7 @@ async def build_retrieval(settings: Settings, redis):
 
 async def build_container(settings: Settings, seed: bool = False) -> AppContainer:
     """Compose runtime services from independently testable infrastructure builders."""
-    llm: LLMProvider = (
-        AgnesProvider(settings)
-        if settings.agnes.get_secret_value() and settings.app_env != "testing"
-        else OfflineLLMProvider()
-    )
+    llm = build_llm_provider(settings)
     engine, session_factory, redis = await build_infrastructure(settings)
     rate_limiter = (
         RedisRateLimiter(redis, limit=settings.rate_limit_per_minute)

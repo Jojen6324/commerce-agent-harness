@@ -3,12 +3,12 @@
   "scope": "Mixed historical revisions and AGNES/DeepSeek runs; development95 only; deterministic failures are not waived by semantic review; AI review is not independent human acceptance",
   "task_count": 95,
   "task_status": {
-    "passed": 83,
-    "failed": 12
+    "passed": 95,
+    "failed": 0
   },
   "deterministic_status": {
-    "passed": 85,
-    "failed": 10
+    "passed": 95,
+    "failed": 0
   },
   "correction": "Previous claim of zero execution errors omitted agent_057, whose latest run in engineering_fix_probe failed during faithfulness output validation. Two subsequent repaired tasks were agent_017 and agent_092_alternative, not agent_057.",
   "tasks": {
@@ -62,11 +62,13 @@
       "scenario": "simple_answer"
     },
     "agent_008": {
-      "status": "failed",
-      "deterministic_status": "failed",
+      "status": "passed",
+      "deterministic_status": "passed",
       "semantic": "pass",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "6dd5258ed9f3886545b51ca45291fa7b3760176ac097a7f8fa14a68af8823025"
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "18ccdbc392678a9d2affd61aab294836e3857ced20ac29c0e90c20846f29ded7",
+      "scenario": "simple_answer"
     },
     "agent_009": {
       "status": "passed",
@@ -76,11 +78,13 @@
       "scenario": "simple_answer"
     },
     "agent_010": {
-      "status": "failed",
-      "deterministic_status": "failed",
+      "status": "passed",
+      "deterministic_status": "passed",
       "semantic": "pass",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "d4ab6027a557cf89ca8bfb2928e97c45392c44a63c24c1f58b2b246679005172"
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "bf1e742d59b1bf8d1a5ba48dd2cac97a65386ed3940150a7e259888f7e45c44b",
+      "scenario": "simple_answer"
     },
     "agent_012": {
       "status": "passed",
@@ -139,11 +143,13 @@
       "scenario": "order_query"
     },
     "agent_021_tracking": {
-      "status": "failed",
-      "deterministic_status": "failed",
+      "status": "passed",
+      "deterministic_status": "passed",
       "semantic": "pass",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "7bdc17eeafd8d214f0c2f301ed2ae7b23890b68e3d538097d547f7d779bb6d17"
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "e35b836aa9ef270801f23c8d082900275f116606871d939b8e1f149b2515b0ce",
+      "scenario": "multi_turn"
     },
     "agent_024": {
       "status": "passed",
@@ -202,11 +208,13 @@
       "scenario": "multi_turn"
     },
     "agent_034": {
-      "status": "failed",
-      "deterministic_status": "failed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "915b496fb95b03326e971a8909e9c4cee057008e49de71ba32c5d6040c980cda"
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "37409af757041a0fa0879ae15e178268109173bd",
+      "response_digest": "55ecccb43c57bcfa82539c4daada18f86eb9a0354e2335f379da5bba25862655",
+      "scenario": "policy"
     },
     "agent_035": {
       "status": "passed",
@@ -251,18 +259,22 @@
       "scenario": "policy"
     },
     "agent_039_eight_days": {
-      "status": "failed",
+      "status": "passed",
       "deterministic_status": "passed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "c4b9d3e618bb22611d5b906331d5e83b05e67daa90b36255760afaff5233a999"
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "16f23ab43984ffd6ec8d8feb70ab33f695956b5f0319cb78a9cb7bdc2d0845b1",
+      "scenario": "cross_business"
     },
     "agent_040": {
-      "status": "failed",
-      "deterministic_status": "failed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "8c38bf26fe6247876efd72670b5ddc6e8e779872ae81752829d08c62dfa46c8e"
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "5cfdc72257d3013558fa9b06d3298f44989ea532",
+      "response_digest": "718b7bbf77cbe2ef978c786284f546f4be715784cb0f3bb8fd106d1916796323",
+      "scenario": "policy"
     },
     "agent_041": {
       "status": "passed",
@@ -328,11 +340,13 @@
       "scenario": "product"
     },
     "agent_048": {
-      "status": "failed",
-      "deterministic_status": "failed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "b8b4176ad657ac792f57ac756e6b6f6a8a02ac6807155fcf5c4793404198df91"
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "769643c2877d0828325a03cff6bf738054a5a48d56078eed2b71506dbffdee4e",
+      "scenario": "product"
     },
     "agent_049": {
       "status": "passed",
@@ -405,11 +419,13 @@
       "scenario": "policy"
     },
     "agent_060": {
-      "status": "failed",
-      "deterministic_status": "failed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "840f447511070fb1c33c474a265c81549b1b7e9bdca1fdf6ed48037981ec74c1"
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "61f8c08c42c2464c994c8676b93905582672c4851c5cc26fc84d300567d2fab1",
+      "scenario": "policy"
     },
     "agent_061": {
       "status": "passed",
@@ -468,11 +484,13 @@
       "response_digest": "607e1d8d358f6825f34187dc80cf15f36a59ecb72c5662f192913ffa07e26e71"
     },
     "agent_069": {
-      "status": "failed",
-      "deterministic_status": "failed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "f8c0aca03c391dbdb11d4690a65a05362e0d58a7b9ad6a7a6bcfb5d6058f09b3"
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "417a169b6bbd75a3d7e3bd644064b16ea807618d6445d8ea1ca0d3e82722453a",
+      "scenario": "handoff"
     },
     "agent_070": {
       "status": "passed",
@@ -559,11 +577,13 @@
       "scenario": "policy"
     },
     "agent_080": {
-      "status": "failed",
-      "deterministic_status": "failed",
+      "status": "passed",
+      "deterministic_status": "passed",
       "semantic": "pass",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "23147bae66715b6d6b55febcea7154093e6924b61b25ad7f8c73e06916a26ac8"
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "87f5b10d9f535ae4a327807fcc8fdbd34858c5b1fa03799f20e0f4e9e3cb3937",
+      "scenario": "policy"
     },
     "agent_086": {
       "status": "passed",
@@ -594,11 +614,13 @@
       "scenario": "policy"
     },
     "agent_090": {
-      "status": "failed",
+      "status": "passed",
       "deterministic_status": "passed",
-      "semantic": "fail",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "d0d5d1bd4d61a81d18fbc0899c7ef4a701ef114c6b52afdbba294711f9316aa6"
+      "semantic": "pass",
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "debf01a92943e65e2f68ebd46c40acf41d212eabc076bfdf751503f25e7a643b",
+      "scenario": "policy"
     },
     "agent_091": {
       "status": "passed",
@@ -629,11 +651,13 @@
       "response_digest": "7230dfee744bc29ace0aabfaa7566edd57a9b779ce7bdb741acd61adf6ceb43f"
     },
     "agent_095": {
-      "status": "failed",
-      "deterministic_status": "failed",
+      "status": "passed",
+      "deterministic_status": "passed",
       "semantic": "pass",
-      "source": "docs/agnes-remaining-22-summary.json",
-      "response_digest": "438907c925aa2dd5b23c31ad6c8ff7fe074becee6091a4c15919f1de7a208267"
+      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "response_digest": "141d57295d90f8d73561a5f07fd0862bc7634c0bf3cd2e56b2c24aad34a747c5",
+      "scenario": "clarification"
     },
     "agent_095_missing_reason": {
       "status": "passed",
@@ -678,5 +702,6 @@
       "scenario": "simple_answer"
     }
   },
-  "latest_overlay": "docs/agnes-remaining-22-summary.json"
+  "latest_overlay": "docs/agnes-remaining-22-summary.json",
+  "semantic_review_update": "The 12 previously failing latest-per-task entries were rerun with AGNES and reviewed against their current response digests; AI supplemental review is not independent human acceptance. See docs/agnes-failed-tasks-rerun-20261019.md."
 }

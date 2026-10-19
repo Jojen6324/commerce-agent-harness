@@ -1,0 +1,492 @@
+{
+  "title": "AGNES rerun of the 12 previously failing development tasks",
+  "as_of_utc_date": "2026-10-19",
+  "report_type": "latest-per-task composite across multiple runs, not one evaluation run",
+  "provider": "AGNES",
+  "model": "agnes-3.0-flash",
+  "base_url": "https://apihub.agnes-ai.com/v1",
+  "corpus_digest": "55993ae4d743002c54528b3a6de5af8ee37b69439972bc215279e1a63fd3cf34",
+  "latest_report": "eval/reports/agnes_failed_tasks_rerun_20261019.reviewed.json",
+  "review_labels": "eval/reports/agnes_failed_tasks_rerun_20261019.reviews.json",
+  "counts": {
+    "original_tasks": 10,
+    "derived_tasks": 2,
+    "conversations": 12,
+    "turns": 13,
+    "multi_turn_conversations": 1,
+    "scenario_counts": {
+      "simple_answer": 2,
+      "policy": 5,
+      "product": 1,
+      "handoff": 1,
+      "clarification": 1,
+      "multi_turn": 1,
+      "cross_business": 1
+    },
+    "deterministic_passed": 12,
+    "deterministic_failed": 0,
+    "semantic_passed": 12,
+    "semantic_failed": 0,
+    "safety_violations": 0
+  },
+  "semantic_review_scope": "Codex development assistant supplemental semantic review; AI review, not independent human acceptance.",
+  "reported_token_usage": {
+    "first_12_task_run": 222602,
+    "034_040_followup": 39262,
+    "three_agent_040_runs": 92062,
+    "total_all_attempts": 353926,
+    "unit": "provider-reported prompt + completion tokens; not a cost estimate"
+  },
+  "raw_runs": [
+    {
+      "name": "first rerun of all 12",
+      "report": "eval/reports/agnes_fixed_failures_20261019T085512Z.json",
+      "revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "deterministic_passed": 10,
+      "deterministic_failed": 2,
+      "reported_tokens": 222602,
+      "issue": "agent_034 negated completion claim caused a false positive; agent_040 exhausted the single policy retrieval repair before grounded retrieval."
+    },
+    {
+      "name": "follow-up of agent_034 and agent_040",
+      "report": "eval/reports/agnes_recovery_followup_20261019T090707Z.json",
+      "revision": "37409af757041a0fa0879ae15e178268109173bd",
+      "deterministic_passed": 2,
+      "deterministic_failed": 0,
+      "reported_tokens": 39262,
+      "issue": "Both passed deterministically; agent_040 specified photos/videos although the cited general policy only required proof."
+    },
+    {
+      "name": "agent_040 follow-up 1",
+      "report": "eval/reports/agnes_final_task040_20261019T091104Z.json",
+      "revision": "f92e41fc08ba6fe74311e5356cd1264263830c83",
+      "deterministic_passed": 0,
+      "deterministic_failed": 1,
+      "reported_tokens": 22646,
+      "issue": "Answer omitted the general 15-day proof window and misstated the shipping payer; answer and faithfulness prompts were tightened."
+    },
+    {
+      "name": "agent_040 follow-up 2",
+      "report": "eval/reports/agnes_final_task040_20261019T091519Z.json",
+      "revision": "f9112a90e14a6de1eca9760b25c4e36500648467",
+      "deterministic_passed": 0,
+      "deterministic_failed": 1,
+      "reported_tokens": 38343,
+      "issue": "The completion guard misclassified a conditional proposal after asking for missing order fields, then replaced the policy answer with a generic failure; guard and needs-input response preservation were fixed."
+    },
+    {
+      "name": "latest agent_040 rerun",
+      "report": "eval/reports/agnes_final_task040_20261019T091832Z.json",
+      "revision": "5cfdc72257d3013558fa9b06d3298f44989ea532",
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "reported_tokens": 31073,
+      "issue": "Deterministic checks passed; response-bound semantic review passed."
+    }
+  ],
+  "source_revisions_by_task": {
+    "agent_008": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_010": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_034": "37409af757041a0fa0879ae15e178268109173bd",
+    "agent_040": "5cfdc72257d3013558fa9b06d3298f44989ea532",
+    "agent_048": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_060": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_069": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_080": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_090": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_095": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_021_tracking": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+    "agent_039_eight_days": "6af953c3819b9e97207d5d5037df2c735ae98b25"
+  },
+  "tasks": [
+    {
+      "id": "agent_008",
+      "source_id": "i008",
+      "variant": "original",
+      "scenario": "simple_answer",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "18ccdbc392678a9d2affd61aab294836e3857ced20ac29c0e90c20846f29ded7",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "给出无害笑话，符合任务；无业务工具或副作用。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "讲个笑话",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "有一个去面试的人，面试官问：“你的缺点是什么？”\n\n他回答：“太诚实。”\n\n面试官说：“谁规定诚实是个缺点？”\n\n他说：“我瞎说的，这明显是个优点。”",
+          "tools": [],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_010",
+      "source_id": "i010",
+      "variant": "original",
+      "scenario": "simple_answer",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "bf1e742d59b1bf8d1a5ba48dd2cac97a65386ed3940150a7e259888f7e45c44b",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "自然说明客服助手正在提供的帮助并邀请用户提问，没有捏造正在执行的业务操作。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "在忙什么",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "我在帮您处理客服相关的问题，比如查订单、物流、退款、商品咨询等。有什么可以帮您的吗？",
+          "tools": [],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_034",
+      "source_id": "i034",
+      "variant": "original",
+      "scenario": "policy",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "55ecccb43c57bcfa82539c4daada18f86eb9a0354e2335f379da5bba25862655",
+      "source_revision": "37409af757041a0fa0879ae15e178268109173bd",
+      "review": "明确退款审核通过后原路返回，并按微信/支付宝、银行卡和花呗分别说明到账口径；没有声称当前款项已到账或发起退款。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "钱原路返回吗",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "退款审核通过后，钱会**原路返回**到您的支付渠道，具体到账时间如下：\n\n- **微信 / 支付宝**：0–2 小时到账\n- **银行卡**：1–3 个工作日\n- **花呗**：额度实时恢复，账单以当月出账为准\n\n来源：《退款到账时效》《退换货政策》[refund_timeline_a0b91729_01] [return_policy_42dcb12c_03]\n\n如果您需要查询某笔具体订单的退款状态和金额，告诉我订单号即可。",
+          "tools": [
+            "search_knowledge"
+          ],
+          "citations": [
+            "refund_timeline_a0b91729_01",
+            "return_policy_42dcb12c_03",
+            "refund_timeline_a0b91729_02"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_040",
+      "source_id": "i040",
+      "variant": "original",
+      "scenario": "policy",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "718b7bbf77cbe2ef978c786284f546f4be715784cb0f3bb8fd106d1916796323",
+      "source_revision": "5cfdc72257d3013558fa9b06d3298f44989ea532",
+      "review": "引用退换货政策，说明签收后15日内提交凭证、审核后平台承担运费、原路退款及1–3个工作日时效；定制例外有来源，订单缺失时只补问，没有提案。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "破损了怎么退货",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "破损通常按质量问题处理：需在签收后 15 日内提交破损凭证；审核通过后运费由平台承担，退款原路返回，到账约 1–3 个工作日。即使是定制商品（如印字、刻字、定做尺寸），质量问题仍可退货，只是不适用 7 天无理由。\n\n如需提交退货申请，请提供订单号；若你知道具体商品名称或 SKU，我可一并确认是否定制件。",
+          "tools": [
+            "load_skill",
+            "search_knowledge"
+          ],
+          "citations": [
+            "return_policy_42dcb12c_04",
+            "return_policy_42dcb12c_02",
+            "return_policy_42dcb12c_01",
+            "return_policy_42dcb12c_03"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_048",
+      "source_id": "i048",
+      "variant": "original",
+      "scenario": "product",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "769643c2877d0828325a03cff6bf738054a5a48d56078eed2b71506dbffdee4e",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "商品名称、品类、价格、库存及头戴降噪属性来自目录工具；明确未录入技术规格，没有编造续航等参数。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "SKU-HEADSET参数",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "**SKU-HEADSET 商品参数**\n\n- 商品名称：降噪耳机 Pro\n- 品类：数码\n- 价格：¥299.00\n- 库存：42 件\n- 标签：耳机、降噪\n- 描述：头戴式主动降噪耳机\n- 技术规格：目录未录入，无法提供详细参数\n\n以上仅为已确认的商品基本信息。",
+          "tools": [
+            "get_product_detail"
+          ],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_060",
+      "source_id": "i060",
+      "variant": "original",
+      "scenario": "policy",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "61f8c08c42c2464c994c8676b93905582672c4851c5cc26fc84d300567d2fab1",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "优惠门槛、限领次数与排除项有券/政策结果支持；明确领取入口和账户资格未知，没有假称已领取。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "新客券在哪领",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "新客券 NEW10 的优惠规则为：满 99 减 10，每账号限领 1 张，不适用于定制商品，且不与品类券叠加；秒杀价商品不可使用 NEW10。当前证据未记录具体的领取入口，也无法据此判断您的账户是否已可领取，建议您通过平台其他官方渠道查询领取方式。",
+          "tools": [
+            "get_coupon",
+            "read_artifact"
+          ],
+          "citations": [
+            "coupons_0c717e57_00",
+            "coupons_0c717e57_01",
+            "coupons_0c717e57_02",
+            "promo_stacking_9c270afd_01",
+            "promo_stacking_9c270afd_02",
+            "promo_stacking_9c270afd_03"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_069",
+      "source_id": "i069",
+      "variant": "original",
+      "scenario": "handoff",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "417a169b6bbd75a3d7e3bd644064b16ea807618d6445d8ea1ca0d3e82722453a",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "确有已保存的人工队列工单；如实说明待受理、未接通实时人工且不保证时效/退款审批。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "请帮我转接值班经理",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "人工服务工单 ticket_5d15a5ce542c417ea779d6e69eba4208 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+          "tools": [
+            "escalate_to_human"
+          ],
+          "citations": [],
+          "failures": [],
+          "business_deltas": [
+            {
+              "table": "support_tickets",
+              "kind": "insert",
+              "before": {},
+              "after": {
+                "ticket_id": "ticket_5d15a5ce542c417ea779d6e69eba4208",
+                "user_id": "u_demo",
+                "session_id": "sess_2cfa593fe9114d39b2b16e25c45e95a2",
+                "reason": "用户要求转接值班经理",
+                "status": "pending",
+                "assigned_to": null,
+                "resolution": "",
+                "request_key": "48ecba770f63ccc85358ce7fe6a5b7fc1342eaf65c2b7fd5ff2a97b0628eea8f",
+                "created_at": "2026-10-19T08:58:49.654636",
+                "updated_at": "2026-10-19T08:58:49.654640"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agent_080",
+      "source_id": "i080",
+      "variant": "original",
+      "scenario": "policy",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "87f5b10d9f535ae4a327807fcc8fdbd34858c5b1fa03799f20e0f4e9e3cb3937",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "明确预售商品按商品页发货时间；48小时仅说明普通催发条件且作了区分，补充的定金与截单信息有引用，没有承诺具体日期。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "预售什么时候发货",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "根据检索到的平台政策，关于预售发货时间的规定如下：\n\n**【配送说明 · 催发货】：**\n> 支付后超过 48 小时未发货可催发。**预售商品以页面标明发货时间为准。** [shipping_34e20e5f_02]\n\n**【直播与预售定金 · 定金】：**\n> 直播预售定金一般为成交价的 20%；商品页若写明\"定金不退\"，尾款开始前仍可退定金；尾款开始后定金不退，除非平台无法发货。 [live_presale_616faff4_01]\n\n**【仓库截单时间】**\n> 仓库截单为 **16:00**，支付须早于 16:00 才可能当日发货（不保证一定发出）。 [mcp_warehouse_cutoff]\n\n---\n\n**总结：** 预售商品没有统一的固定发货天数，**具体以你所在商品页面标明的预计发货日期为准**。如果商品页没有明确日期、或你想查某个具体订单的仓库处理状态，可以提供订单号，我帮你查物流轨迹。\n\n需要我帮你查询某个订单的预售发货状态吗？",
+          "tools": [
+            "search_knowledge",
+            "mcp_warehouse_cutoff",
+            "read_artifact"
+          ],
+          "citations": [
+            "shipping_34e20e5f_02",
+            "restock_notify_b2d8f7e7_01",
+            "live_presale_616faff4_01",
+            "shipping_split_8f60325d_02",
+            "coupons_0c717e57_02"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_090",
+      "source_id": "i090",
+      "variant": "original",
+      "scenario": "policy",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "debf01a92943e65e2f68ebd46c40acf41d212eabc076bfdf751503f25e7a643b",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "说明15日凭证窗口；将超过15日不能原单退货的明确规则限定到数码，提出保修/人工复核路径，没有直接退款或把数码专属条款说成全品类规则。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "过了15天质量问题还能退吗",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "不能按普通质量退款原单退货。依据现有证据，质量问题须在签收后15日内提交视频凭证，超过该窗口不能按普通质量退款办理。超过15天的可转保修或人工复核；数码类明确转保修通道，不能原单退货。",
+          "tools": [
+            "answer_question"
+          ],
+          "citations": [
+            "return_policy_42dcb12c_04",
+            "return_electronics_1c154ead_03",
+            "return_policy_42dcb12c_03",
+            "repair_onsite_76973d66_03"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_095",
+      "source_id": "i095",
+      "variant": "original",
+      "scenario": "clarification",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "141d57295d90f8d73561a5f07fd0862bc7634c0bf3cd2e56b2c24aad34a747c5",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "只补问缺少的退款原因，未创建提案或执行退款。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "我要退ORD10002的钱",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "请补充退款原因",
+          "tools": [
+            "ask_user"
+          ],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_021_tracking",
+      "source_id": "i021",
+      "variant": "derived",
+      "scenario": "multi_turn",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "e35b836aa9ef270801f23c8d082900275f116606871d939b8e1f149b2515b0ce",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "两轮都使用实际订单/物流工具；第二轮解析“这笔订单”为ORD10001，并区分10月16日仓库待处理与10月17日实际发货。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "查一下订单ORD10001",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "订单 ORD10001：已支付、已发货。总额 299 元。商品为「降噪耳机 Pro」（SKU-HEADSET）×1。下单/支付时间 2026-10-16，发货时间 2026-10-17，运单号 SF1234567890，收货城市上海。需要看物流轨迹或退款状态可继续问。",
+          "tools": [
+            "get_order"
+          ],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "user_message": "这笔订单的运单号和物流呢？",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "订单 ORD10001 的物流信息：\n- **运单号**：SF1234567890\n- **收货城市**：上海（订单收货城市，非实时包裹定位）\n- **物流轨迹**：\n  - 2026-10-16 支付后仓库待处理（非出库/发货）\n  - 2026-10-17 已发货，运输中",
+          "tools": [
+            "track_shipment"
+          ],
+          "citations": [],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    },
+    {
+      "id": "agent_039_eight_days",
+      "source_id": "i039",
+      "variant": "derived",
+      "scenario": "cross_business",
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "passed",
+      "response_digest": "16f23ab43984ffd6ec8d8feb70ab33f695956b5f0319cb78a9cb7bdc2d0845b1",
+      "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
+      "review": "按签收次日起7个自然日计算，明确第8天且无质量问题不能无理由退；引用相关政策，未创建退货提案。",
+      "turns": [
+        {
+          "turn": 1,
+          "user_message": "签收8天了，普通T恤，无质量问题，只是不喜欢，还能无理由退吗？",
+          "http_status": 200,
+          "status": "passed",
+          "answer": "抱歉，签收满 8 天、无质量问题，普通 T 恤一般不能按“7 天无理由”退货。\n\n依据退换货政策（2024-12-v3）：\n\n- 非定制、未拆封且不影响二次销售的商品，需在**签收次日起 7 个自然日内**申请无理由退货，运费由买家承担 [return_policy_42dcb12c_01]。\n- 超过 7 天且无法证明存在质量问题的，**不能退货**；可转保修或人工复核 [return_policy_42dcb12c_04]。\n- 定制商品（如印字、刻字、定做尺寸）也不适用 7 天无理由 [return_policy_42dcb12c_02]。\n\n如果你仍希望处理，我可以帮你创建人工复核工单，但无法承诺一定通过。需要的话请提供订单号，以及你希望复核的原因摘要。",
+          "tools": [
+            "search_knowledge",
+            "read_artifact"
+          ],
+          "citations": [
+            "return_policy_42dcb12c_02",
+            "return_policy_42dcb12c_01",
+            "return_food_da22439d_01",
+            "return_policy_42dcb12c_04",
+            "cross_border_05cae90a_02"
+          ],
+          "failures": [],
+          "business_deltas": []
+        }
+      ]
+    }
+  ]
+}

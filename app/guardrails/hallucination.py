@@ -54,7 +54,7 @@ class FaithfulnessChecker:
         chunks: list[RetrievedChunk],
         tool_results_text: str,
     ) -> FaithfulnessResult:
-        evidence = "\n\n".join(evidence_text(c) for c in chunks[:8]) or "(none)"
+        evidence = "\n\n".join(evidence_text(c) for c in chunks) or "(none)"
         messages = [
             {"role": "system", "content": FAITHFULNESS_SYSTEM},
             {

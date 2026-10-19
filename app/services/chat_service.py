@@ -64,7 +64,6 @@ class ChatService:
         self.runner = AgentRunner(self.provider, self.executor, settings)
         self.store = RuntimeStore(session_factory)
         self.executor.artifacts = self.store
-        self.validator = AnswerValidator(self.provider)
         self.spec = AgentSpec(
             "main",
             frozenset([*self.registry.names(), "load_skill", "read_artifact", "ask_user"]),
@@ -75,6 +74,9 @@ class ChatService:
             self.spec = AgentSpec(
                 "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
             )
+        self.validator = AnswerValidator(
+            self.provider, tool_contracts=self.executor.schemas(self.spec)
+        )
         self._locks: dict[str, asyncio.Lock] = {}
 
     async def chat(self, request: ChatRequest, *, trace_id: str, emit=None) -> ChatResponse:
@@ -238,6 +240,7 @@ class ChatService:
                     "tool_calls": budget.tools,
                     "tools": [o["name"] for o in result.get("observations", [])],
                     "failure": result.get("failure"),
+                    "validation": result.get("validation"),
                     "degradations": degradations,
                 },
                 session_id=session_id,

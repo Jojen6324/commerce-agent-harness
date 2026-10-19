@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+
 from app.agents.nodes.generate import AnswerPayload, _extractive_fallback
 from app.agents.state import AgentState
 from app.core.enums import RetrievalStrategy
@@ -16,6 +18,15 @@ from app.retrieval.evidence import cited_refs, evidence_text
 from app.schemas.retrieval import Citation, RetrievedChunk
 
 
+def validation_attempt(answer: str, result: FaithfulnessResult, stage: str) -> dict:
+    """Persist the verdict without replaying a rejected answer to the customer."""
+    return {
+        "stage": stage,
+        "candidate_sha256": hashlib.sha256(answer.encode()).hexdigest(),
+        "verdict": result.model_dump(),
+    }
+
+
 async def self_correct_answer(
     *,
     llm: LLMProvider,
@@ -25,59 +36,118 @@ async def self_correct_answer(
     chunks: list[RetrievedChunk],
     tool_results_text: str,
     first_result: FaithfulnessResult,
+    allowed_refs: set[str] | None = None,
+    audit: list[dict] | None = None,
 ) -> tuple[str, FaithfulnessResult, bool]:
-    """LLM rewrite once, then extractive fallback. Returns (answer, judge, corrected)."""
-    evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(无检索结果)"
-    critique = first_result.rationale
-    if first_result.hallucinated_spans:
-        critique += "；不支持的说法：" + "、".join(first_result.hallucinated_spans)
-    if first_result.missing_conditions:
-        critique += "；遗漏的必要条件：" + "、".join(first_result.missing_conditions)
-    try:
-        response = await llm.generate(
-            [
-                {"role": "system", "content": SELF_CORRECT_SYSTEM},
+    """At most two feedback-driven rewrites, using the same complete evidence.
+
+    Rejected output stays rejected. Quoting the first search hit cannot repair
+    missing conditions spread over other sources.
+    """
+    evidence = "\n\n".join(evidence_text(c) for c in chunks) or "(无检索结果)"
+    known_refs = {chunk.chunk_id for chunk in chunks} | (allowed_refs or set())
+    judged = first_result
+    format_error = ""
+    last_error = None
+    audit = audit if audit is not None else []
+    for attempt in range(2):
+        critique = judged.rationale
+        if judged.hallucinated_spans:
+            critique += "；不支持的说法：" + "、".join(judged.hallucinated_spans)
+        if judged.missing_conditions:
+            critique += "；遗漏的必要条件：" + "、".join(judged.missing_conditions)
+        if format_error:
+            critique += "；上次改写未被接受：" + format_error
+        try:
+            response = await llm.generate(
+                [
+                    {"role": "system", "content": SELF_CORRECT_SYSTEM},
+                    {
+                        "role": "user",
+                        "content": SELF_CORRECT_USER.format(
+                            query=query,
+                            answer=answer,
+                            critique=critique or "请补齐证据范围、问题回答和必要条件。",
+                            evidence=evidence,
+                            tool_results=tool_results_text or "(无)",
+                        ),
+                    },
+                ],
+                temperature=0.0,
+                max_tokens=1200 if attempt == 0 else 1800,
+                response_format={"type": "json_object"},
+            )
+            if response.finish_reason != "stop":
+                raise LLMProviderError(
+                    "rewrite response incomplete",
+                    retryable=False,
+                    finish_reason=response.finish_reason,
+                )
+            payload = parse_model(response.content, AnswerPayload)
+            if not payload.answer.strip():
+                raise LLMOutputError("rewrite returned an empty answer")
+            if (set(payload.citation_chunk_ids) | cited_refs(payload.answer)) - known_refs:
+                raise LLMOutputError("rewrite referenced unavailable evidence")
+            answer = payload.answer
+            missing_refs = set(payload.citation_chunk_ids) - cited_refs(answer)
+            if missing_refs:
+                answer += " " + " ".join(f"[{ref}]" for ref in sorted(missing_refs))
+            judged = await checker.check(
+                query=query,
+                answer=answer,
+                chunks=chunks,
+                tool_results_text=tool_results_text,
+            )
+            audit.append(validation_attempt(answer, judged, f"rewrite_{attempt + 1}"))
+            format_error = ""
+            last_error = None
+            if judged.supported or judged.failure:
+                return answer, judged, True
+        except (LLMProviderError, LLMOutputError) as exc:
+            last_error = {
+                "code": exc.error_code.value,
+                "reason": exc.message,
+                "retryable": exc.retryable,
+                "stage": "rewrite",
+                "finish_reason": getattr(exc, "finish_reason", None),
+            }
+            audit.append(
                 {
-                    "role": "user",
-                    "content": SELF_CORRECT_USER.format(
-                        query=query,
-                        answer=answer,
-                        critique=critique or "请补齐证据范围、问题回答和必要条件。",
-                        evidence=evidence,
-                        tool_results=tool_results_text or "(无)",
+                    "stage": f"rewrite_{attempt + 1}",
+                    "error": {
+                        "code": exc.error_code.value,
+                        "reason": exc.message,
+                        "finish_reason": getattr(exc, "finish_reason", None),
+                    },
+                }
+            )
+            if isinstance(exc, LLMProviderError) and exc.finish_reason != "length":
+                return (
+                    answer,
+                    judged.model_copy(
+                        update={
+                            "supported": False,
+                            "rationale": "checker_unavailable",
+                            "failure": {
+                                "code": exc.error_code.value,
+                                "reason": exc.message,
+                                "retryable": exc.retryable,
+                                "stage": "rewrite",
+                            },
+                        }
                     ),
-                },
-            ],
-            temperature=0.0,
-            max_tokens=500,
-            response_format={"type": "json_object"},
+                    True,
+                )
+            format_error = exc.message
+    if last_error:
+        judged = judged.model_copy(
+            update={
+                "supported": False,
+                "rationale": "checker_unavailable",
+                "failure": last_error,
+            }
         )
-        payload = parse_model(response.content, AnswerPayload)
-        known_refs = {chunk.chunk_id for chunk in chunks}
-        if set(payload.citation_chunk_ids) - known_refs:
-            raise LLMOutputError("rewrite referenced unavailable evidence")
-        rewritten = payload.answer
-        missing_refs = set(payload.citation_chunk_ids) - cited_refs(rewritten)
-        if missing_refs:
-            rewritten += " " + " ".join(f"[{ref}]" for ref in sorted(missing_refs))
-        judged = await checker.check(
-            query=query,
-            answer=rewritten,
-            chunks=chunks,
-            tool_results_text=tool_results_text,
-        )
-        if judged.supported:
-            return rewritten, judged, True
-    except (LLMProviderError, LLMOutputError):
-        pass
-    patched = _extractive_fallback(query, evidence, tool_results_text)
-    judged = await checker.check(
-        query=query,
-        answer=patched,
-        chunks=chunks,
-        tool_results_text=tool_results_text,
-    )
-    return patched, judged, True
+    return answer, judged.model_copy(update={"supported": False}), True
 
 
 async def faithfulness_node(
@@ -107,10 +177,12 @@ async def faithfulness_node(
         chunks=chunks,
         tool_results_text=tool_text,
     )
+    audit = [validation_attempt(answer, result, "initial")]
     extra = {
         **(state.get("extra") or {}),
         "faithfulness": result.model_dump(),
         "self_corrected": False,
+        "validation_attempts": audit,
     }
     if result.supported:
         return {"extra": extra}
@@ -142,6 +214,7 @@ async def faithfulness_node(
         chunks=chunks,
         tool_results_text=tool_text,
         first_result=result,
+        audit=audit,
     )
     extra = {
         **(state.get("extra") or {}),

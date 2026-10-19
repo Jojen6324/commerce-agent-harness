@@ -64,4 +64,5 @@ class KnowledgeService:
             "degradation_reason": extra.get("degradation_reason"),
             "failure": (extra.get("faithfulness") or {}).get("failure"),
             "generation_failure": extra.get("generation_failure"),
+            "validation": extra.get("validation_attempts", []),
         }

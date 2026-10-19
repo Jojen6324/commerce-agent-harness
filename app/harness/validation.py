@@ -3,7 +3,7 @@
 import json
 import re
 
-from app.agents.nodes.faithfulness import self_correct_answer
+from app.agents.nodes.faithfulness import self_correct_answer, validation_attempt
 from app.guardrails.hallucination import FaithfulnessChecker
 from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
@@ -27,8 +27,16 @@ def asserted_phrase(answer, phrase):
 
 
 class AnswerValidator:
-    def __init__(self, llm):
+    def __init__(self, llm, *, tool_contracts=None):
         self.llm = llm
+        self.tool_contracts = [
+            {
+                "name": item["function"]["name"],
+                "description": item["function"]["description"],
+                "required_parameters": item["function"].get("parameters", {}).get("required", []),
+            }
+            for item in (tool_contracts or [])
+        ]
 
     async def validate(self, query, result):
         if result["status"] not in ("completed", "needs_input"):
@@ -44,12 +52,27 @@ class AnswerValidator:
         tool_facts = []
         verified = []
         for observation in observations:
+            # A model's clarification draft is not independent evidence for
+            # its own claims. Failed tools cannot supply policy facts either.
+            if observation["name"] == "ask_user":
+                continue
+            if observation["output"].get("success") is False:
+                tool_facts.append({"name": observation["name"], "result": {"success": False}})
+                continue
             data = observation["output"].get("output", observation["output"])
             for c in data.get("chunks", []):
                 chunks[c["chunk_id"]] = RetrievedChunk.model_validate(c)
             if data.get("validated") and data.get("answered_question") == query:
                 verified.append(data.get("answer"))
-            tool_facts.append({"name": observation["name"], "result": data})
+            # Pass policy once, with provenance, rather than once as evidence
+            # and again as a long JSON tool result. Generated summaries are not
+            # additional primary sources.
+            facts = {
+                k: v
+                for k, v in data.items()
+                if k not in ("chunks", "answer", "summary", "validation")
+            }
+            tool_facts.append({"name": observation["name"], "result": facts})
         known_refs = (
             set(chunks)
             | {o["name"] for o in observations}
@@ -111,24 +134,42 @@ class AnswerValidator:
         if isinstance(provider, OfflineLLMProvider):
             return result
         checker = FaithfulnessChecker(self.llm)
-        text = json.dumps(tool_facts, ensure_ascii=False)
+        text = json.dumps(
+            {"observations": tool_facts, "available_tools": self.tool_contracts},
+            ensure_ascii=False,
+        )
+        audit: list[dict] = []
+
+        def finish(value: dict, verdict_status: str) -> dict:
+            validation = {"status": verdict_status, "attempts": audit}
+            value = {**value, "validation": validation}
+            value["events"] = [
+                *value.get("events", []),
+                {"event": "output_validation", **validation},
+            ]
+            return value
+
         judged = await checker.check(
             query=query, answer=answer, chunks=list(chunks.values()), tool_results_text=text
         )
+        audit.append(validation_attempt(answer, judged, "initial"))
         if judged.rationale == "checker_unavailable":
-            return {
-                **result,
-                "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请核对引用原文或稍后重试。",
-                "status": "failed",
-                "failure": judged.failure
-                or {
-                    "code": "VALIDATION_UNAVAILABLE",
-                    "reason": "checker_unavailable",
-                    "retryable": True,
+            return finish(
+                {
+                    **result,
+                    "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请核对引用原文或稍后重试。",
+                    "status": "failed",
+                    "failure": judged.failure
+                    or {
+                        "code": "VALIDATION_UNAVAILABLE",
+                        "reason": "checker_unavailable",
+                        "retryable": True,
+                    },
                 },
-            }
+                "unavailable",
+            )
         if judged.supported:
-            return result
+            return finish(result, "passed")
         rewritten, judge, _ = await self_correct_answer(
             llm=self.llm,
             checker=checker,
@@ -137,11 +178,32 @@ class AnswerValidator:
             chunks=list(chunks.values()),
             tool_results_text=text,
             first_result=judged,
+            allowed_refs=known_refs,
+            audit=audit,
         )
-        if not judge.supported or cited_refs(rewritten) - known_refs:
+        accepted = judge.supported and not (cited_refs(rewritten) - known_refs)
+        if not accepted:
             rewritten = "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。"
-        return {
-            **result,
-            "answer": rewritten,
-            "status": result["status"] if judge.supported else "validation_failed",
-        }
+        failure = judge.failure or (
+            None
+            if accepted
+            else {
+                "code": "ANSWER_VALIDATION_FAILED",
+                "stage": "output_validation",
+                "reason": "bounded_correction_exhausted",
+                "retryable": False,
+            }
+        )
+        return finish(
+            {
+                **result,
+                "answer": rewritten,
+                "failure": failure,
+                "status": result["status"]
+                if accepted
+                else "failed"
+                if judge.failure
+                else "validation_failed",
+            },
+            "passed" if accepted else "unavailable" if judge.failure else "rejected",
+        )

@@ -31,9 +31,13 @@ def completion_issue(answer: str, *, main=True, observations=()):
         or re.search(
             r"(?:是否|请问是否|请|回复)[“\"\s]*(?:确认提交|确认取消|确认执行|继续[？?])", answer
         )
-        or re.search(r"正在(?:为您|帮您|为你|帮你).{0,20}(取消|退款|退货|提交)", answer)
         or re.search(
-            r"(?:马上|这就|即将|我来|我将)(?:为您|帮您|为你|帮你)?.{0,30}(申请|取消|退款|退货|提交)",
+            r"正在(?:为您|帮您|为你|帮你)?(?:办理|处理)?(?:申请|取消|退款|退货|提交)",
+            answer,
+        )
+        or re.search(
+            r"(?:马上|这就|即将|我来|我将)(?:为您|帮您|为你|帮你)?"
+            r"(?:办理|处理)?(?:申请|取消|退款|退货|提交)",
             answer,
         )
         or re.search(r"即将.{0,30}(取消|退款|退货|提交).{0,40}(确认|是否)", answer, re.S)
@@ -84,7 +88,7 @@ def policy_evidence_issue(query: str, observations=()):
     )
     policy_question = re.search(
         r"吗|呢[？?]?$|怎么|如何|哪里|在哪|什么时候|何时|多久|几天|是否|能不能|可不可以|"
-        r"能否|规则|政策|时效|条件|流程|多少",
+        r"能否|规则|政策|时效|条件|流程|多少|地址|哪儿",
         query,
     )
     if not policy_topic or not policy_question:

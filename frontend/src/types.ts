@@ -40,6 +40,8 @@ export type StreamEvent =
   | { event: "started"; trace_id: string }
   | { event: "node"; node: string; intent?: string; strategy?: Strategy }
   | { event: "token"; text: string }
+  | { event: "agent_started" | "tool_started" | "tool_completed" | "delegation" | "delegation_completed" | "compression" | "validation" | "needs_confirmation" | "needs_input" | "artifact_saved" | "stopped"; agent?: string; tool?: string }
+  | { event: "error"; error?: string; reason?: string }
   | { event: "answer"; data: ChatResponse }
   | { event: "done"; trace_id: string };
 
@@ -49,6 +51,7 @@ export interface Message {
   content: string;
   state: "complete" | "streaming" | "error" | "stopped";
   citations?: Citation[];
+  progress?: string;
   pendingAction?: ActionProposal | null;
   strategy?: Strategy | null;
   traceId?: string;

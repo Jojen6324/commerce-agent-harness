@@ -1,0 +1,682 @@
+{
+  "report_type": "latest-per-task audit inventory, not a single evaluation run",
+  "scope": "Mixed historical revisions and AGNES/DeepSeek runs; development95 only; deterministic failures are not waived by semantic review; AI review is not independent human acceptance",
+  "task_count": 95,
+  "task_status": {
+    "passed": 83,
+    "failed": 12
+  },
+  "deterministic_status": {
+    "passed": 85,
+    "failed": 10
+  },
+  "correction": "Previous claim of zero execution errors omitted agent_057, whose latest run in engineering_fix_probe failed during faithfulness output validation. Two subsequent repaired tasks were agent_017 and agent_092_alternative, not agent_057.",
+  "tasks": {
+    "agent_001": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_002": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_003": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_004": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_005": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_006": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_007": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_008": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "6dd5258ed9f3886545b51ca45291fa7b3760176ac097a7f8fa14a68af8823025"
+    },
+    "agent_009": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "simple_answer"
+    },
+    "agent_010": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "d4ab6027a557cf89ca8bfb2928e97c45392c44a63c24c1f58b2b246679005172"
+    },
+    "agent_012": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_013": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "4f5bce0d184b59ff8d28133eddfefa3343ae966541f36d59fe12e5d304640b70"
+    },
+    "agent_014": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_016": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "policy"
+    },
+    "agent_017": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_recovery_recommendation_20261019T081519Z.json",
+      "scenario": "policy"
+    },
+    "agent_019": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_020": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "policy"
+    },
+    "agent_021": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "order_query"
+    },
+    "agent_021_tracking": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "7bdc17eeafd8d214f0c2f301ed2ae7b23890b68e3d538097d547f7d779bb6d17"
+    },
+    "agent_024": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "7ad8ad106911bf78da6c41d3b9307c434f6b099e8f0724fffd61b00ff3d57a20"
+    },
+    "agent_024_cancel": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_429_retry_20261019T071702Z.json",
+      "scenario": "cross_business"
+    },
+    "agent_029": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "logistics"
+    },
+    "agent_031": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_032": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_032_refund": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/optimization_followup_20261019T050013Z.json",
+      "scenario": "multi_turn"
+    },
+    "agent_033": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_033_requested": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "multi_turn"
+    },
+    "agent_034": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "915b496fb95b03326e971a8909e9c4cee057008e49de71ba32c5d6040c980cda"
+    },
+    "agent_035": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "893d8a68e54c336863d4a7c23bdc4c76f5593b075ff36fbd43af5fdb4c9bcde6"
+    },
+    "agent_036": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_037": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_038": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/optimization_final_20261019T045650Z.json",
+      "scenario": "policy"
+    },
+    "agent_038_return": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_429_retry_20261019T071702Z.json",
+      "scenario": "cross_business"
+    },
+    "agent_039": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_039_eight_days": {
+      "status": "failed",
+      "deterministic_status": "passed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "c4b9d3e618bb22611d5b906331d5e83b05e67daa90b36255760afaff5233a999"
+    },
+    "agent_040": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "8c38bf26fe6247876efd72670b5ddc6e8e779872ae81752829d08c62dfa46c8e"
+    },
+    "agent_041": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "clarification"
+    },
+    "agent_042": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_043": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/optimization_final_20261019T045650Z.json",
+      "scenario": "approval"
+    },
+    "agent_043_foreign_confirm": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/optimization_followup_20261019T050013Z.json",
+      "scenario": "boundary"
+    },
+    "agent_043_repeat_confirm": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_429_retry_20261019T071702Z.json",
+      "scenario": "approval"
+    },
+    "agent_044": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_045": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_046": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "product"
+    },
+    "agent_047": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/optimization_final_20261019T045650Z.json",
+      "scenario": "product"
+    },
+    "agent_048": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "b8b4176ad657ac792f57ac756e6b6f6a8a02ac6807155fcf5c4793404198df91"
+    },
+    "agent_049": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/engineering_fix_probe_20261019T075848Z.json",
+      "scenario": "product"
+    },
+    "agent_050": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_052": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_053": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_055": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "recommendation"
+    },
+    "agent_056": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_057": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "deb6fcf33a0134f07dd02e05353d4a605050be4bacc904c09fa5d1669c6b9380"
+    },
+    "agent_057_custom_coupon": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "cross_business"
+    },
+    "agent_058": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "ccb1162653343ef80448322ae42864e22ed11978b2ee0a92dd983e8c4c5f0e28"
+    },
+    "agent_059": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_060": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "840f447511070fb1c33c474a265c81549b1b7e9bdca1fdf6ed48037981ec74c1"
+    },
+    "agent_061": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "complaint"
+    },
+    "agent_062": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "clarification"
+    },
+    "agent_063": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_064": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_065": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "complaint"
+    },
+    "agent_066": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/engineering_fix_followup_20261019T080333Z.json",
+      "scenario": "handoff"
+    },
+    "agent_067": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "8f5cd0ad204046a2f3b1f697d3702109442171616955f475089d7dfcc81cc04c"
+    },
+    "agent_068": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "607e1d8d358f6825f34187dc80cf15f36a59ecb72c5662f192913ffa07e26e71"
+    },
+    "agent_069": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "f8c0aca03c391dbdb11d4690a65a05362e0d58a7b9ad6a7a6bcfb5d6058f09b3"
+    },
+    "agent_070": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "559e630c4b707cb55f10da680bef7647d8af1fe524b1159580e097256d285d1e"
+    },
+    "agent_070_review_not_write": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/engineering_fix_followup_20261019T080333Z.json",
+      "scenario": "cross_business"
+    },
+    "agent_071": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_072": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_073": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_074": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_075": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_076": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_076_injection_order": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_077": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "boundary"
+    },
+    "agent_078": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_079": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "policy"
+    },
+    "agent_080": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "23147bae66715b6d6b55febcea7154093e6924b61b25ad7f8c73e06916a26ac8"
+    },
+    "agent_086": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "clarification"
+    },
+    "agent_086_tracking_id": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/agnes_semantic_diagnosis_20261019T072453Z.json",
+      "scenario": "multi_turn"
+    },
+    "agent_088": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_089": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "policy"
+    },
+    "agent_090": {
+      "status": "failed",
+      "deterministic_status": "passed",
+      "semantic": "fail",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "d0d5d1bd4d61a81d18fbc0899c7ef4a701ef114c6b52afdbba294711f9316aa6"
+    },
+    "agent_091": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_429_retry_20261019T071702Z.json",
+      "scenario": "inventory"
+    },
+    "agent_092": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "inventory"
+    },
+    "agent_092_alternative": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_recovery_recommendation_20261019T081519Z.json",
+      "scenario": "multi_turn"
+    },
+    "agent_094": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "7230dfee744bc29ace0aabfaa7566edd57a9b779ce7bdb741acd61adf6ceb43f"
+    },
+    "agent_095": {
+      "status": "failed",
+      "deterministic_status": "failed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "438907c925aa2dd5b23c31ad6c8ff7fe074becee6091a4c15919f1de7a208267"
+    },
+    "agent_095_missing_reason": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_429_retry_20261019T071702Z.json",
+      "scenario": "multi_turn"
+    },
+    "agent_096": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "clarification"
+    },
+    "agent_097": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/behavior_20261019T043202Z.json",
+      "scenario": "complaint"
+    },
+    "agent_098": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "docs/agnes-remaining-22-summary.json",
+      "response_digest": "d37c6c12b0870d5c299aa9d24a6eedcfb1b87d3bdf6bba4378dd6fa2b8cf0de7"
+    },
+    "agent_099": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "boundary"
+    },
+    "agent_100": {
+      "status": "passed",
+      "deterministic_status": "passed",
+      "semantic": "pass",
+      "source": "eval/reports/deepseek_incomplete_11_20261019T080829Z.json",
+      "scenario": "simple_answer"
+    }
+  },
+  "latest_overlay": "docs/agnes-remaining-22-summary.json"
+}

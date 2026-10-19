@@ -1,3 +1,5 @@
+> 本文中的 Graph / intent 流程属于旧基线。当前主路径请读 [Agent Harness](harness.md)；旧实现由 Git 基线分支保留。
+
 # 05 · 智能体、工具与 HITL
 
 > 一句话：意图 LLM + 覆盖层；Skill 按需收缩工具目录；写操作 HITL + 幂等；读失败换工具；MCP 与本地工具同一套 Function Calling。

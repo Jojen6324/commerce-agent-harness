@@ -1,21 +1,9 @@
 import pytest
 
 from app.agents.nodes.generate import generate_node
-from app.agents.nodes.intent import IntentClassifier, rule_based_intent
-from app.core.enums import IntentLabel, RetrievalStrategy
+from app.core.enums import RetrievalStrategy
 from app.providers.fake import OfflineLLMProvider
 from app.schemas.retrieval import RetrievedChunk
-
-
-def test_greeting_prefix_does_not_hide_order_intent() -> None:
-    intent = rule_based_intent("你好，我想取消订单 ORD10003")
-    assert intent.label != IntentLabel.GREETING
-
-
-@pytest.mark.asyncio
-async def test_offline_classifier_uses_rules_not_fake_json() -> None:
-    intent = await IntentClassifier(OfflineLLMProvider()).classify("电子发票一般多久可以开具？")
-    assert intent.label == IntentLabel.FAQ_POLICY
 
 
 @pytest.mark.asyncio

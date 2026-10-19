@@ -1,7 +1,7 @@
 """Offline eval harness for resume-quantifiable metrics.
 
 python -m eval.runner --task all --llm
-python -m eval.runner --task intent --llm
+python -m eval.runner --task behavior --llm --limit 10
 python -m eval.runner --task retrieval
 python -m eval.runner --task generation --llm
 python -m eval.runner --task e2e --llm
@@ -15,11 +15,8 @@ import json
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from eval.metrics import (
-    accuracy,
-    classification_report,
     hit_at_k,
     mrr,
     percentile,
@@ -71,96 +68,6 @@ def _keyword_hit(answer: str, keywords: list[str]) -> bool:
     if not keywords:
         return True
     return all(word in answer for word in keywords)
-
-
-def eval_intent_rules() -> dict:
-    from app.agents.nodes.intent import rule_based_intent
-
-    rows = load_jsonl(INTENT_PATH)
-    pairs = [(row["intent"], rule_based_intent(row["query"]).label.value) for row in rows]
-    return {
-        "backend": "rules",
-        "prompt_version": "intent_rules_v1",
-        "n": len(pairs),
-        "accuracy": round(accuracy(pairs), 4),
-        "per_label": {k: round(v, 4) for k, v in classification_report(pairs).items()},
-    }
-
-
-async def eval_intent_llm(*, version: str, overlay: bool) -> dict:
-    from app.agents.nodes.intent import IntentClassifier
-    from app.config.settings import get_settings
-    from app.prompts.intent import INTENT_SYSTEM, INTENT_SYSTEM_V1, INTENT_SYSTEM_V2
-    from app.providers.deepseek import DeepSeekProvider
-
-    settings = get_settings()
-    if not settings.llm_configured:
-        raise SystemExit("DEEPSEEK_API_KEY missing")
-    if version == "intent_v1":
-        system = INTENT_SYSTEM_V1
-    elif version == "intent_v2":
-        system = INTENT_SYSTEM_V2
-    else:
-        system = INTENT_SYSTEM
-    classifier = IntentClassifier(
-        DeepSeekProvider(settings),
-        system_prompt=system,
-        prompt_version=version,
-        apply_overlay=overlay,
-    )
-    rows = load_jsonl(INTENT_PATH)
-    semaphore = asyncio.Semaphore(4)
-    errors = 0
-
-    async def _one(row: dict) -> tuple[str, str]:
-        nonlocal errors
-        async with semaphore:
-            try:
-                pred = (await classifier.classify(row["query"])).label.value
-                return row["intent"], pred
-            except Exception:
-                errors += 1
-                return row["intent"], "ERROR"
-
-    pairs = list(await asyncio.gather(*[_one(row) for row in rows]))
-    mismatches = [
-        {"query": rows[i]["query"], "gold": gold, "pred": pred}
-        for i, (gold, pred) in enumerate(pairs)
-        if gold != pred
-    ]
-    return {
-        "backend": "deepseek",
-        "prompt_version": version,
-        "overlay": overlay,
-        "n": len(pairs),
-        "errors": errors,
-        "accuracy": round(accuracy(pairs), 4),
-        "per_label": {k: round(v, 4) for k, v in classification_report(pairs).items()},
-        "mismatches": mismatches,
-    }
-
-
-def eval_intent_overlay() -> dict:
-    from app.agents.nodes.intent_overlay import high_precision_intent
-
-    rows = load_jsonl(INTENT_PATH)
-    pairs = []
-    uncovered = 0
-    for row in rows:
-        pred = high_precision_intent(row["query"])
-        if pred is None:
-            uncovered += 1
-            pairs.append((row["intent"], "NONE"))
-        else:
-            pairs.append((row["intent"], pred.value))
-    return {
-        "backend": "overlay",
-        "prompt_version": "intent_overlay_v1",
-        "n": len(pairs),
-        "uncovered": uncovered,
-        "accuracy": round(accuracy(pairs), 4),
-        "per_label": {k: round(v, 4) for k, v in classification_report(pairs).items()},
-    }
 
 
 async def eval_retrieval() -> dict:
@@ -287,16 +194,16 @@ async def _generate_answer(llm, query: str, evidence: str) -> str:
 async def eval_generation() -> dict:
     from app.config.settings import get_settings
     from app.guardrails.hallucination import FaithfulnessChecker
-    from app.providers.deepseek import DeepSeekProvider
+    from app.providers.agnes import AgnesProvider
     from app.providers.embeddings import build_embedding_provider
     from app.retrieval.hybrid import HybridRetriever
     from app.retrieval.ingest import ingest_to_memory
     from app.retrieval.vector import VectorRetriever
 
     settings = get_settings()
-    if not settings.llm_configured:
-        raise SystemExit("DEEPSEEK_API_KEY missing")
-    llm = DeepSeekProvider(settings)
+    if not settings.agnes.get_secret_value():
+        raise SystemExit("AGNES binding missing")
+    llm = AgnesProvider(settings)
     checker = FaithfulnessChecker(llm)
     embedder = build_embedding_provider(settings)
     bm25, store, _ = await ingest_to_memory("knowledge", embedder)
@@ -403,8 +310,8 @@ async def eval_e2e() -> dict:
 
     clear_settings_cache()
     settings = get_settings()
-    if not settings.llm_configured:
-        raise SystemExit("DEEPSEEK_API_KEY missing")
+    if not settings.agnes.get_secret_value():
+        raise SystemExit("AGNES binding missing")
     container = await build_container(settings, seed=True)
     rows = load_jsonl(E2E_PATH)
     latencies: list[float] = []
@@ -474,21 +381,6 @@ async def eval_e2e() -> dict:
 
 def _resume_bullets(report: dict) -> list[str]:
     bullets = []
-    intent_rules = report.get("intent_rules")
-    intent_v1 = report.get("intent_v1")
-    intent_v2 = report.get("intent_v2")
-    intent_v3 = report.get("intent_v3")
-    overlay = report.get("intent_overlay")
-    if intent_v3:
-        parts = [f"intent_v3+overlay {intent_v3['accuracy']:.1%}"]
-        if intent_v2:
-            parts.insert(0, f"intent_v2 {intent_v2['accuracy']:.1%}")
-        if intent_v1:
-            parts.insert(0, f"intent_v1 {intent_v1['accuracy']:.1%}")
-        extra = f"；规则 {intent_rules['accuracy']:.1%}" if intent_rules else ""
-        if overlay:
-            extra += f"；仅覆盖层 {overlay['accuracy']:.1%}"
-        bullets.append(f"意图识别：{intent_v3['n']} 条 " + " → ".join(parts) + extra)
     retrieval = report.get("retrieval")
     if retrieval:
         bm25 = next((s for s in retrieval["systems"] if s["backend"] == "bm25"), None)
@@ -547,14 +439,9 @@ def _resume_bullets(report: dict) -> list[str]:
 async def run_all(*, llm: bool) -> dict:
     report: dict = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "intent_rules": eval_intent_rules(),
-        "intent_overlay": eval_intent_overlay(),
         "retrieval": await eval_retrieval(),
     }
     if llm:
-        report["intent_v1"] = await eval_intent_llm(version="intent_v1", overlay=False)
-        report["intent_v2"] = await eval_intent_llm(version="intent_v2", overlay=False)
-        report["intent_v3"] = await eval_intent_llm(version="intent_v3", overlay=True)
         report["generation"] = await eval_generation()
         report["e2e"] = await eval_e2e()
     report["resume_bullets"] = _resume_bullets(report)
@@ -565,26 +452,26 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--task",
-        choices=["all", "intent", "retrieval", "generation", "e2e"],
+        choices=["all", "behavior", "retrieval", "generation", "e2e"],
         default="all",
     )
     parser.add_argument("--llm", action="store_true")
+    parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--full", action="store_true", help="Run the full selected task split")
+    parser.add_argument("--split", choices=["development", "holdout", "all"], default="development")
     args = parser.parse_args()
 
     async def _go() -> dict:
         if args.task == "all":
             return await run_all(llm=args.llm)
-        if args.task == "intent":
-            result: dict[str, Any] = {
-                "intent_rules": eval_intent_rules(),
-                "intent_overlay": eval_intent_overlay(),
+        if args.task == "behavior":
+            from eval.behavior import evaluate
+
+            return {
+                "behavior": await evaluate(
+                    live=args.llm, limit=None if args.full else args.limit, split=args.split
+                )
             }
-            if args.llm:
-                result["intent_v1"] = await eval_intent_llm(version="intent_v1", overlay=False)
-                result["intent_v2"] = await eval_intent_llm(version="intent_v2", overlay=False)
-                result["intent_v3"] = await eval_intent_llm(version="intent_v3", overlay=True)
-            result["resume_bullets"] = _resume_bullets(result)
-            return result
         if args.task == "retrieval":
             return {"retrieval": await eval_retrieval()}
         if args.task == "generation":

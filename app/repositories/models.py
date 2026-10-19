@@ -113,3 +113,56 @@ class IdempotencyRow(Base):
     fingerprint: Mapped[str] = mapped_column(String(64))
     response_json: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class RuntimeStateRow(Base):
+    __tablename__ = "harness_state"
+    session_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    facts_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class ArtifactRow(Base):
+    __tablename__ = "harness_artifacts"
+    ref: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    content_json: Mapped[str] = mapped_column(Text)
+
+
+class RunRow(Base):
+    __tablename__ = "harness_runs"
+    run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    parent_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(32))
+    events_json: Mapped[str] = mapped_column(Text, default="[]")
+
+
+class ActionRow(Base):
+    __tablename__ = "harness_actions"
+    action_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    tool_name: Mapped[str] = mapped_column(String(64))
+    arguments_json: Mapped[str] = mapped_column(Text)
+    proposal_json: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    expires_epoch: Mapped[int] = mapped_column(Integer)
+    idempotency_key: Mapped[str] = mapped_column(String(128), unique=True)
+    result_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class SupportTicketRow(Base):
+    __tablename__ = "support_tickets"
+    ticket_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    assigned_to: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    resolution: Mapped[str] = mapped_column(Text, default="")
+    request_key: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

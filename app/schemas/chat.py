@@ -36,6 +36,10 @@ class ChatResponse(BaseModel):
     answer: str
     session_id: str
     trace_id: str
+    run_id: str | None = None
+    status: str = "completed"
+    diagnostics: dict[str, Any] = Field(default_factory=dict)
+    events: list[dict[str, Any]] = Field(default_factory=list)
     intent: IntentLabel | None = None
     complexity: QueryComplexity | None = None
     strategy: RetrievalStrategy | None = None

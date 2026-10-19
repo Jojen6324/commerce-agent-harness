@@ -1,5 +1,7 @@
 """Order, refund and return queries."""
 
+import re
+
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,6 +10,7 @@ from app.core.enums import OrderStatus
 from app.core.exceptions import DatabaseError, InvalidRequestError
 from app.core.ids import new_id
 from app.repositories.models import AuditLogRow, OrderRow, ProductRow, RefundRow, ReturnRow
+from app.retrieval.tokenizer import tokenize
 from app.schemas.order import Order, OrderItem, Product
 
 
@@ -159,13 +162,32 @@ class OrderRepository:
             select(ProductRow)
             .where(
                 or_(
-                    ProductRow.name.ilike(pattern),
-                    ProductRow.category.ilike(pattern),
-                    ProductRow.tags.ilike(pattern),
+                    ProductRow.name.ilike(pattern, escape="\\"),
+                    ProductRow.category.ilike(pattern, escape="\\"),
+                    ProductRow.tags.ilike(pattern, escape="\\"),
                 )
             )
             .limit(limit)
         )
+        rows = result.scalars().all()
+        # Prefer an exact phrase; models and users also supply separated terms.
+        # Each term must match, with literal LIKE escaping retained throughout.
+        terms = [t for t in re.split(r"[\s/、,，]+", query.strip()) if t]
+        if not rows and len(terms) == 1 and re.fullmatch(r"[\u4e00-\u9fff]+", terms[0]):
+            terms = list(dict.fromkeys(tokenize(terms[0])))
+        if not rows and 1 < len(terms) <= 8:
+            filters = []
+            for term in terms:
+                term_pattern = f"%{escape_like(term)}%"
+                filters.append(
+                    or_(
+                        ProductRow.name.ilike(term_pattern, escape="\\"),
+                        ProductRow.category.ilike(term_pattern, escape="\\"),
+                        ProductRow.tags.ilike(term_pattern, escape="\\"),
+                    )
+                )
+            result = await self._session.execute(select(ProductRow).where(*filters).limit(limit))
+            rows = result.scalars().all()
         return [
             Product(
                 sku=row.sku,
@@ -176,8 +198,60 @@ class OrderRepository:
                 tags=[tag for tag in row.tags.split(",") if tag],
                 description=row.description,
             )
-            for row in result.scalars().all()
+            for row in rows
         ]
+
+    async def recommend_products(
+        self,
+        *,
+        query: str = "",
+        category: str | None = None,
+        max_price_cents: int | None = None,
+        in_stock_only: bool = True,
+        limit: int = 3,
+    ) -> tuple[list[Product], str]:
+        # Hard constraints are SQL predicates BEFORE LIMIT, never LLM filtering.
+        statement = select(ProductRow)
+        if category:
+            statement = statement.where(ProductRow.category == category)
+        if max_price_cents is not None:
+            statement = statement.where(ProductRow.price_cents <= max_price_cents)
+        if in_stock_only:
+            statement = statement.where(ProductRow.inventory > 0)
+        statement = statement.order_by(ProductRow.price_cents, ProductRow.sku).limit(limit)
+        rows = []
+        mode = "constraints_only"
+        if query.strip():
+            pattern = f"%{escape_like(query.strip())}%"
+            rows = list(
+                (
+                    await self._session.scalars(
+                        statement.where(
+                            or_(
+                                ProductRow.name.ilike(pattern, escape="\\"),
+                                ProductRow.tags.ilike(pattern, escape="\\"),
+                                ProductRow.description.ilike(pattern, escape="\\"),
+                            )
+                        )
+                    )
+                ).all()
+            )
+            if rows:
+                mode = "text_and_constraints"
+        if not rows:
+            rows = list((await self._session.scalars(statement)).all())
+        return [
+            Product(
+                sku=r.sku,
+                name=r.name,
+                category=r.category,
+                price_cents=r.price_cents,
+                inventory=r.inventory,
+                tags=[t for t in r.tags.split(",") if t],
+                description=r.description,
+            )
+            for r in rows
+        ], mode
 
     async def get_refunds(self, order_id: str) -> list[RefundRow]:
         result = await self._session.execute(

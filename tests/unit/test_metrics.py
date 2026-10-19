@@ -250,13 +250,9 @@ def test_resume_bullets_empty_report() -> None:
 
 def test_resume_bullets_cover_every_section() -> None:
     bullets = _resume_bullets(_report())
-    # intent + bm25 + dense + hybrid+rrf + cross-encoder + 2 generation + e2e
-    assert len(bullets) == 8
-
-    assert bullets[0].startswith("意图识别：100 条")
-    assert "intent_v1 80.0% → intent_v2 88.0% → intent_v3+overlay 91.0%" in bullets[0]
-    assert "规则 62.0%" in bullets[0]
-    assert "仅覆盖层 93.0%" in bullets[0]
+    # Retrieval/generation/E2E metrics remain; obsolete classifier accuracy is excluded.
+    assert len(bullets) == 7
+    assert not any("意图识别" in b for b in bullets)
 
     assert any("BM25 Precision@1 50.0%，Recall@3 70.0%，MRR 0.60" in b for b in bullets)
     assert any("dense-hash Precision@1 55.0%，Recall@3 75.0%" in b for b in bullets)
@@ -269,4 +265,4 @@ def test_resume_bullets_cover_every_section() -> None:
 
 def test_resume_bullets_without_earlier_intent_versions() -> None:
     bullets = _resume_bullets({"intent_v3": {"accuracy": 0.90, "n": 10}})
-    assert bullets == ["意图识别：10 条 intent_v3+overlay 90.0%"]
+    assert bullets == []

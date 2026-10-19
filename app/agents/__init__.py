@@ -1,6 +1,5 @@
-"""LangGraph agent layer."""
+"""Shared RAG node types; runtime lives in app.harness."""
 
-from app.agents.graph import build_graph
 from app.agents.state import AgentState
 
-__all__ = ["AgentState", "build_graph"]
+__all__ = ["AgentState"]

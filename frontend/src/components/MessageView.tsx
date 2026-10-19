@@ -52,6 +52,7 @@ export function MessageView({ conversation, busy, onConfirm, onCancel }: Message
           <div className="assistant-avatar"><Logo small /></div>
           <div className="assistant-body">
             {message.content ? <div className={`markdown ${message.state === "error" ? "message-error" : ""}`}><ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown></div> : <div className="thinking"><span /><span /><span /></div>}
+            {message.state === "streaming" && message.progress && <span className="message-note" role="status">{message.progress}</span>}
             {message.state === "complete" && <>
               <CitationList citations={message.citations ?? []} />
               {message.pendingAction && <ActionCard action={message.pendingAction} disabled={busy} onConfirm={() => onConfirm(message.pendingAction!, message.id)} onCancel={() => onCancel(message.id)} />}

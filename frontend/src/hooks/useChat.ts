@@ -12,6 +12,7 @@ type Action =
   | { type: "select"; id: string | null }
   | { type: "delete"; id: string }
   | { type: "start"; conversation: Conversation; user: Message; assistant: Message }
+  | { type: "progress"; conversationId: string; messageId: string; text: string }
   | { type: "token"; conversationId: string; messageId: string; text: string }
   | { type: "complete"; conversationId: string; messageId: string; response: ChatResponse }
   | { type: "fail"; conversationId: string; messageId: string; message: string; stopped: boolean }
@@ -47,6 +48,10 @@ function reducer(state: State, action: Action): State {
         conversations: [next, ...state.conversations.filter((item) => item.id !== next.id)],
       };
     }
+    case "progress":
+      return updateConversation(state, action.conversationId, (item) => ({
+        ...item, messages: item.messages.map((m) => m.id === action.messageId ? {...m, progress: action.text} : m),
+      }));
     case "token":
       return updateConversation(state, action.conversationId, (item) => ({
         ...item,
@@ -150,6 +155,10 @@ export function useChat() {
           ...(confirmActionId ? { confirm_action_id: confirmActionId } : {}),
         },
         (event) => {
+          if (event.event === "error") throw new Error("执行失败，请稍后重试。");
+          const labels: Record<string, string> = {agent_started:"正在处理",tool_started:"正在查询",tool_completed:"查询完成",delegation:"正在请专家核查",delegation_completed:"专家核查完成",compression:"正在整理会话",validation:"正在核对答复",needs_confirmation:"等待确认",needs_input:"需要补充信息"};
+          const progress = labels[event.event];
+          if (progress) dispatch({type:"progress",conversationId:conversation.id,messageId:assistant.id,text:progress});
           if (event.event === "token") {
             dispatch({ type: "token", conversationId: conversation.id, messageId: assistant.id, text: event.text });
           }

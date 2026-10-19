@@ -17,7 +17,6 @@ dependencies = [
     "alembic>=1.14.0,<1.15",
     "qdrant-client>=1.12.0,<1.13",
     "redis>=5.2.0,<6",
-    "langgraph>=0.2.50,<0.3",
     "langchain-core>=0.3.20,<0.4",
     "jieba>=0.42.1",
     "rank-bm25>=0.2.2",
@@ -38,6 +37,7 @@ dev = [
     "mypy>=2.0,<3",
 ]
 rerank = [
+    "torch==2.6.0",
     "sentence-transformers>=3.1.0,<4",
     "modelscope>=1.20.0,<2",
 ]
@@ -98,3 +98,11 @@ line-ending = "auto"
 [tool.ruff.lint.isort]
 known-first-party = ["app", "eval"]
 combine-as-imports = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

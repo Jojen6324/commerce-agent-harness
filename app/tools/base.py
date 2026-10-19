@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from app.core.enums import ToolRisk
 from app.core.exceptions import InvalidRequestError, ToolExecutionError
@@ -27,6 +27,8 @@ class ToolContext(BaseModel):
     trace_id: str
     confirmed_action_id: str | None = None
     idempotency_key: str | None = None
+    # Populated by ChatService from authenticated user turns, never tool args.
+    user_messages: list[str] = Field(default_factory=list)
 
 
 class BaseTool(Protocol):

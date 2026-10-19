@@ -9,8 +9,8 @@ from app.infra.rate_limit import InMemoryRateLimiter, RedisRateLimiter
 from app.infra.redis_client import connect_redis
 from app.mcp.adapter import merge_mcp_tools
 from app.mcp.runtime import LOCAL_CATALOG
+from app.providers.agnes import AgnesProvider
 from app.providers.base import LLMProvider
-from app.providers.deepseek import DeepSeekProvider
 from app.providers.embeddings import build_embedding_provider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.reranker import CrossEncoderRerankProvider
@@ -94,7 +94,9 @@ async def build_retrieval(settings: Settings, redis):
 async def build_container(settings: Settings, seed: bool = False) -> AppContainer:
     """Compose runtime services from independently testable infrastructure builders."""
     llm: LLMProvider = (
-        DeepSeekProvider(settings) if settings.llm_configured else OfflineLLMProvider()
+        AgnesProvider(settings)
+        if settings.agnes.get_secret_value() and settings.app_env != "testing"
+        else OfflineLLMProvider()
     )
     engine, session_factory, redis = await build_infrastructure(settings)
     rate_limiter = (
@@ -110,7 +112,7 @@ async def build_container(settings: Settings, seed: bool = False) -> AppContaine
             specs.append(
                 {
                     "name": "mcp_remote_echo",
-                    "description": "Remote MCP tool via HTTP (same Function Calling schema)",
+                    "description": "Custom HTTP JSON tool (not standard MCP)",
                     "transport": "http",
                     "endpoint": settings.mcp_remote_url.rstrip("/") + "/mcp/call",
                 }

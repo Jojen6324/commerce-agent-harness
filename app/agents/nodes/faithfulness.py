@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.agents.nodes.generate import AnswerPayload, _extractive_fallback, _offline_answer
+from app.agents.nodes.generate import AnswerPayload, _extractive_fallback
 from app.agents.state import AgentState
 from app.core.enums import RetrievalStrategy
 from app.core.exceptions import LLMOutputError, LLMProviderError
@@ -12,6 +12,7 @@ from app.prompts.faithfulness import SELF_CORRECT_SYSTEM, SELF_CORRECT_USER
 from app.providers.base import LLMProvider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.json_parser import parse_model
+from app.retrieval.evidence import evidence_text
 from app.schemas.retrieval import Citation, RetrievedChunk
 
 
@@ -26,9 +27,7 @@ async def self_correct_answer(
     first_result: FaithfulnessResult,
 ) -> tuple[str, FaithfulnessResult, bool]:
     """LLM rewrite once, then extractive fallback. Returns (answer, judge, corrected)."""
-    evidence = (
-        "\n\n".join(f"[{c.chunk_id}] {c.title}\n{c.content}" for c in chunks[:6]) or "(无检索结果)"
-    )
+    evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(无检索结果)"
     try:
         response = await llm.generate(
             [
@@ -97,12 +96,19 @@ async def faithfulness_node(
         chunks=chunks,
         tool_results_text=tool_text,
     )
-    extra = {"faithfulness": result.model_dump(), "self_corrected": False}
+    extra = {
+        **(state.get("extra") or {}),
+        "faithfulness": result.model_dump(),
+        "self_corrected": False,
+    }
     if result.supported:
         return {"extra": extra}
     HALLUCINATION_FLAGS.inc()
     if result.rationale == "checker_unavailable":
-        fallback_answer, citation_ids = _offline_answer(state)
+        evidence = "\n\n".join(evidence_text(c) for c in chunks[:6])
+        fallback_answer = _extractive_fallback(state["user_query"], evidence, tool_text)
+        extra["degraded"] = True
+        extra["degradation_reason"] = "checker_unavailable"
         citations = [
             Citation(
                 document_id=chunk.document_id,
@@ -110,8 +116,7 @@ async def faithfulness_node(
                 chunk_id=chunk.chunk_id,
                 section=chunk.section,
             )
-            for chunk in chunks
-            if chunk.chunk_id in citation_ids
+            for chunk in chunks[:1]
         ]
         return {
             "final_answer": fallback_answer,
@@ -127,7 +132,11 @@ async def faithfulness_node(
         tool_results_text=tool_text,
         first_result=result,
     )
-    extra = {"faithfulness": judged.model_dump(), "self_corrected": corrected}
+    extra = {
+        **(state.get("extra") or {}),
+        "faithfulness": judged.model_dump(),
+        "self_corrected": corrected,
+    }
     if not judged.supported:
         return {
             "final_answer": "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。",

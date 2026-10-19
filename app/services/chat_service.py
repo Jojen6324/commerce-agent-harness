@@ -1,42 +1,34 @@
-"""Chat orchestration: graph execution, streaming and persistence."""
+"""Conversation persistence, deterministic confirmation and harness streaming."""
 
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
-from collections.abc import AsyncIterator
-from dataclasses import dataclass
-from typing import cast
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-
-from app.agents.graph import build_graph
-from app.agents.state import AgentState
 from app.config.settings import Settings
-from app.core.exceptions import AppError, GuardrailError, InvalidRequestError, RateLimitError
+from app.core.exceptions import (
+    GuardrailError,
+    InvalidRequestError,
+    LLMProviderError,
+    RateLimitError,
+)
 from app.core.ids import new_id
-from app.core.request_scope import request_session
-from app.infra.rate_limit import RateLimiter
-from app.observability.metrics import REQUEST_LATENCY, REQUESTS, ROUTING, STAGE_LATENCY, TOKEN_USAGE
-from app.providers.base import LLMProvider
+from app.guardrails.injection import detect_prompt_injection
+from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
+from app.harness.delegation import DelegationService
+from app.harness.executor import ToolExecutor
+from app.harness.runner import AgentRunner, AgentSpec
+from app.harness.validation import AnswerValidator
+from app.providers.fake import OfflineLLMProvider
+from app.repositories.runtime import RuntimeStore
 from app.repositories.session_repository import SessionRepository
-from app.retrieval.hybrid import HybridRetriever
-from app.retrieval.reranker import DocumentReranker
 from app.schemas.chat import ActionProposal, ChatRequest, ChatResponse
-from app.schemas.common import LatencyBreakdown, TokenUsage
+from app.schemas.common import LatencyBreakdown
+from app.schemas.retrieval import Citation
+from app.services.knowledge import KnowledgeService
+from app.tools.base import ToolContext
 from app.tools.factory import build_tool_registry
-from app.tools.registry import ToolRegistry
-
-logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class PendingConfirmation:
-    session_id: str
-    user_id: str
-    action: ActionProposal
-    expires_at: float
+from app.tools.knowledge_service import EvidenceTool, PolicyAnswerTool
 
 
 class ChatService:
@@ -44,251 +36,304 @@ class ChatService:
         self,
         *,
         settings: Settings,
-        llm: LLMProvider,
-        retriever: HybridRetriever,
-        reranker: DocumentReranker,
-        session_factory: async_sessionmaker[AsyncSession],
-        rate_limiter: RateLimiter,
-        registry: ToolRegistry | None = None,
-    ) -> None:
-        self._settings = settings
-        self._llm = llm
-        self._retriever = retriever
-        self._reranker = reranker
-        self._session_factory = session_factory
-        self._rate_limiter = rate_limiter
+        llm,
+        retriever,
+        reranker,
+        session_factory,
+        rate_limiter,
+        registry=None,
+    ):
+        self._settings, self._llm = settings, llm
+        self._session_factory, self._rate_limiter = session_factory, rate_limiter
         self.registry = registry or build_tool_registry(retriever)
-        self._pending_actions: dict[str, PendingConfirmation] = {}
-        self._graph = build_graph(
-            llm=llm,
-            settings=settings,
-            retriever=retriever,
-            reranker=reranker,
-            registry=self.registry,
+        self.provider = (
+            llm
+            if isinstance(llm, OfflineLLMProvider)
+            else BudgetedProvider(llm, settings.agent_context_tokens)
         )
-
-    async def chat(self, request: ChatRequest, *, trace_id: str) -> ChatResponse:
-        await self._enforce_rate_limit(request.user_id)
-        started = time.perf_counter()
-        session_id = request.session_id or new_id("sess_")
-        async with request_session(self._session_factory) as db:
-            state = await self._initial_state(db, request, session_id, trace_id)
-            result = await self._invoke(state)
-            response = self._to_response(result, session_id=session_id, trace_id=trace_id)
-            await self._persist(db, request, response, summary=result.get("summary") or "")
-            await db.commit()
-        self._remember_pending(request, response)
-        self._observe(response, started)
-        return response
-
-    async def stream(self, request: ChatRequest, *, trace_id: str) -> AsyncIterator[dict]:
-        """SSE: report progress, then send only the validated user-facing answer."""
-        await self._enforce_rate_limit(request.user_id)
-        started = time.perf_counter()
-        session_id = request.session_id or new_id("sess_")
-        async with request_session(self._session_factory) as db:
-            state = await self._initial_state(db, request, session_id, trace_id)
-            yield {"event": "started", "trace_id": trace_id}
-            queue: asyncio.Queue[dict | None] = asyncio.Queue()
-            holder: dict = {"merged": dict(state), "guardrail": None, "error": None}
-
-            async def _run_graph() -> None:
-                try:
-                    async for update in self._graph.astream(state, stream_mode="updates"):
-                        for node, payload in update.items():
-                            if isinstance(payload, dict):
-                                holder["merged"].update(payload)
-                            event: dict = {"event": "node", "node": node}
-                            if isinstance(payload, dict) and payload.get("intent"):
-                                event["intent"] = payload["intent"].label.value
-                            if isinstance(payload, dict) and payload.get("strategy"):
-                                event["strategy"] = payload["strategy"].value
-                            await queue.put(event)
-                except GuardrailError as exc:
-                    holder["guardrail"] = exc
-                except Exception as exc:  # graph failures surface after the queue drains
-                    holder["error"] = exc
-                finally:
-                    await queue.put(None)
-
-            task = asyncio.create_task(_run_graph())
-            try:
-                while True:
-                    item = await queue.get()
-                    if item is None:
-                        break
-                    yield item
-                await task
-            finally:
-                if not task.done():
-                    task.cancel()
-
-            if holder["guardrail"] is not None:
-                exc = holder["guardrail"]
-                await db.commit()
-                yield {
-                    "event": "answer",
-                    "data": ChatResponse(
-                        answer=exc.message,
-                        session_id=session_id,
-                        trace_id=trace_id,
-                        refused=True,
-                        error_code=exc.error_code.value,
-                    ).model_dump(mode="json"),
-                }
-                yield {"event": "done", "trace_id": trace_id}
-                return
-            if holder["error"] is not None:
-                raise holder["error"]
-            merged: AgentState = holder["merged"]
-            response = self._to_response(merged, session_id=session_id, trace_id=trace_id)
-            await self._persist(db, request, response, summary=merged.get("summary") or "")
-            await db.commit()
-        self._remember_pending(request, response)
-        self._observe(response, started)
-        # Never stream the LLM's JSON envelope or an answer that may still be
-        # replaced by the faithfulness check. Only the final answer is public.
-        for index in range(0, len(response.answer), 48):
-            yield {"event": "token", "text": response.answer[index : index + 48]}
-        yield {"event": "answer", "data": response.model_dump(mode="json")}
-        yield {"event": "done", "trace_id": trace_id}
-
-    async def _enforce_rate_limit(self, user_id: str) -> None:
-        allowed = await self._rate_limiter.allow(f"user:{user_id}")
-        if not allowed:
-            raise RateLimitError()
-
-    async def _initial_state(
-        self,
-        db: AsyncSession,
-        request: ChatRequest,
-        session_id: str,
-        trace_id: str,
-    ) -> AgentState:
-        confirmed_action = self._resolve_confirmation(request, session_id)
-        sessions = SessionRepository(db)
-        await sessions.get_or_create(session_id, request.user_id)
-        history = await sessions.recent_messages(session_id)
-        return {
-            "trace_id": trace_id,
-            "session_id": session_id,
-            "user_id": request.user_id,
-            "user_query": request.message,
-            "messages": history,
-            "summary": "",
-            "retrieved_chunks": [],
-            "tool_results": [],
-            "citations": [],
-            "refused": False,
-            "step_count": 0,
-            "token_usage": TokenUsage(),
-            "latency": LatencyBreakdown(),
-            "confirm_action_id": request.confirm_action_id,
-            "confirmed_action": confirmed_action,
-            "idempotency_key": request.idempotency_key,
-        }
-
-    def _resolve_confirmation(self, request: ChatRequest, session_id: str) -> ActionProposal | None:
-        if not request.confirm_action_id:
-            return None
-        pending = self._pending_actions.get(request.confirm_action_id)
-        if (
-            pending is None
-            or pending.expires_at < time.monotonic()
-            or pending.session_id != session_id
-            or pending.user_id != request.user_id
-        ):
-            raise InvalidRequestError("待确认操作不存在或已过期，请重新发起。")
-        return pending.action
-
-    def _remember_pending(self, request: ChatRequest, response: ChatResponse) -> None:
-        now = time.monotonic()
-        self._pending_actions = {
-            key: value for key, value in self._pending_actions.items() if value.expires_at > now
-        }
-        action = response.pending_action
-        if action is not None:
-            self._pending_actions[action.action_id] = PendingConfirmation(
-                session_id=response.session_id,
-                user_id=request.user_id,
-                action=action,
-                expires_at=now + 15 * 60,
+        self.knowledge = KnowledgeService(retriever, reranker, self.provider, settings)
+        self.registry.register(EvidenceTool(self.knowledge))
+        self.registry.register(PolicyAnswerTool(self.knowledge))
+        self.executor = ToolExecutor(
+            self.registry,
+            session_factory,
+            settings.agent_tool_timeout,
+            settings.agent_knowledge_timeout,
+        )
+        self.runner = AgentRunner(self.provider, self.executor, settings)
+        self.store = RuntimeStore(session_factory)
+        self.executor.artifacts = self.store
+        self.validator = AnswerValidator(self.provider)
+        self.spec = AgentSpec(
+            "main",
+            frozenset([*self.registry.names(), "load_skill", "read_artifact", "ask_user"]),
+            max_steps=settings.max_agent_steps,
+        )
+        if settings.agent_delegation_enabled:
+            self.executor.delegate = DelegationService(self.runner, self.executor, self.store)
+            self.spec = AgentSpec(
+                "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
             )
+        self._locks: dict[str, asyncio.Lock] = {}
 
-    async def _invoke(self, state: AgentState) -> AgentState:
-        try:
-            # LangGraph widens the state to dict[str, Any]; the graph contract is AgentState.
-            return cast(AgentState, await self._graph.ainvoke(state))
-        except GuardrailError as exc:
-            return {
-                **state,
-                "final_answer": exc.message,
-                "refused": True,
-                "error": exc.error_code.value,
-            }
-        except AppError:
-            raise
+    async def chat(self, request: ChatRequest, *, trace_id: str, emit=None) -> ChatResponse:
+        if not await self._rate_limiter.allow(f"user:{request.user_id}"):
+            raise RateLimitError()
+        session_id = request.session_id or new_id("sess_")
+        lock = self._locks.setdefault(session_id, asyncio.Lock())
+        if lock.locked():
+            raise InvalidRequestError("同一会话正在处理请求，请稍后重试。")
+        async with lock:
+            return await self._chat(request, session_id, trace_id, emit)
 
-    async def _persist(
-        self,
-        db: AsyncSession,
-        request: ChatRequest,
-        response: ChatResponse,
-        *,
-        summary: str = "",
-    ) -> None:
-        sessions = SessionRepository(db)
-        await sessions.append_message(response.session_id, "user", request.message)
-        await sessions.append_message(response.session_id, "assistant", response.answer)
-        if summary:
-            await sessions.save_summary(response.session_id, summary)
-
-    def _to_response(
-        self,
-        result: AgentState,
-        *,
-        session_id: str,
-        trace_id: str,
-    ) -> ChatResponse:
-        answer = result.get("final_answer") or "暂时无法回答，请稍后重试。"
-        strategy = result.get("strategy")
-        intent = result.get("intent")
-        return ChatResponse(
-            answer=answer,
+    async def _chat(self, request, session_id, trace_id, emit):
+        started = time.perf_counter()
+        context = ToolContext(
+            user_id=request.user_id,
             session_id=session_id,
             trace_id=trace_id,
-            intent=intent.label if intent else None,
-            complexity=result.get("query_complexity"),
-            strategy=strategy,
-            citations=result.get("citations") or [],
-            pending_action=result.get("pending_action"),
-            refused=bool(result.get("refused")),
-            error_code=result.get("error"),
-            token_usage=result.get("token_usage") or TokenUsage(),
-            latency=result.get("latency") or LatencyBreakdown(),
+            idempotency_key=request.idempotency_key,
         )
+        async with self._session_factory() as db:
+            repo = SessionRepository(db)
+            row = await repo.get_or_create(session_id, request.user_id)
+            summary = row.summary or ""
+            history = await repo.recent_messages(session_id)
+            await db.commit()
+        context = context.model_copy(
+            update={
+                "user_messages": [m.content for m in history if m.role == "user"]
+                + [request.message]
+            }
+        )
+        budget = RunBudget(
+            time.monotonic() + self._settings.agent_deadline_seconds,
+            max_models=self._settings.agent_model_calls,
+            max_tools=self._settings.max_tool_calls,
+            max_tokens=self._settings.agent_total_tokens,
+        )
+        facts = await self.store.facts(context)
+        token = current_budget.set(budget)
+        run_id = None
+        run_events = []
+        result = {}
 
-    def _observe(self, response: ChatResponse, started: float) -> None:
-        total_ms = (time.perf_counter() - started) * 1000
-        response.latency.total_ms = total_ms
-        REQUESTS.labels(
-            strategy=(response.strategy.value if response.strategy else "unknown"),
-            intent=(response.intent.value if response.intent else "unknown"),
-            status="ok" if not response.refused else "refused",
-        ).inc()
-        if response.strategy:
-            ROUTING.labels(strategy=response.strategy.value).inc()
-        REQUEST_LATENCY.observe(total_ms / 1000)
-        STAGE_LATENCY.labels(stage="intent").observe(response.latency.intent_ms / 1000)
-        STAGE_LATENCY.labels(stage="retrieval").observe(response.latency.retrieval_ms / 1000)
-        STAGE_LATENCY.labels(stage="llm").observe(response.latency.llm_ms / 1000)
-        TOKEN_USAGE.labels(kind="total").inc(response.token_usage.total_tokens)
-        logger.info(
-            "chat_completed",
-            extra={
-                "trace_id": response.trace_id,
-                "strategy": response.strategy.value if response.strategy else None,
-                "intent": response.intent.value if response.intent else None,
-                "latency_ms": round(total_ms, 1),
-            },
-        )
+        async def record_event(event):
+            nonlocal run_id
+            if event.get("parent_run_id") is None:
+                run_id = event.get("run_id", run_id)
+            run_events.append(event)
+            if emit:
+                await emit(event)
+
+        try:
+            detect_prompt_injection(request.message)
+            if request.confirm_action_id:
+                run_id = new_id("run_")
+                if emit:
+                    await emit(
+                        {
+                            "event": "tool_started",
+                            "run_id": run_id,
+                            "action_id": request.confirm_action_id,
+                        }
+                    )
+                result = await self._confirm(request, context)
+                result.update(
+                    run_id=run_id,
+                    events=[
+                        {
+                            "event": "confirmation",
+                            "action_id": request.confirm_action_id,
+                            "status": result["status"],
+                        }
+                    ],
+                )
+                if emit:
+                    await emit(
+                        {"event": "tool_completed", "run_id": run_id, "status": result["status"]}
+                    )
+            else:
+                async with asyncio.timeout(self._settings.agent_deadline_seconds):
+                    result = await self.runner.run(
+                        request.message,
+                        context,
+                        self.spec,
+                        history=history,
+                        summary=summary,
+                        facts=facts,
+                        emit=record_event,
+                    )
+            if not request.confirm_action_id:
+                result = await self.validator.validate(request.message, result)
+            await self.store.record(result, context)
+            for observation in result.get("observations", []):
+                args = observation.get("arguments", {})
+                if "order_id" in args:
+                    facts["last_order"] = {
+                        "order_id": args["order_id"],
+                        "source": observation["name"],
+                    }
+                output = observation["output"].get("output", observation["output"])
+                if observation["name"] in (
+                    "get_order",
+                    "get_order_items",
+                    "track_shipment",
+                    "get_refund_status",
+                ) and observation["output"].get("success"):
+                    facts.setdefault("business", {})[
+                        args.get("order_id", "") + ":" + observation["name"]
+                    ] = {
+                        "tool": observation["name"],
+                        "result": output,
+                    }
+            await self.store.save_facts(context, facts)
+            pending = (
+                ActionProposal.model_validate(result["pending_action"])
+                if result.get("pending_action")
+                else None
+            )
+            citations = {}
+            degradations = []
+            for observation in result.get("observations", []):
+                data = observation["output"].get("output", observation["output"])
+                if data.get("generation_failure") or data.get("degraded"):
+                    degradations.append(
+                        {
+                            "tool": observation["name"],
+                            "generation_failure": data.get("generation_failure"),
+                            "validation_failure": data.get("failure")
+                            if data.get("degraded")
+                            else None,
+                        }
+                    )
+                for c in data.get("chunks", []):
+                    citations[c["chunk_id"]] = Citation(
+                        document_id=c["document_id"],
+                        chunk_id=c["chunk_id"],
+                        title=c["title"],
+                        section=c.get("section"),
+                    )
+            response = ChatResponse(
+                answer=result["answer"],
+                run_id=result.get("run_id"),
+                status=result.get("status", "completed"),
+                error_code=(result.get("failure") or {}).get("code"),
+                events=result.get("events", []),
+                diagnostics={
+                    "model_calls": budget.models,
+                    "reserved_tokens_without_usage": budget.reserved_tokens,
+                    "tool_calls": budget.tools,
+                    "tools": [o["name"] for o in result.get("observations", [])],
+                    "failure": result.get("failure"),
+                    "degradations": degradations,
+                },
+                session_id=session_id,
+                trace_id=trace_id,
+                citations=list(citations.values()),
+                pending_action=pending,
+                token_usage=budget.usage,
+                latency=LatencyBreakdown(total_ms=(time.perf_counter() - started) * 1000),
+            )
+        except (BudgetExceeded, TimeoutError) as exc:
+            failure = {
+                "code": "RUN_BUDGET_EXHAUSTED",
+                "reason": str(exc) or "deadline",
+                "retryable": True,
+            }
+            run_events.append({"event": "stopped", "run_id": run_id, **failure})
+            response = ChatResponse(
+                answer="本轮执行达到预算或时间限制，请稍后重试。",
+                status="budget_exhausted",
+                error_code=failure["code"],
+                run_id=run_id,
+                events=run_events,
+                diagnostics={"failure": failure},
+                session_id=session_id,
+                trace_id=trace_id,
+                token_usage=budget.usage,
+            )
+            if run_id:
+                await self.store.record(
+                    {"run_id": run_id, "status": response.status, "events": run_events}, context
+                )
+        except LLMProviderError as exc:
+            failure = {
+                "code": exc.error_code.value,
+                "reason": exc.message,
+                "retryable": exc.retryable,
+            }
+            run_events.append({"event": "error", "run_id": run_id, **failure})
+            response = ChatResponse(
+                answer="模型暂不可用，本轮未能完成结果校验，请稍后重试。",
+                status="failed",
+                error_code=exc.error_code.value,
+                run_id=run_id,
+                session_id=session_id,
+                trace_id=trace_id,
+                token_usage=budget.usage,
+                diagnostics={"failure": failure},
+                events=run_events,
+            )
+            if run_id:
+                await self.store.record(
+                    {"run_id": run_id, "status": response.status, "events": run_events}, context
+                )
+        except GuardrailError as exc:
+            response = ChatResponse(
+                answer=exc.message,
+                session_id=session_id,
+                trace_id=trace_id,
+                refused=True,
+                error_code=exc.error_code.value,
+            )
+        finally:
+            current_budget.reset(token)
+        response.latency.total_ms = (time.perf_counter() - started) * 1000
+        response.diagnostics.setdefault("model_calls", budget.models)
+        response.diagnostics.setdefault("tool_calls", budget.tools)
+        response.diagnostics.setdefault("reserved_tokens_without_usage", budget.reserved_tokens)
+        async with self._session_factory() as db:
+            repo = SessionRepository(db)
+            await repo.append_message(session_id, "user", request.message)
+            await repo.append_message(session_id, "assistant", response.answer)
+            # Deterministic running summary supplements, never replaces, structured facts.
+            excerpt = "\n".join(m.content for m in history[-6:])
+            await repo.save_summary(
+                session_id,
+                (summary + "\n" + excerpt + "\n" + request.message + "\n" + response.answer)[
+                    -4000:
+                ],
+            )
+            await db.commit()
+        return response
+
+    async def _confirm(self, request, context):
+        return await self.executor.confirm(request.confirm_action_id, context, self.spec)
+
+    async def stream(self, request: ChatRequest, *, trace_id: str):
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def work():
+            try:
+                response = await self.chat(request, trace_id=trace_id, emit=queue.put)
+                await queue.put({"event": "answer", "data": response.model_dump(mode="json")})
+            except Exception as exc:
+                await queue.put({"event": "error", "error": type(exc).__name__})
+            finally:
+                await queue.put(None)
+
+        yield {"event": "started", "trace_id": trace_id}
+        task = asyncio.create_task(work())
+        try:
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                yield event
+            await task
+            yield {"event": "done", "trace_id": trace_id}
+        finally:
+            if not task.done():
+                task.cancel()
+            await asyncio.gather(task, return_exceptions=True)

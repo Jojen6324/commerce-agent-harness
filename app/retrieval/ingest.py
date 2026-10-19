@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from pathlib import Path
 
 from app.config.settings import Settings, get_settings
@@ -91,11 +92,25 @@ class KnowledgeIngestor:
                 category=category,
                 settings=self._settings,
             )
+            if path.suffix.lower() == ".md":
+                text = await asyncio.to_thread(path.read_text, encoding="utf-8")
+                heading = re.search(r"^#\s+(.+)$", text, re.M)
+                version = re.search(r"政策版本[：:]\s*([^\s]+)", text)
+                for chunk in file_chunks:
+                    if heading:
+                        chunk.metadata["document_title"] = heading.group(1).strip()
+                    if version:
+                        chunk.policy_version = version.group(1)
             chunks.extend(file_chunks)
         chunks = dedupe_chunks(chunks)
         if not chunks:
             return [], []
-        embeddings = await self._embedder.embed([chunk.content for chunk in chunks])
+        embeddings = await self._embedder.embed(
+            [
+                f"{c.metadata.get('document_title', c.title)} {c.section or ''}\n{c.content}"
+                for c in chunks
+            ]
+        )
         records = build_records(chunks, embeddings)
         return chunks, records
 

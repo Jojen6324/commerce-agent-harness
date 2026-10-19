@@ -3,7 +3,7 @@
 <h1 align="center">Adaptive RAG · 电商客服工作流</h1>
 
 <p align="center"><strong>让简单问题直接回答，让复杂问题找到证据，让业务操作停在确认之前。</strong></p>
-<p align="center">FastAPI × LangGraph × 混合检索 · API、流式对话与 ChatGPT 风格 Web 工作台</p>
+<p align="center">FastAPI × Agent Harness × 混合检索 · API、流式对话与 ChatGPT 风格 Web 工作台</p>
 
 <p align="center">
   <a href="https://github.com/JEen-wang/Adaptive-rag/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JEen-wang/Adaptive-rag/actions/workflows/ci.yml/badge.svg"></a>
@@ -23,35 +23,37 @@
 
 ---
 
+## 当前架构：轻量 Agent Harness
+
+本分支已将主路径替换为 Python `AgentRunner`，移除 LangGraph 与独立意图分类。
+主 Agent 根据当前目标、历史、事实和工具目录直接决定回答、补问、查询、按需专家委派或业务提案。
+完整 RAG、答案校验、上下文压缩和本地业务工具继续复用。写入必须经持久化 `action_id` 确认。
+
+- [启动、源码导读、三个演示与能力边界](docs/harness.md)
+- [本次基线、模拟测试与真实模型对照](docs/harness-evaluation.md)
+- [新任务语料、来源家族划分与验收协议](docs/agent-task-evaluation.md)
+- 生成模型：云端 `AGNES` 绑定，`https://apihub.agnes-ai.com/v1`，`agnes-3.0-flash`；不自动切换其他付费服务。
+- 启动：`uv sync --frozen --extra dev --extra rerank`，再运行 `.venv/bin/python -m uvicorn app.asgi:app --port 8000`。
+- 以下旧版实测数字和简历指标保留为历史材料，不是本次重构结果；以新对照报告为准。
+
 <a id="overview"></a>
 
-## ✨ 一眼看懂
+## 项目能力
 
-> **Adaptive RAG** 的核心决策是：这个问题需要直接回答、检索一条证据、交叉核对多条证据、调用业务工具，还是拒绝处理？
+| 能力 | 当前实现 |
+|:---|:---|
+| 自主执行 | 一套 Python AgentRunner，直接回答、补问、调用工具或按需委派 |
+| 完整 RAG | KnowledgeService 统一改写、BM25/BGE、RRF、精排、多轮检索与自纠错 |
+| 业务工具与权限 | ToolExecutor 统一 Schema、归属、角色白名单、风险、超时和结果记录 |
+| 按需多 Agent | 主 Agent、只读知识专家、只读订单专家；深度 1，共享预算 |
+| 人工确认 | 持久化 Action、有效期、幂等键、条件更新与本地事务 |
+| 多轮与上下文 | 历史、摘要、业务事实真实加载；模型调用前压缩与受控大结果引用 |
+| 可观测性 | run/call ID、工具与专家进度、压缩与校验事件；最终答案校验后返回 |
 
-电商客服里的问题跨度很大。「你好」无需查知识库；退货政策需要可靠出处；「定制商品超过七天但有质量问题」要同时判断定制、时效与质量例外；取消订单则必须检查订单状态、权限与确认。项目用明确的路由策略处理这些差异，避免把所有输入都塞进同一条向量检索链路。
+新路径不再返回意图分类结果，兼容字段 `intent`、`complexity`、`strategy` 可为 null。
+详细边界与当前验证结果见 [Harness 文档](docs/harness.md) 和 [本次对照报告](docs/harness-evaluation.md)。
 
-| 能力 | 你能看到什么 | 关键实现 |
-|:---|:---|:---|
-| 🧭 **按复杂度路由** | 每次回答带有 `strategy`，便于追踪实际路径 | [Graph 与节点](app/agents/graph.py) · [策略枚举](app/core/enums.py) |
-| 🔎 **有出处的检索** | BM25、稠密向量、RRF 融合与精排；回答可带 `citations` | [检索模块](app/retrieval/) |
-| 🧩 **多跳与自纠错** | 复合问题拆分检索，答案经过忠实度检查 | [智能体节点](app/agents/nodes/) |
-| 🛡️ **人工确认** | 高风险写操作先返回 `pending_action`，确认后才执行 | [工具与权限](app/tools/) |
-| 💬 **Web 对话工作台** | 流式显示、引用、本地会话搜索、深色模式与确认卡片 | [前端](frontend/) |
-| 📈 **可测可观测** | 离线评测、回归测试、结构化日志与 Prometheus 指标 | [评测](eval/) · [可观测性](app/observability/) |
-
-### 五条处理路径
-
-| 策略 | 适合的问题 | 处理方式 |
-|:---:|:---|:---|
-| `DIRECT` | 问候、闲聊 | 直接生成，不做知识检索 |
-| `SINGLE` | 单一政策问题 | 一轮混合检索与精排 |
-| `MULTI` | 多条件、跨条款问题 | 查询改写、多路检索与自纠错 |
-| `AGENT` | 查询订单、物流或发起业务操作 | 规划后调用受权限约束的工具 |
-| `REFUSE` | 越权、注入或证据不足 | 拒答或引导人工处理 |
-
-> [!TIP]
-> 第一次了解项目，可以先看[架构图](#architecture)，再按[快速开始](#quickstart)提问。想看每条路径怎样落到代码，读[智能体与工具](docs/05-agents-and-tools.md)。
+人工服务请求现在保存为数据库工单，支持受保护的人工受理、解决和同会话状态查询。配置与能力边界见 [最小人工工单服务](docs/support-service.md)；保存工单不代表已经接通真人。
 
 <a id="quickstart"></a>
 
@@ -73,7 +75,7 @@ uvicorn app.asgi:app --reload --port 8000
 
 Windows PowerShell 激活虚拟环境可使用 `.venv\Scripts\Activate.ps1`。首次启用本地 Embedding / Cross-Encoder 时可能需要下载模型；需要完整的本地精排依赖可安装 `pip install -e ".[rerank]"`。更多选项见[配置参考](docs/07-configuration.md)。
 
-`.env` 中的 `DEEPSEEK_API_KEY` 可留空：此时系统进入离线演示模式，展示检索原文或可核对的订单状态，不会假装生成完整答案。要体验生成式回答，需要配置可用的 DeepSeek 密钥。**不要提交 `.env` 或密钥。**
+`.env` 中的 `AGNES` 可留空：此时系统进入离线演示模式，展示检索原文或可核对的订单状态，不会假装生成完整答案。要体验生成式回答，需要配置可用的 AGNES 密钥。**不要提交 `.env` 或密钥。**
 
 ### 2. 发送第一条消息
 
@@ -129,23 +131,25 @@ PY
 
 ```mermaid
 flowchart LR
-    U["用户 · Web / CLI / HTTP"] --> API["FastAPI · JSON / SSE"]
-    API --> S["ChatService"]
-    S --> G["LangGraph：护栏 → 意图 → 复杂度路由"]
-    G --> D["DIRECT"]
-    G --> R["SINGLE / MULTI"]
-    G --> A["AGENT"]
-    G --> F["REFUSE"]
-    R --> H["BM25 + 向量 → RRF → 精排"]
-    A --> T["权限校验 → 工具 → 人工确认"]
-    D --> O["生成 / 忠实度检查"]
-    H --> O
-    T --> O
-    F --> O
-    O --> X["回答 + 引用 + trace_id"]
+    U[用户] --> API[FastAPI JSON / SSE]
+    API --> C[加载历史、摘要与事实]
+    C --> R[AgentRunner]
+    R --> T[ToolExecutor]
+    T --> K[KnowledgeService 完整 RAG]
+    T --> B[订单 / 商品 / 物流只读工具]
+    T --> D[按需知识与订单专家]
+    T --> P[持久化 Action 提案]
+    P --> H[用户 action_id 确认]
+    H --> X[确定性校验 + 原子业务事务]
+    K --> V[答案校验 / 有限修正]
+    B --> V
+    D --> V
+    V --> S[保存历史、摘要、事实与事件]
+    X --> S
+    S --> API
 ```
 
-HTTP 层处理校验与序列化，`ChatService` 编排对话，Graph 决定路径，检索器与工具由容器装配。默认数据库为 SQLite；Redis、Qdrant 和远程模型按配置接入。完整的节点、降级路径和依赖关系见[架构与运行流程](docs/17-architecture-flow.md)。
+HTTP 层处理校验与序列化，`ChatService` 管理会话与确认，AgentRunner 决定工具和委派，检索器与工具由容器装配。默认数据库为 SQLite；Redis、Qdrant 和远程模型按配置接入。完整的节点、降级路径和依赖关系见[架构与运行流程](docs/17-architecture-flow.md)。
 
 <a id="evaluation"></a>
 
@@ -211,7 +215,7 @@ cd frontend && npm test && npm run build
 | 系统学习 RAG 工程实践 | [12 部分教学文档](docs/tutorial/README.md) |
 | 准备 Agent/RAG 面试 | [Chapter 1](docs/interview/chapter1.md) · [Chapter 2](docs/interview/chapter2.md) · [Chapter 3](docs/interview/chapter3.md) · [17 维度索引](docs/16-interview-bagu-map.md) |
 
-完整索引见 [`docs/README.md`](docs/README.md)。源码可从 `app/asgi.py` → `app/services/chat_service.py` → `app/agents/graph.py` 开始读；Web 代码在 `frontend/src/`。
+完整索引见 [`docs/README.md`](docs/README.md)。源码可从 `app/asgi.py` → `app/services/chat_service.py` → `app/harness/runner.py` 开始读；Web 代码在 `frontend/src/`。
 
 <details>
 <summary><strong>📁 展开项目目录</strong></summary>

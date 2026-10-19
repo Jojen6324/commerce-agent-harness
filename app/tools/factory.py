@@ -23,6 +23,7 @@ from app.tools.product_tools import (
     SearchProductsTool,
 )
 from app.tools.registry import ToolRegistry
+from app.tools.support import GetSupportTicketTool
 
 
 def build_tool_registry(retriever: HybridRetriever) -> ToolRegistry:
@@ -41,11 +42,12 @@ def build_tool_registry(retriever: HybridRetriever) -> ToolRegistry:
         SearchProductsTool(),
         GetProductDetailTool(),
         RecommendProductsTool(),
-        GetCouponTool(),
+        GetCouponTool(retriever),
         CheckInventoryTool(),
         GetWarrantyTool(),
         SearchKnowledgeTool(retriever),
         EscalateToHumanTool(),
+        GetSupportTicketTool(),
     ]
     for tool in tools:
         registry.register(tool)

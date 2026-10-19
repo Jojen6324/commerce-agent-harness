@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "method": "curated near-duplicate/source-family groups; balanced by task coverage before full scoring, never by measured model success; descendants inherit group",
+  "holdout_policy": "Development evaluation by default; holdout requires explicit split selection. No tuning on holdout scores.",
+  "groups": [
+    {
+      "id": "greetings",
+      "split": "development",
+      "source_ids": [
+        "i001",
+        "i002",
+        "i003",
+        "i004",
+        "i005"
+      ]
+    },
+    {
+      "id": "casual",
+      "split": "development",
+      "source_ids": [
+        "i006",
+        "i008",
+        "i010",
+        "i100"
+      ]
+    },
+    {
+      "id": "identity",
+      "split": "development",
+      "source_ids": [
+        "i007",
+        "i009"
+      ]
+    },
+    {
+      "id": "invoices",
+      "split": "holdout",
+      "source_ids": [
+        "i011",
+        "i015"
+      ]
+    },
+    {
+      "id": "points",
+      "split": "development",
+      "source_ids": [
+        "i012",
+        "i059"
+      ]
+    },
+    {
+      "id": "service_hours",
+      "split": "development",
+      "source_ids": [
+        "i013"
+      ]
+    },
+    {
+      "id": "payments",
+      "split": "development",
+      "source_ids": [
+        "i014"
+      ]
+    },
+    {
+      "id": "return_rules",
+      "split": "development",
+      "source_ids": [
+        "i016",
+        "i017",
+        "i019",
+        "i035",
+        "i036",
+        "i037",
+        "i038",
+        "i039",
+        "i040",
+        "i088",
+        "i089",
+        "i090"
+      ]
+    },
+    {
+      "id": "warranty",
+      "split": "holdout",
+      "source_ids": [
+        "i018",
+        "i082",
+        "i083"
+      ]
+    },
+    {
+      "id": "shipping_fees",
+      "split": "development",
+      "source_ids": [
+        "i020",
+        "i078",
+        "i079",
+        "i094"
+      ]
+    },
+    {
+      "id": "refunds",
+      "split": "development",
+      "source_ids": [
+        "i031",
+        "i032",
+        "i033",
+        "i034",
+        "i095"
+      ]
+    },
+    {
+      "id": "products",
+      "split": "development",
+      "source_ids": [
+        "i046",
+        "i047",
+        "i048",
+        "i049",
+        "i050"
+      ]
+    },
+    {
+      "id": "coupons",
+      "split": "development",
+      "source_ids": [
+        "i056",
+        "i057",
+        "i058",
+        "i060"
+      ]
+    },
+    {
+      "id": "complaints",
+      "split": "development",
+      "source_ids": [
+        "i061",
+        "i062",
+        "i063",
+        "i064",
+        "i065",
+        "i097"
+      ]
+    },
+    {
+      "id": "handoff",
+      "split": "development",
+      "source_ids": [
+        "i066",
+        "i067",
+        "i068",
+        "i069",
+        "i070",
+        "i098"
+      ]
+    },
+    {
+      "id": "boundary",
+      "split": "development",
+      "source_ids": [
+        "i071",
+        "i072",
+        "i073",
+        "i074",
+        "i075",
+        "i076",
+        "i077",
+        "i099"
+      ]
+    },
+    {
+      "id": "presale",
+      "split": "development",
+      "source_ids": [
+        "i080"
+      ]
+    },
+    {
+      "id": "inspection",
+      "split": "holdout",
+      "source_ids": [
+        "i081"
+      ]
+    },
+    {
+      "id": "shipment_lookup",
+      "source_ids": [
+        "i021",
+        "i029",
+        "i086"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "unshipped_cancellation",
+      "source_ids": [
+        "i024",
+        "i041",
+        "i042",
+        "i043",
+        "i044",
+        "i045",
+        "i096"
+      ],
+      "split": "development"
+    },
+    {
+      "id": "missing_order_context",
+      "source_ids": [
+        "i022",
+        "i023",
+        "i025",
+        "i026",
+        "i027",
+        "i028",
+        "i030",
+        "i085",
+        "i087"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "delivered_order",
+      "source_ids": [
+        "i084"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "headset_recommendation",
+      "source_ids": [
+        "i051",
+        "i054",
+        "i093"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "gift_and_stock",
+      "source_ids": [
+        "i052",
+        "i053",
+        "i055",
+        "i091",
+        "i092"
+      ],
+      "split": "development"
+    }
+  ]
+}

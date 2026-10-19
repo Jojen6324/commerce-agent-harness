@@ -36,6 +36,8 @@ class ContextBuilder:
                             "summary": data.get("summary", "大结果已外置，请读取引用。"),
                             "facts": data.get("facts", {}),
                             "status": data.get("status"),
+                            "evidence_refs": data.get("evidence_refs", []),
+                            "missing_fields": data.get("missing_fields", []),
                         },
                         ensure_ascii=False,
                     )

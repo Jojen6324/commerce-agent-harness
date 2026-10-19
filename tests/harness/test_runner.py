@@ -148,3 +148,42 @@ async def test_explicit_clarification_stops_before_business_tool():
     )
     assert result["status"] == "needs_input" and result["answer"] == "请提供订单号"
     assert any(e["event"] == "needs_input" for e in result["events"])
+
+
+@pytest.mark.asyncio
+async def test_externalized_specialist_result_keeps_summary_facts_and_evidence():
+    facts = [{"tool": "get_order", "result": {"order_id": "ORD1", "status": "delivered"}}]
+    output = {
+        "status": "completed",
+        "summary": "定制商品质量问题例外须核对举证和品类，不能承诺退款。",
+        "facts": facts,
+        "evidence_refs": ["policy_01"],
+        "missing_fields": ["quality_proof"],
+        "chunks": [{"chunk_id": "policy_01", "content": "原文" * 3000}],
+    }
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse(
+                    "",
+                    tool_calls=[call("delegate_task", {"agent": "knowledge", "goal": "核对政策"})],
+                    finish_reason="tool_calls",
+                ),
+                LLMResponse("已整理专家调查，尚需质量凭证。"),
+            ]
+        )
+    )
+    artifacts = SimpleNamespace(put=AsyncMock(return_value="art_large"), record=AsyncMock())
+    executor = SimpleNamespace(
+        schemas=lambda _: [], execute=AsyncMock(return_value=output), artifacts=artifacts
+    )
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "核对", context(), AgentSpec("main", frozenset(["delegate_task"]))
+    )
+    assert result["status"] == "completed"
+    message = json.loads(llm.generate.call_args_list[1].args[0][-1]["content"])
+    assert message["summary"] == output["summary"]
+    assert message["facts"] == facts and message["evidence_refs"] == ["policy_01"]
+    assert message["missing_fields"] == ["quality_proof"]
+    assert message["artifact_ref"] == "art_large" and "chunks" not in message
+    executor.execute.assert_awaited_once()

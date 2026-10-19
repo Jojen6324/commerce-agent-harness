@@ -254,14 +254,21 @@ class AgentRunner:
                             "artifact_ref": ref,
                             "status": output.get("status", "complete"),
                             "summary": str(
-                                data.get("answer", "大结果已保存，需要原文时调用read_artifact。")
-                            )[:1200],
-                            "facts": {
-                                k: v
-                                for k, v in data.items()
-                                if k in ("order_id", "status", "missing_fields")
-                            },
-                            "evidence_refs": [c["chunk_id"] for c in data.get("chunks", [])],
+                                data.get("summary")
+                                or data.get("answer")
+                                or "大结果已保存，需要原文时调用read_artifact。"
+                            )[:1500],
+                            "facts": data.get(
+                                "facts",
+                                {
+                                    k: v
+                                    for k, v in data.items()
+                                    if k in ("order_id", "status", "missing_fields")
+                                },
+                            ),
+                            "missing_fields": data.get("missing_fields", []),
+                            "evidence_refs": data.get("evidence_refs")
+                            or [c["chunk_id"] for c in data.get("chunks", [])],
                         }
                         await event("artifact_saved", ref=ref)
                     messages.append(

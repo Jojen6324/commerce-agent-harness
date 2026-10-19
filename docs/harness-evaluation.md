@@ -15,7 +15,7 @@ A 使用基线 archive 独立目录执行；B/C 使用当前 checkout。演示�
 
 ## 当前确定性验证
 
-最终完整回归 **174 passed**，覆盖率 **74.94%**，满足原 70% 门槛。Python 3.12 本机通过；Python 3.11 的 CI 已保留配置，本机未另跑该版本。
+最终完整回归 **175 passed**，覆盖率 **75.05%**，满足原 70% 门槛。Python 3.12 本机通过；Python 3.11 的 CI 已保留配置，本机未另跑该版本。
 
 同时通过 Ruff 格式/静态检查、mypy（124 个源码文件）、锁文件检查、前端 3 项测试与 TypeScript/Vite 构建。原分类器、Planner、Graph 专属测试随旧运行时清理，保留原数据集并新增行为、执行与恢复测试，不再比较意图准确率。CI 增加前端检查并采用冻结锁文件安装。
 
@@ -92,3 +92,16 @@ A 从基线 archive 复现：创建 `/tmp/harness-baseline`，执行 `git archiv
 ## 仍有边界
 
 生产认证、跨进程会话锁、标准 MCP 客户端、真实支付/Java、任意位置任务恢复和完整真实模型质量评估不在已验证能力内。当前适合一个 worker 的本地开发与演示。限流下任务会停在有边界的失败/补问，而不是虚构业务成功。
+
+
+## 双专家追加重试
+
+用户要求重试后，保持同一个 `agnes-3.0-flash`、16K 上下文、60K 共享总 Token、24 次模型尝试及 150 秒演示 deadline，没有扩大预算。
+
+第一次重试：知识专家与订单专家均为 completed。知识专家返回 6 个证据引用和质量问题例外，订单专家返回 ORD10002 的状态与定制马克杯明细；主 Agent 又读取了外置结果，最终在汇总前触发共享预算停止。13 次模型尝试，7 次工具调用，已返回 usage 为 27071 Token；失败/未知 usage 保守预留 24485，耗时 91.47 秒。不能称为端到端通过。
+
+检查发现一个可修复问题：大体积专家结果外置时，投影只识别 answer 字段，丢失已有 summary 和结构化 facts，迫使父 Agent 再读取全文。已保留专家 summary、facts、evidence_refs 与 missing_fields；进一步压缩也保留这些字段。原始证据仍通过受控 artifact 引用读取。新增回归测试验证父 Agent 能直接获得摘要与事实、保持 call_id 关联而无需额外读取。完整测试更新为 175 passed、75.05%，mypy/Ruff 通过。
+
+修复后第二次真实重试：订单专家 completed，知识专家收到 `AGNES HTTP 429`，随后父任务被共享预算安全停止。16 次模型尝试（包含重试）、6 次工具调用，已返回 usage 为 16464 Token，保守预留 37481，耗时 66.84 秒。没有扩大额度、没有业务写入、没有报告虚构成功。该轮主 Agent 没有再次调用 read_artifact，但外部限流仍阻止完整汇总。
+
+逐例文件：`eval/reports/harness_live_specialists_retry.json` 与 `eval/reports/harness_live_specialists_summary_fix.json`。因此当前结论是：两名专家在一次真实重试中均完成了调查，但修复后的完整双专家端到端成功仍未确认，须在 AGNES 配额允许时复验。

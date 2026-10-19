@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.core.exceptions import LLMOutputError, LLMProviderError
 from app.prompts.faithfulness import FAITHFULNESS_SYSTEM, FAITHFULNESS_USER
@@ -16,9 +16,30 @@ from app.schemas.retrieval import RetrievedChunk
 
 class FaithfulnessResult(BaseModel):
     supported: bool
+    claims_grounded: bool
+    answers_question: bool
+    scope_preserved: bool
+    critical_conditions_complete: bool
     hallucinated_spans: list[str] = Field(default_factory=list)
+    missing_conditions: list[str] = Field(default_factory=list)
     rationale: str = ""
     failure: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def require_grounding_and_task_coverage(self) -> FaithfulnessResult:
+        """Do not let a positive aggregate verdict override a failed dimension."""
+        object.__setattr__(
+            self,
+            "supported",
+            self.supported
+            and self.claims_grounded
+            and self.answers_question
+            and self.scope_preserved
+            and self.critical_conditions_complete
+            and not self.hallucinated_spans
+            and not self.missing_conditions,
+        )
+        return self
 
 
 class FaithfulnessChecker:
@@ -78,6 +99,10 @@ class FaithfulnessChecker:
                     continue
                 return FaithfulnessResult(
                     supported=False,
+                    claims_grounded=False,
+                    answers_question=False,
+                    scope_preserved=False,
+                    critical_conditions_complete=False,
                     rationale="checker_unavailable",
                     failure={
                         "code": exc.error_code.value,

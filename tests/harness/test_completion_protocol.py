@@ -198,7 +198,14 @@ async def test_checker_fallback_reports_unavailability_without_claiming_missing_
     )
     checker = SimpleNamespace(
         check=AsyncMock(
-            return_value=FaithfulnessResult(supported=False, rationale="checker_unavailable")
+            return_value=FaithfulnessResult(
+                supported=False,
+                claims_grounded=False,
+                answers_question=False,
+                scope_preserved=False,
+                critical_conditions_complete=False,
+                rationale="checker_unavailable",
+            )
         )
     )
     result = await faithfulness_node(
@@ -238,7 +245,9 @@ async def test_policy_answer_with_missing_fields_is_still_faithfulness_checked()
     llm = SimpleNamespace(
         generate=AsyncMock(
             return_value=LLMResponse(
-                '{"supported":true,"hallucinated_spans":[],"rationale":"与政策一致"}'
+                '{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,'
+                '"critical_conditions_complete":true,"hallucinated_spans":[],'
+                '"missing_conditions":[],"rationale":"与政策一致"}'
             )
         )
     )
@@ -267,6 +276,61 @@ async def test_policy_answer_with_missing_fields_is_still_faithfulness_checked()
 
 
 @pytest.mark.asyncio
+async def test_policy_scope_failure_is_repaired_with_the_missing_condition():
+    digital = RetrievedChunk(
+        document_id="return_electronics",
+        chunk_id="digital_15d",
+        title="数码退货细则",
+        section="时效",
+        content="数码商品质量问题超过15天转保修通道，不能原单退货。",
+        score=1,
+    )
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse(
+                    '{"supported":true,"claims_grounded":false,"answers_question":true,"scope_preserved":false,'
+                    '"critical_conditions_complete":false,"hallucinated_spans":["所有商品"],'
+                    '"missing_conditions":["超过15天规则仅适用于数码商品"],'
+                    '"rationale":"把数码规则泛化到所有商品"}'
+                ),
+                LLMResponse(
+                    '{"answer":"资料只明确数码商品超过15天转保修；其他品类需核实。'
+                    '请提供商品或订单信息。[digital_15d]",'
+                    '"citation_chunk_ids":["digital_15d"]}'
+                ),
+                LLMResponse(
+                    '{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,'
+                    '"critical_conditions_complete":true,"hallucinated_spans":[],'
+                    '"missing_conditions":[],"rationale":"已限定品类并说明未知范围"}'
+                ),
+            ]
+        )
+    )
+    result = await AnswerValidator(llm).validate(
+        "超过15天的质量问题还能退吗",
+        {
+            "status": "completed",
+            "answer": "超过15天的质量问题都不能原单退货 [digital_15d]",
+            "observations": [
+                {
+                    "name": "search_knowledge",
+                    "output": {
+                        "success": True,
+                        "output": {"chunks": [digital.model_dump(mode="json")]},
+                    },
+                }
+            ],
+        },
+    )
+    assert result["status"] == "completed"
+    assert "只明确数码商品" in result["answer"]
+    assert "[digital_15d]" in result["answer"]
+    rewrite_prompt = llm.generate.await_args_list[1].args[0][1]["content"]
+    assert "超过15天规则仅适用于数码商品" in rewrite_prompt
+
+
+@pytest.mark.asyncio
 async def test_correcting_partial_answer_preserves_need_for_user_input():
     chunk = RetrievedChunk(
         document_id="policy",
@@ -279,12 +343,18 @@ async def test_correcting_partial_answer_preserves_need_for_user_input():
         generate=AsyncMock(
             side_effect=[
                 LLMResponse(
-                    '{"supported":false,"hallucinated_spans":["15日"],"rationale":"期限错误"}'
+                    '{"supported":false,"claims_grounded":false,"answers_question":true,"scope_preserved":true,'
+                    '"critical_conditions_complete":false,"hallucinated_spans":["15日"],'
+                    '"missing_conditions":["期限为12日"],"rationale":"期限错误"}'
                 ),
                 LLMResponse(
                     '{"answer":"应在12日内提交凭证。请提供订单号。","citation_chunk_ids":["p1"]}'
                 ),
-                LLMResponse('{"supported":true,"hallucinated_spans":[],"rationale":"符合原文"}'),
+                LLMResponse(
+                    '{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,'
+                    '"critical_conditions_complete":true,"hallucinated_spans":[],'
+                    '"missing_conditions":[],"rationale":"符合原文"}'
+                ),
             ]
         )
     )

@@ -5,13 +5,18 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.config.settings import Settings
-from app.harness.runner import AgentRunner, AgentSpec
+from app.harness.runner import SYSTEM, AgentRunner, AgentSpec
+from app.prompts.evidence_rules import EVIDENCE_RULES
 from app.providers.base import LLMResponse
 from app.tools.base import ToolContext
 
 
 def context():
     return ToolContext(user_id="u", session_id="s", trace_id="t")
+
+
+def test_main_agent_uses_shared_evidence_contract():
+    assert SYSTEM.endswith(EVIDENCE_RULES)
 
 
 def call(name="get_order", args=None, call_id="call1"):

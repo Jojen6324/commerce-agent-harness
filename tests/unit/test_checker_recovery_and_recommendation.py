@@ -22,7 +22,10 @@ async def test_length_recovery_requires_a_complete_verdict_and_preserves_rejecti
             side_effect=[
                 LLMProviderError("incomplete", retryable=False, finish_reason="length"),
                 LLMResponse(
-                    '{"supported":false,"hallucinated_spans":["所有商品"],"rationale":"专用规则被泛化"}'
+                    '{"supported":false,"claims_grounded":false,"answers_question":true,'
+                    '"scope_preserved":false,"critical_conditions_complete":false,'
+                    '"hallucinated_spans":["所有商品"],"missing_conditions":["仅适用于数码"],'
+                    '"rationale":"专用规则被泛化"}'
                 ),
             ]
         )
@@ -31,6 +34,7 @@ async def test_length_recovery_requires_a_complete_verdict_and_preserves_rejecti
         query="能退吗", answer="所有商品可退", chunks=[], tool_results_text=""
     )
     assert verdict.supported is False and verdict.rationale == "专用规则被泛化"
+    assert verdict.missing_conditions == ["仅适用于数码"]
     assert model.generate.await_count == 2
     assert model.generate.await_args_list[1].kwargs["max_tokens"] == 768
     # Repeated bad JSON cannot be silently accepted or retried without bound.
@@ -136,9 +140,11 @@ async def test_real_provider_finish_reason_reaches_bounded_checker_recovery():
                     {
                         "finish_reason": "length" if first else "stop",
                         "message": {
-                            "content": '{"supported":'
+                            "content": '{"claims_grounded":'
                             if first
-                            else '{"supported":true,"rationale":"证据支持"}'
+                            else '{"supported":true,"claims_grounded":true,"answers_question":true,'
+                            '"scope_preserved":true,"critical_conditions_complete":true,'
+                            '"hallucinated_spans":[],"missing_conditions":[],"rationale":"证据支持"}'
                         },
                     }
                 ]
@@ -153,3 +159,26 @@ async def test_real_provider_finish_reason_reaches_bounded_checker_recovery():
             query="q", answer="a", chunks=[], tool_results_text=""
         )
     assert verdict.supported and limits == [512, 768]
+
+
+@pytest.mark.asyncio
+async def test_faithfulness_verdict_requires_scope_and_critical_condition_coverage():
+    model = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                '{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":false,'
+                '"critical_conditions_complete":false,"hallucinated_spans":[],'
+                '"missing_conditions":["已检索到的限制只适用于数码商品"],'
+                '"rationale":"回答将数码规则推广到所有商品"}'
+            )
+        )
+    )
+    verdict = await FaithfulnessChecker(model).check(
+        query="超过15天的质量问题还能退吗",
+        answer="所有商品超过15天都不能原单退货。",
+        chunks=[],
+        tool_results_text="数码商品超过15天转保修通道。",
+    )
+    assert verdict.claims_grounded
+    assert not verdict.scope_preserved and not verdict.critical_conditions_complete
+    assert verdict.missing_conditions and not verdict.supported

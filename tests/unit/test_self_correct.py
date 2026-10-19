@@ -23,7 +23,11 @@ class _SequenceLLM:
         if self.calls == 1:
             content = '{"answer":"七天无理由不含定制","citation_chunk_ids":[]}'
         else:
-            content = '{"supported":true,"hallucinated_spans":[],"rationale":"ok"}'
+            content = (
+                '{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,'
+                '"critical_conditions_complete":true,"hallucinated_spans":[],'
+                '"missing_conditions":[],"rationale":"ok"}'
+            )
         return LLMResponse(content=content, usage=TokenUsage(total_tokens=4), model="fake")
 
 
@@ -43,7 +47,14 @@ async def test_self_correct_rewrites_unsupported_answer() -> None:
     from app.guardrails.hallucination import FaithfulnessResult
 
     first = FaithfulnessResult(
-        supported=False, hallucinated_spans=["随时退"], rationale="unsupported"
+        supported=False,
+        claims_grounded=False,
+        answers_question=True,
+        scope_preserved=False,
+        critical_conditions_complete=False,
+        hallucinated_spans=["随时退"],
+        missing_conditions=["定制商品不适用七天无理由"],
+        rationale="unsupported",
     )
     answer, judged, corrected = await self_correct_answer(
         llm=llm,
@@ -74,8 +85,22 @@ async def test_rewrite_replaces_original_citations_with_its_actual_sources():
     checker = SimpleNamespace(
         check=AsyncMock(
             side_effect=[
-                FaithfulnessResult(supported=False, rationale="适用来源错误"),
-                FaithfulnessResult(supported=True),
+                FaithfulnessResult(
+                    supported=False,
+                    claims_grounded=True,
+                    answers_question=True,
+                    scope_preserved=False,
+                    critical_conditions_complete=False,
+                    missing_conditions=["正确的适用来源"],
+                    rationale="适用来源错误",
+                ),
+                FaithfulnessResult(
+                    supported=True,
+                    claims_grounded=True,
+                    answers_question=True,
+                    scope_preserved=True,
+                    critical_conditions_complete=True,
+                ),
             ]
         )
     )

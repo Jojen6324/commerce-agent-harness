@@ -28,6 +28,11 @@ async def self_correct_answer(
 ) -> tuple[str, FaithfulnessResult, bool]:
     """LLM rewrite once, then extractive fallback. Returns (answer, judge, corrected)."""
     evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(无检索结果)"
+    critique = first_result.rationale
+    if first_result.hallucinated_spans:
+        critique += "；不支持的说法：" + "、".join(first_result.hallucinated_spans)
+    if first_result.missing_conditions:
+        critique += "；遗漏的必要条件：" + "、".join(first_result.missing_conditions)
     try:
         response = await llm.generate(
             [
@@ -37,8 +42,7 @@ async def self_correct_answer(
                     "content": SELF_CORRECT_USER.format(
                         query=query,
                         answer=answer,
-                        critique=first_result.rationale
-                        or ",".join(first_result.hallucinated_spans),
+                        critique=critique or "请补齐证据范围、问题回答和必要条件。",
                         evidence=evidence,
                         tool_results=tool_results_text or "(无)",
                     ),

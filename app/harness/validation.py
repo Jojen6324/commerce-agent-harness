@@ -42,6 +42,26 @@ class AnswerValidator:
         if result["status"] not in ("completed", "needs_input"):
             return result
         answer = result["answer"]
+
+        def reject(reason, message, **details):
+            validation = {
+                "status": "rejected",
+                "attempts": [{"stage": "deterministic", "reason": reason, **details}],
+            }
+            return {
+                **result,
+                "answer": message,
+                "status": "validation_failed",
+                "failure": {
+                    "code": "ANSWER_VALIDATION_FAILED",
+                    "stage": "output_validation",
+                    "reason": reason,
+                    "retryable": False,
+                },
+                "validation": validation,
+                "events": [*result.get("events", []), {"event": "output_validation", **validation}],
+            }
+
         observations = result.get("observations", [])
         grounded_observations = [
             observation for observation in observations if observation.get("name") != "ask_user"
@@ -94,11 +114,10 @@ class AnswerValidator:
             for d in tool_facts
         )
         if refund_complete and not has_settled:
-            return {
-                **result,
-                "answer": "当前记录不能证明退款已到账；申请提交与退款完成是不同状态。",
-                "status": "validation_failed",
-            }
+            return reject(
+                "unverified_refund_completion",
+                "当前记录不能证明退款已到账；申请提交与退款完成是不同状态。",
+            )
         # A requested/pending action can never support a completion claim.
         if unknown or (pending and completion_claim):
             result["events"].append(
@@ -108,11 +127,12 @@ class AnswerValidator:
                     "references": sorted(unknown),
                 }
             ) if "events" in result else None
-            return {
-                **result,
-                "answer": "现有证据不足以支持该结论，请核对原文或补充信息。",
-                "status": "validation_failed",
-            }
+            return reject(
+                "unknown_citation_or_action_claim",
+                "现有证据不足以支持该结论，请核对原文或补充信息。",
+                unknown_references=sorted(unknown),
+                pending_completion_claim=bool(pending and completion_claim),
+            )
         provider = getattr(self.llm, "provider", self.llm)
         if any(
             o["output"].get("success") and support_receipt(o["output"].get("output", {})) == answer
@@ -123,14 +143,18 @@ class AnswerValidator:
             return result
         if not observations:
             if completion_claim:
-                return {
-                    **result,
-                    "answer": "尚未执行或核实业务操作，无法确认已完成。",
-                    "status": "validation_failed",
-                }
+                return reject(
+                    "unverified_action_completion", "尚未执行或核实业务操作，无法确认已完成。"
+                )
             return result
         if answer in verified and len(observations) == 1:
             return result
+        if not allow_correction and result["status"] == "completed" and chunks and not cited:
+            return reject(
+                "missing_evidence_citation",
+                "答复缺少可核对的证据引用。",
+                available_references=sorted(chunks),
+            )
         if isinstance(provider, OfflineLLMProvider):
             return result
         checker = FaithfulnessChecker(self.llm)

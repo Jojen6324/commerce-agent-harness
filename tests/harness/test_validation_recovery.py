@@ -350,3 +350,38 @@ async def test_failed_output_returns_to_main_agent_with_tools_for_missing_eviden
     feedback = llm.generate.await_args_list[1].args[0][-1]["content"]
     assert "需要核实品类范围" in feedback and "不是政策证据" in feedback
     assert len(result["validation"]["attempts"]) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "answer,observations,reason",
+    [
+        ("退款已到账", [], "unverified_refund_completion"),
+        ("业务已提交", [], "unverified_action_completion"),
+        ("未知 [invented]", [], "unknown_citation_or_action_claim"),
+        (
+            "数码商品超15天转保修",
+            [
+                {
+                    "name": "search_knowledge",
+                    "output": {"success": True, "output": {"chunks": [chunk().model_dump()]}},
+                }
+            ],
+            "missing_evidence_citation",
+        ),
+    ],
+)
+async def test_deterministic_rejections_carry_feedback_for_shared_tool_loop(
+    answer, observations, reason
+):
+    llm = SimpleNamespace(generate=AsyncMock())
+    result = await AnswerValidator(llm).validate(
+        "核对规则",
+        {"status": "completed", "answer": answer, "observations": observations},
+        allow_correction=False,
+    )
+    assert result["status"] == "validation_failed"
+    assert result["failure"]["stage"] == "output_validation"
+    assert result["failure"]["reason"] == reason
+    assert result["validation"]["attempts"][0]["reason"] == reason
+    llm.generate.assert_not_awaited()

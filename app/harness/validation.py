@@ -19,6 +19,21 @@ def cited_refs(answer):
     return refs
 
 
+def asserted_phrase(answer, phrase):
+    """Return true only when a completion phrase is stated affirmatively."""
+    for match in re.finditer(re.escape(phrase), answer):
+        prefix = answer[max(0, match.start() - 16) : match.start()]
+        if re.search(
+            r"(?:不代表|不等于|并非|不是|未能|不能(?:证明|确认|声称|说明)?|"
+            r"无法(?:证明|确认|声称|说明)?|没有|尚未|并不|未)"
+            r"[^，。；！？!?]{0,8}$",
+            prefix,
+        ):
+            continue
+        return True
+    return False
+
+
 class AnswerValidator:
     def __init__(self, llm):
         self.llm = llm
@@ -47,9 +62,12 @@ class AnswerValidator:
         unknown = cited - known_refs
         pending = any(o["output"].get("pending_action") for o in observations)
         completion_claim = any(
-            w in answer for w in ("退款已完成", "已到账", "退款成功", "已取消", "已提交")
+            asserted_phrase(answer, word)
+            for word in ("退款已完成", "已到账", "退款成功", "已取消", "已提交")
         )
-        refund_complete = any(w in answer for w in ("退款已完成", "已到账", "退款成功"))
+        refund_complete = any(
+            asserted_phrase(answer, word) for word in ("退款已完成", "已到账", "退款成功")
+        )
         has_settled = any(
             d["result"].get("status") == "refunded"
             or any(r.get("status") == "refunded" for r in d["result"].get("refunds", []))

@@ -136,14 +136,15 @@ class AgentRunner:
                         raise LLMProviderError("incomplete response", retryable=False)
                     calls, text = response.tool_calls, response.content
                 if not calls:
-                    issue = completion_issue(
+                    issues = [completion_issue(
                         text or "", main=spec.name == "main", observations=observations
-                    )
-                    if not issue and spec.name == "main":
-                        issue = policy_evidence_issue(query, observations)
+                    )]
+                    if spec.name == "main":
+                        issues.append(policy_evidence_issue(query, observations))
+                    issue = "；".join(item for item in issues if item)
                     if issue:
                         await event("completion_repair", reason=issue)
-                        if repairs < 1 and _step + 1 < spec.max_steps:
+                        if repairs < 2 and _step + 1 < spec.max_steps:
                             repairs += 1
                             messages.extend(
                                 [
@@ -444,7 +445,7 @@ class AgentRunner:
                         issue = policy_evidence_issue(query, observations)
                     if issue:
                         await event("completion_repair", reason=issue)
-                        if repairs < 1 and _step + 1 < spec.max_steps:
+                        if repairs < 2 and _step + 1 < spec.max_steps:
                             repairs += 1
                             messages.append(
                                 {"role": "system", "content": REPAIR_GUIDANCE.format(issue=issue)}

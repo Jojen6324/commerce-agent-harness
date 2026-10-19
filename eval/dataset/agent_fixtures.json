@@ -151,7 +151,7 @@
       ]
     },
     "knowledge_v1": {
-      "description": "现有Markdown知识库，必须检验散列，来源冲突通过语义审阅保留。",
+      "description": "现有Markdown知识库，必须检验散列，来源冲突通过语义审阅保留。 2026-10-19澄清通用举证期限、数码超期规则和备件等待时间的适用范围；原有天数和业务条件不变。",
       "depends_on": [],
       "files": {
         "knowledge/account_security.md": "3e593f4c4146af13a20b92df37f1dfa30bef8add7c4e7a03bee3d90420804cd8",
@@ -177,13 +177,13 @@
         "knowledge/privacy_cs.md": "48097995896a7e37db43ff6db84564a95dacf6419135f5db89285a78f1ae1637",
         "knowledge/promo_stacking.md": "0af1f5549189af9153698ec037807a4992358713add102f5d85c056247a09b47",
         "knowledge/refund_timeline.md": "50987388dbf1fbd5e4a0dc2d45b17b8865b01ce89db846538219f81cd4075524",
-        "knowledge/repair_onsite.md": "8db6488829c21cc46755e0d0183258655684ba0452dd4c1b1c4f8d2dda727dc0",
+        "knowledge/repair_onsite.md": "77c128900a435e2021525e0ac80ebc0bf98bf3bc2780e9d744586e01242e6aa9",
         "knowledge/restock_notify.md": "8cab0c2c2aa9fa95f634987c3708de8bbd26241840a0c1a12eabff02785d5fdf",
         "knowledge/return_apparel.md": "cadd4ae69405ff3c0cd15fa3307910e0db3a787670461a90888998af157d4c75",
         "knowledge/return_custom.md": "41e300ea107d2a2426e8509f6d8ec3aed95f6980e73adb381146c4ef627cc539",
-        "knowledge/return_electronics.md": "35f056a0896efd7bb3c382872c8a9408d2e0c24d676a072f3a5d6dc9e57b9423",
+        "knowledge/return_electronics.md": "a80bed73fa2526908b1cce9255b7aaef90044155e8907fe8131f674620a43564",
         "knowledge/return_food.md": "bdd67ccebcec0f81def4dfb7d64409e20f47c71e09ffbf4f29fb95223de6238d",
-        "knowledge/return_policy.md": "109f5a3ea25d8f5bcc5d19547b650a5c0c30246467112faaccebf63dedc2042a",
+        "knowledge/return_policy.md": "4696d1a4a8e205bd398237435189dae9da3fcd4cdbbce244dbc6620f1c127dc0",
         "knowledge/shipping.md": "ac5218dd81d47dff8cedec9bf38e85412b75e531de68bcbefd198ac3a995f316",
         "knowledge/shipping_address.md": "1aa1053644ce8a1c1a81f9c926e38618ef085628e063fd53d85d1606a005def9",
         "knowledge/shipping_cod.md": "6616e2a1f3c42de3c7ef4325a49eb136000ede060c5161b1324928163632f2d4",

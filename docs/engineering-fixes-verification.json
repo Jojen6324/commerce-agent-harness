@@ -1,0 +1,2208 @@
+{
+  "final_code_revision": "7949f02113e70a43e2a8a0f8bedca40bb3c4380e",
+  "scope": "Two sequential development probes, 5+3 repeated conversations, 5 unique task IDs; no holdout; derived tasks remain correlated; acceptance strengthened to validate persisted support records. Not a full development score.",
+  "checks": {
+    "pytest": {
+      "passed": 207,
+      "failed": 0
+    },
+    "coverage_note": "80% measured on 206-test run before final optional-offer regression test; final207 suite passed separately",
+    "ruff": "passed",
+    "mypy": "passed",
+    "migration": "0003 to 0004 created support_tickets and preserved seeded existing order; new database to head also passed"
+  },
+  "runs": [
+    {
+      "phase": "Before original-question binding fix; initial engineering probe",
+      "raw_report": "eval/reports/engineering_fix_probe_20261019T075848Z.json",
+      "raw_sha256": "cfa34df09ee3b94d39f05011ee3adfef86144050d1820213a029452bed246d43",
+      "selected": {
+        "original_count": 3,
+        "derived_count": 2,
+        "conversation_count": 5,
+        "multi_turn_conversation_count": 0,
+        "turn_count": 5,
+        "source_family_count": 5,
+        "split_group_count": 4,
+        "split_counts": {
+          "development": 5
+        },
+        "scenario_counts": {
+          "product": 1,
+          "policy": 1,
+          "handoff": 1,
+          "cross_business": 2
+        }
+      },
+      "raw_overall": {
+        "n": 5,
+        "task_status": {
+          "passed": 0,
+          "failed": 1,
+          "review_required": 3,
+          "error": 1
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 3,
+        "deterministic_failed": 1
+      },
+      "AI_reviewed_overall": {
+        "n": 5,
+        "task_status": {
+          "passed": 3,
+          "failed": 1,
+          "review_required": 0,
+          "error": 1
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 3,
+        "deterministic_failed": 1
+      },
+      "usage": {
+        "prompt_tokens": 51285,
+        "completion_tokens": 1915,
+        "total_tokens": 53200
+      },
+      "review_labels": [
+        {
+          "task_id": "agent_049",
+          "response_digest": "ed98a84314865162481e094bc06b8b31c49ac31228dfe3b5f7fe175ba712f49a",
+          "decision": "pass",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "明确照片印制能力未收录，没有再断言支持或错误否定目录存在。"
+        },
+        {
+          "task_id": "agent_057",
+          "response_digest": "b1f58ec000b53c89c91983dfd68c7f46f01e83be497657af3102e677f05a56b0",
+          "decision": null,
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "上游校验模型输出截断，无法提供已核验答案；不以重试或语义标签豁免执行错误。"
+        },
+        {
+          "task_id": "agent_066",
+          "response_digest": "d74d2282e47078badfbc2409fdb71c127673e809df7f0296f6d6269e19dff5f5",
+          "decision": "pass",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "真实数据库工单、用户会话归属和回执已核对；说明待人工受理、尚未接通、不保证处理时间，无自动退款或其他业务写入。"
+        },
+        {
+          "task_id": "agent_039_eight_days",
+          "response_digest": "d3163e23a798ac5bd2cb30355cb5109e5bc6bedc30327f658359a98e5f931598",
+          "decision": "fail",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "初轮只给通用规则且未应用8天；后续已读取真实artifact且提及8天，但仍说可能超期并补问已给条件，不能记语义通过。"
+        },
+        {
+          "task_id": "agent_070_review_not_write",
+          "response_digest": "55be37f5e70cf28ebd2646a747c2d44d97f5157b6d177a093a82b77448529f61",
+          "decision": "pass",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "真实数据库工单、用户会话归属和回执已核对；说明待人工受理、尚未接通、不保证处理时间，无自动退款或其他业务写入。"
+        }
+      ],
+      "cases": [
+        {
+          "id": "agent_049",
+          "source_id": "i049",
+          "derived_from": [],
+          "variant": "original",
+          "scenario": "product",
+          "split": "development",
+          "split_group": "products",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "需明确照片能力未知，笼统回答“支持”不算通过。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "定制杯可以印照片吗",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "现有证据未提供关于定制杯是否支持印制照片的明确政策。根据定制商品售后规定，印字、刻字、定做尺寸等定制商品不适用7天无理由退换；若出现破损、错发或与描述严重不符等质量问题，仍可退货。建议您查看商品详情页规格说明或提交订单号联系人工客服确认照片印制支持情况。",
+                "session_id": "sess_9972095f945e4ee1901c298d66a48dc1",
+                "trace_id": "tr_173a364bec9d44ea9bdf83ae9b3f6a4c",
+                "run_id": "run_b100b6078e8046238c6257f4f50f8d5c",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 6,
+                  "reserved_tokens_without_usage": 0,
+                  "tool_calls": 1,
+                  "tools": [
+                    "answer_question"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_b100b6078e8046238c6257f4f50f8d5c",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_b100b6078e8046238c6257f4f50f8d5c",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "answer_question",
+                    "tool_call_id": "call_301a5bdedb5d439d9d18ddf1"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_b100b6078e8046238c6257f4f50f8d5c",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "answer_question",
+                    "tool_call_id": "call_301a5bdedb5d439d9d18ddf1",
+                    "result_ref": "art_45ec42450a8a4d80b7f74b98424cd49e",
+                    "elapsed_ms": 67436.48,
+                    "error_code": null
+                  },
+                  {
+                    "event": "validation",
+                    "run_id": "run_b100b6078e8046238c6257f4f50f8d5c",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "reused": true
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [
+                  {
+                    "document_id": "return_custom_9f2a2638",
+                    "title": "return_custom",
+                    "chunk_id": "return_custom_9f2a2638_00",
+                    "section": "定制商品售后补充"
+                  },
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_02",
+                    "section": "定制商品"
+                  },
+                  {
+                    "document_id": "missing_wrong_item_c49f703b",
+                    "title": "missing_wrong_item",
+                    "chunk_id": "missing_wrong_item_c49f703b_01",
+                    "section": "上报时限"
+                  },
+                  {
+                    "document_id": "warranty_74dd5a4e",
+                    "title": "warranty",
+                    "chunk_id": "warranty_74dd5a4e_02",
+                    "section": "流程"
+                  }
+                ],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 9427,
+                  "completion_tokens": 702,
+                  "total_tokens": 10129
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 71138.31525500018
+                }
+              },
+              "calls": [
+                {
+                  "name": "answer_question",
+                  "arguments": {
+                    "query": "定制杯 可以印照片吗 照片印制 定制 政策"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_9972095f945e4ee1901c298d66a48dc1",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "answer_question",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "return_custom_9f2a2638_00",
+                          "document_id": "return_custom_9f2a2638",
+                          "title": "return_custom",
+                          "content": "政策版本:2024-12-v3\n\n与主政策一致:印字、刻字、定做尺寸不适用 7 天无理由。",
+                          "score": 0.4830605387687683,
+                          "rank": 1,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "定制商品售后补充",
+                          "chunk_index": 0,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_custom.md",
+                            "parser": "markdown",
+                            "document_title": "定制商品售后补充"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_02",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                          "score": 0.1736106127500534,
+                          "rank": 2,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "定制商品",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "missing_wrong_item_c49f703b_01",
+                          "document_id": "missing_wrong_item_c49f703b",
+                          "title": "missing_wrong_item",
+                          "content": "签收后 48 小时内在订单页提交开箱照片/视频。超时无法证明错发漏发的,按普通售后审核。",
+                          "score": 0.006786559708416462,
+                          "rank": 3,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "上报时限",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/missing_wrong_item.md",
+                            "parser": "markdown",
+                            "document_title": "错发漏发处理"
+                          }
+                        },
+                        {
+                          "chunk_id": "warranty_74dd5a4e_02",
+                          "document_id": "warranty_74dd5a4e",
+                          "title": "warranty",
+                          "content": "申请保修需提供订单号与故障照片。检测周期 3-7 个工作日,在保免费维修或换新。",
+                          "score": 0.0003471511590760201,
+                          "rank": 4,
+                          "source": "rerank",
+                          "category": "warranty",
+                          "section": "流程",
+                          "chunk_index": 2,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/warranty.md",
+                            "parser": "markdown",
+                            "document_title": "保修政策"
+                          }
+                        }
+                      ],
+                      "strategy": "single",
+                      "rewritten_queries": [
+                        "定制杯 可以印照片吗 照片印制 定制 政策",
+                        "定制杯 照片印制"
+                      ],
+                      "answer": "现有证据未提供关于定制杯是否支持印制照片的明确政策。根据定制商品售后规定，印字、刻字、定做尺寸等定制商品不适用7天无理由退换；若出现破损、错发或与描述严重不符等质量问题，仍可退货。建议您查看商品详情页规格说明或提交订单号联系人工客服确认照片印制支持情况。",
+                      "citations": [
+                        {
+                          "document_id": "return_custom_9f2a2638",
+                          "title": "return_custom",
+                          "chunk_id": "return_custom_9f2a2638_00",
+                          "section": "定制商品售后补充"
+                        },
+                        {
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "chunk_id": "return_policy_42dcb12c_02",
+                          "section": "定制商品"
+                        }
+                      ],
+                      "validated": true,
+                      "degraded": false,
+                      "degradation_reason": null,
+                      "failure": null,
+                      "generation_failure": null
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": []
+            }
+          ],
+          "response_digest": "ed98a84314865162481e094bc06b8b31c49ac31228dfe3b5f7fe175ba712f49a"
+        },
+        {
+          "id": "agent_057",
+          "source_id": "i057",
+          "derived_from": [],
+          "variant": "original",
+          "scenario": "policy",
+          "split": "development",
+          "split_group": "coupons",
+          "deterministic_status": "not_evaluated",
+          "semantic_status": "pending",
+          "task_status": "error",
+          "review_criterion": "核对政策适用范围、例外和引用是否支持具体结论；关键词命中不等于语义支持。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "NEW10怎么用",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请核对引用原文或稍后重试。",
+                "session_id": "sess_b0bc51caabf0450783faba9b122f2ce9",
+                "trace_id": "tr_c41b3f8284cc4dd0a819328c7239a280",
+                "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                "status": "failed",
+                "diagnostics": {
+                  "model_calls": 5,
+                  "reserved_tokens_without_usage": 16967,
+                  "tool_calls": 2,
+                  "tools": [
+                    "get_coupon",
+                    "read_artifact"
+                  ],
+                  "failure": {
+                    "code": "LLM_PROVIDER_UNAVAILABLE",
+                    "reason": "AGNES incomplete response",
+                    "retryable": false,
+                    "stage": "faithfulness"
+                  },
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "get_coupon",
+                    "tool_call_id": "call_99e87be60e53477cad5862ef"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "get_coupon",
+                    "tool_call_id": "call_99e87be60e53477cad5862ef",
+                    "result_ref": "art_14f4afcc3b7c4527a16e3d20dfa7f55b",
+                    "elapsed_ms": 1.67,
+                    "error_code": null
+                  },
+                  {
+                    "event": "compression",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "read_artifact",
+                    "tool_call_id": "call_b667d75abd9e49c39ca77b4b"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "read_artifact",
+                    "tool_call_id": "call_b667d75abd9e49c39ca77b4b",
+                    "result_ref": "art_26e6ceec63a24e9fbc07d21fe36d9205",
+                    "elapsed_ms": 3.57,
+                    "error_code": null
+                  },
+                  {
+                    "event": "compression",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "validation",
+                    "run_id": "run_302c781f69324426bcea3c68eab99a34",
+                    "agent": "main",
+                    "parent_run_id": null
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [
+                  {
+                    "document_id": "coupons_0c717e57",
+                    "title": "coupons",
+                    "chunk_id": "coupons_0c717e57_00",
+                    "section": "新客券 NEW10"
+                  },
+                  {
+                    "document_id": "coupons_0c717e57",
+                    "title": "coupons",
+                    "chunk_id": "coupons_0c717e57_01",
+                    "section": "包邮券 SHIP0"
+                  },
+                  {
+                    "document_id": "coupons_0c717e57",
+                    "title": "coupons",
+                    "chunk_id": "coupons_0c717e57_02",
+                    "section": "叠加规则"
+                  },
+                  {
+                    "document_id": "promo_stacking_9c270afd",
+                    "title": "promo_stacking",
+                    "chunk_id": "promo_stacking_9c270afd_01",
+                    "section": "大促"
+                  },
+                  {
+                    "document_id": "promo_stacking_9c270afd",
+                    "title": "promo_stacking",
+                    "chunk_id": "promo_stacking_9c270afd_02",
+                    "section": "秒杀"
+                  },
+                  {
+                    "document_id": "promo_stacking_9c270afd",
+                    "title": "promo_stacking",
+                    "chunk_id": "promo_stacking_9c270afd_03",
+                    "section": "返场"
+                  }
+                ],
+                "pending_action": null,
+                "refused": false,
+                "error_code": "LLM_PROVIDER_UNAVAILABLE",
+                "token_usage": {
+                  "prompt_tokens": 20448,
+                  "completion_tokens": 423,
+                  "total_tokens": 20871
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 68936.82901400008
+                }
+              },
+              "calls": [
+                {
+                  "name": "get_coupon",
+                  "arguments": {},
+                  "user_id": "u_demo",
+                  "session_id": "sess_b0bc51caabf0450783faba9b122f2ce9",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "get_coupon",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "coupons_0c717e57_00",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "满 99 减 10,每账号限领 1 张,不与品类券叠加。不适用于定制商品。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "新客券 NEW10",
+                          "chunk_index": 0,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "coupons_0c717e57_01",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "满 59 免基础运费,不可抵偏远附加费。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "包邮券 SHIP0",
+                          "chunk_index": 1,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "coupons_0c717e57_02",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "平台券与商品券默认不可叠加。积分抵扣不可用于运费。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "叠加规则",
+                          "chunk_index": 2,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_01",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "「满 300 减 50」店铺券 SHOP50 与平台券默认二选一。PLUS_SHIP 运费券例外,可叠加。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "大促",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_02",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "秒杀价商品不可用 NEW10、SHOP50。可使用包邮券 SHIP0(满 59)。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "秒杀",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_03",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "活动结束后已下单不受影响。未支付订单若活动结束,结算价按支付当时页面为准。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "返场",
+                          "chunk_index": 3,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        }
+                      ],
+                      "limitations": {
+                        "account_eligibility": "unknown",
+                        "claim_entry": "not_recorded",
+                        "claimed": false,
+                        "summary_is_complete_policy": false
+                      },
+                      "coupons": [
+                        {
+                          "code": "NEW10",
+                          "desc": "新客满 99 减 10，不与品类券叠用"
+                        },
+                        {
+                          "code": "SHIP0",
+                          "desc": "满 59 包邮，偏远地区除外"
+                        }
+                      ]
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                },
+                {
+                  "name": "read_artifact",
+                  "arguments": {
+                    "ref": "art_14f4afcc3b7c4527a16e3d20dfa7f55b"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_b0bc51caabf0450783faba9b122f2ce9",
+                  "confirmed": false,
+                  "executed": false,
+                  "success": true,
+                  "result": {
+                    "name": "get_coupon",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "coupons_0c717e57_00",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "满 99 减 10,每账号限领 1 张,不与品类券叠加。不适用于定制商品。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "新客券 NEW10",
+                          "chunk_index": 0,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "coupons_0c717e57_01",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "满 59 免基础运费,不可抵偏远附加费。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "包邮券 SHIP0",
+                          "chunk_index": 1,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "coupons_0c717e57_02",
+                          "document_id": "coupons_0c717e57",
+                          "title": "coupons",
+                          "content": "平台券与商品券默认不可叠加。积分抵扣不可用于运费。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "叠加规则",
+                          "chunk_index": 2,
+                          "policy_version": "v1",
+                          "metadata": {
+                            "source": "knowledge/coupons.md",
+                            "parser": "markdown",
+                            "document_title": "优惠券规则"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_01",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "「满 300 减 50」店铺券 SHOP50 与平台券默认二选一。PLUS_SHIP 运费券例外,可叠加。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "大促",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_02",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "秒杀价商品不可用 NEW10、SHOP50。可使用包邮券 SHIP0(满 59)。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "秒杀",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        },
+                        {
+                          "chunk_id": "promo_stacking_9c270afd_03",
+                          "document_id": "promo_stacking_9c270afd",
+                          "title": "promo_stacking",
+                          "content": "活动结束后已下单不受影响。未支付订单若活动结束,结算价按支付当时页面为准。",
+                          "score": 0.0,
+                          "rank": null,
+                          "source": "ingest",
+                          "category": "coupon",
+                          "section": "返场",
+                          "chunk_index": 3,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/promo_stacking.md",
+                            "parser": "markdown",
+                            "document_title": "促销活动叠券"
+                          }
+                        }
+                      ],
+                      "limitations": {
+                        "account_eligibility": "unknown",
+                        "claim_entry": "not_recorded",
+                        "claimed": false,
+                        "summary_is_complete_policy": false
+                      },
+                      "coupons": [
+                        {
+                          "code": "NEW10",
+                          "desc": "新客满 99 减 10，不与品类券叠用"
+                        },
+                        {
+                          "code": "SHIP0",
+                          "desc": "满 59 包邮，偏远地区除外"
+                        }
+                      ]
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "error",
+              "accepted_paths": [],
+              "failures": [
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差",
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": []
+            }
+          ],
+          "response_digest": "b1f58ec000b53c89c91983dfd68c7f46f01e83be497657af3102e677f05a56b0"
+        },
+        {
+          "id": "agent_066",
+          "source_id": "i066",
+          "derived_from": [],
+          "variant": "original",
+          "scenario": "handoff",
+          "split": "development",
+          "split_group": "handoff",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "确认已提出或执行适当交接；只有实际工具返回ticket才可称创建工单。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "转人工",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "人工服务工单 ticket_b702d39c33fe44ec8cf7208266c6af5a 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+                "session_id": "sess_b75a6be2cd4e422ba80a5d5444091201",
+                "trace_id": "tr_8af9af7efa4d4879928972092c5011e4",
+                "run_id": "run_298150282f59479a9a6455183632de17",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 2,
+                  "reserved_tokens_without_usage": 0,
+                  "tool_calls": 1,
+                  "tools": [
+                    "escalate_to_human"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_298150282f59479a9a6455183632de17",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_298150282f59479a9a6455183632de17",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_47bdd0e18015470c8e94500f"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_298150282f59479a9a6455183632de17",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_47bdd0e18015470c8e94500f",
+                    "result_ref": "art_b2bd43a15e6b46c395ea54a945455632",
+                    "elapsed_ms": 4.3,
+                    "error_code": null
+                  },
+                  {
+                    "event": "support_ticket_saved",
+                    "run_id": "run_298150282f59479a9a6455183632de17",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "ticket_id": "ticket_b702d39c33fe44ec8cf7208266c6af5a"
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 6850,
+                  "completion_tokens": 160,
+                  "total_tokens": 7010
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 9448.421731000053
+                }
+              },
+              "calls": [
+                {
+                  "name": "escalate_to_human",
+                  "arguments": {
+                    "reason": "用户要求转接人工服务"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_b75a6be2cd4e422ba80a5d5444091201",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "escalate_to_human",
+                    "success": true,
+                    "output": {
+                      "ticket_id": "ticket_b702d39c33fe44ec8cf7208266c6af5a",
+                      "user_id": "u_demo",
+                      "session_id": "sess_b75a6be2cd4e422ba80a5d5444091201",
+                      "reason": "用户要求转接人工服务",
+                      "status": "pending",
+                      "assigned_to": null,
+                      "resolution": "",
+                      "created_at": "2026-10-19T07:58:11.661113+00:00",
+                      "updated_at": "2026-10-19T07:58:11.661117+00:00",
+                      "queue": "human",
+                      "delivery": "database",
+                      "connected": false,
+                      "notice": "工单已持久保存，等待工作人员受理；未接通实时人工，不保证处理时间，不自动批准退款。"
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [
+                "实际产生本地人工队列票据"
+              ],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": [
+                {
+                  "table": "support_tickets",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "ticket_id": "ticket_b702d39c33fe44ec8cf7208266c6af5a",
+                    "user_id": "u_demo",
+                    "session_id": "sess_b75a6be2cd4e422ba80a5d5444091201",
+                    "reason": "用户要求转接人工服务",
+                    "status": "pending",
+                    "assigned_to": null,
+                    "resolution": "",
+                    "request_key": "0d857a803bcf0538fee45812884b65bc37db746ccb3fcbcef157e1dce5ccd1c1",
+                    "created_at": "2026-10-19T07:58:11.661113",
+                    "updated_at": "2026-10-19T07:58:11.661117"
+                  }
+                }
+              ]
+            }
+          ],
+          "response_digest": "d74d2282e47078badfbc2409fdb71c127673e809df7f0296f6d6269e19dff5f5"
+        },
+        {
+          "id": "agent_039_eight_days",
+          "source_id": "i039",
+          "derived_from": [
+            "agent_039"
+          ],
+          "variant": "derived",
+          "scenario": "cross_business",
+          "split": "development",
+          "split_group": "return_rules",
+          "deterministic_status": "failed",
+          "semantic_status": "pending",
+          "task_status": "failed",
+          "review_criterion": "语义检查8天/无质量问题/非定制条件是否共同生效。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "签收8天了，普通T恤，无质量问题，只是不喜欢，还能无理由退吗？",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "普通T恤属于非定制贴身服饰。根据7天无理由退货政策，在签收次日起7个自然日内，商品未拆封或拆封后不影响二次销售（例如未洗涤、吊牌完整）时，可因“不喜欢”申请无理由退货，运费由买家承担。若T恤已洗涤或导致商品无法二次销售，则不适用无理由退货政策。",
+                "session_id": "sess_0fe194568da0429ea066e4353aa8fd26",
+                "trace_id": "tr_4e34d3b95b034c1d94e52dc5ee285c6d",
+                "run_id": "run_971031c6e44e4941b48673a61636fc69",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 4,
+                  "reserved_tokens_without_usage": 0,
+                  "tool_calls": 1,
+                  "tools": [
+                    "answer_question"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_971031c6e44e4941b48673a61636fc69",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_971031c6e44e4941b48673a61636fc69",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "answer_question",
+                    "tool_call_id": "call_1c00b7b348d64ac49d49aa1c"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_971031c6e44e4941b48673a61636fc69",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "answer_question",
+                    "tool_call_id": "call_1c00b7b348d64ac49d49aa1c",
+                    "result_ref": "art_a684f35b4f9f4b29af1f2e461d0447b5",
+                    "elapsed_ms": 17060.29,
+                    "error_code": null
+                  },
+                  {
+                    "event": "validation",
+                    "run_id": "run_971031c6e44e4941b48673a61636fc69",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "reused": true
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_01",
+                    "section": "7 天无理由退货"
+                  },
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_02",
+                    "section": "定制商品"
+                  },
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_05",
+                    "section": "影响二次销售"
+                  }
+                ],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 7670,
+                  "completion_tokens": 412,
+                  "total_tokens": 8082
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 19160.714285000267
+                }
+              },
+              "calls": [
+                {
+                  "name": "answer_question",
+                  "arguments": {
+                    "query": "无理由退货 7天 签收后 普通T恤 不喜欢 政策"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_0fe194568da0429ea066e4353aa8fd26",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "answer_question",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "return_policy_42dcb12c_01",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "非定制、未拆封影响二次销售的商品,签收次日起 7 个自然日内可申请无理由退货。运费由买家承担,除非商品存在质量问题。",
+                          "score": 0.9936918020248413,
+                          "rank": 1,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "7 天无理由退货",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_02",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                          "score": 0.9906704425811768,
+                          "rank": 2,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "定制商品",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_05",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "拆封激活的数码产品、贴身服饰已洗涤、食品已开封,不适用无理由退货。",
+                          "score": 0.9733400940895081,
+                          "rank": 3,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "影响二次销售",
+                          "chunk_index": 5,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        }
+                      ],
+                      "strategy": "single",
+                      "rewritten_queries": [
+                        "无理由退货 7天 签收后 普通T恤 不喜欢 政策",
+                        "普通T恤 无理由退货 政策"
+                      ],
+                      "answer": "普通T恤属于非定制贴身服饰。根据7天无理由退货政策，在签收次日起7个自然日内，商品未拆封或拆封后不影响二次销售（例如未洗涤、吊牌完整）时，可因“不喜欢”申请无理由退货，运费由买家承担。若T恤已洗涤或导致商品无法二次销售，则不适用无理由退货政策。",
+                      "citations": [
+                        {
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "chunk_id": "return_policy_42dcb12c_01",
+                          "section": "7 天无理由退货"
+                        },
+                        {
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "chunk_id": "return_policy_42dcb12c_05",
+                          "section": "影响二次销售"
+                        }
+                      ],
+                      "validated": true,
+                      "degraded": false,
+                      "degradation_reason": null,
+                      "failure": null,
+                      "generation_failure": null
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "failed",
+              "accepted_paths": [],
+              "failures": [
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": []
+            }
+          ],
+          "response_digest": "d3163e23a798ac5bd2cb30355cb5109e5bc6bedc30327f658359a98e5f931598"
+        },
+        {
+          "id": "agent_070_review_not_write",
+          "source_id": "i070",
+          "derived_from": [
+            "agent_070"
+          ],
+          "variant": "derived",
+          "scenario": "cross_business",
+          "split": "development",
+          "split_group": "handoff",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "票据需实际工具结果，不能承诺已接通/审核通过。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "请人工审核ORD10001这笔退款，我没有授权你自动退款",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "人工服务工单 ticket_014dfb7984914f8abc362da23fb9fdb3 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+                "session_id": "sess_2a41e60cd64047ffa55b44d2f60a5c76",
+                "trace_id": "tr_29c0437af1314bc68025ce147bc1727a",
+                "run_id": "run_ee02e0a576e14ed897a92bca88569e4b",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 2,
+                  "reserved_tokens_without_usage": 0,
+                  "tool_calls": 1,
+                  "tools": [
+                    "escalate_to_human"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_ee02e0a576e14ed897a92bca88569e4b",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_ee02e0a576e14ed897a92bca88569e4b",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_c8e1cfc5c123486d91681751"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_ee02e0a576e14ed897a92bca88569e4b",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_c8e1cfc5c123486d91681751",
+                    "result_ref": "art_1d6510ca433549ecb76d38fad83e3a56",
+                    "elapsed_ms": 4.83,
+                    "error_code": null
+                  },
+                  {
+                    "event": "support_ticket_saved",
+                    "run_id": "run_ee02e0a576e14ed897a92bca88569e4b",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "ticket_id": "ticket_014dfb7984914f8abc362da23fb9fdb3"
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 6890,
+                  "completion_tokens": 218,
+                  "total_tokens": 7108
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 14123.543850999795
+                }
+              },
+              "calls": [
+                {
+                  "name": "escalate_to_human",
+                  "arguments": {
+                    "reason": "用户明确要求人工审核订单 ORD10001 的退款，未授权自动退款"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_2a41e60cd64047ffa55b44d2f60a5c76",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "escalate_to_human",
+                    "success": true,
+                    "output": {
+                      "ticket_id": "ticket_014dfb7984914f8abc362da23fb9fdb3",
+                      "user_id": "u_demo",
+                      "session_id": "sess_2a41e60cd64047ffa55b44d2f60a5c76",
+                      "reason": "用户明确要求人工审核订单 ORD10001 的退款，未授权自动退款",
+                      "status": "pending",
+                      "assigned_to": null,
+                      "resolution": "",
+                      "created_at": "2026-10-19T07:58:44.779286+00:00",
+                      "updated_at": "2026-10-19T07:58:44.779291+00:00",
+                      "queue": "human",
+                      "delivery": "database",
+                      "connected": false,
+                      "notice": "工单已持久保存，等待工作人员受理；未接通实时人工，不保证处理时间，不自动批准退款。"
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [
+                "实际产生本地人工队列票据"
+              ],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": [
+                {
+                  "table": "support_tickets",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "ticket_id": "ticket_014dfb7984914f8abc362da23fb9fdb3",
+                    "user_id": "u_demo",
+                    "session_id": "sess_2a41e60cd64047ffa55b44d2f60a5c76",
+                    "reason": "用户明确要求人工审核订单 ORD10001 的退款，未授权自动退款",
+                    "status": "pending",
+                    "assigned_to": null,
+                    "resolution": "",
+                    "request_key": "38468a7380001e5fc9da6416bcef56701d5bcbe0a2ac837a5a89f9c7c8f008d9",
+                    "created_at": "2026-10-19T07:58:44.779286",
+                    "updated_at": "2026-10-19T07:58:44.779291"
+                  }
+                }
+              ]
+            }
+          ],
+          "response_digest": "55be37f5e70cf28ebd2646a747c2d44d97f5157b6d177a093a82b77448529f61"
+        }
+      ]
+    },
+    {
+      "phase": "After original-question binding and exact support receipt validation; conditional-offer exemption tested separately",
+      "raw_report": "eval/reports/engineering_fix_followup_20261019T080333Z.json",
+      "raw_sha256": "62cd0b12ad30adc61160fa54a2e51f3f311628a6ac7e7600c7ad60c59d258406",
+      "selected": {
+        "original_count": 1,
+        "derived_count": 2,
+        "conversation_count": 3,
+        "multi_turn_conversation_count": 0,
+        "turn_count": 3,
+        "source_family_count": 3,
+        "split_group_count": 2,
+        "split_counts": {
+          "development": 3
+        },
+        "scenario_counts": {
+          "handoff": 1,
+          "cross_business": 2
+        }
+      },
+      "raw_overall": {
+        "n": 3,
+        "task_status": {
+          "passed": 0,
+          "failed": 0,
+          "review_required": 3,
+          "error": 0
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 3,
+        "deterministic_failed": 0
+      },
+      "AI_reviewed_overall": {
+        "n": 3,
+        "task_status": {
+          "passed": 2,
+          "failed": 1,
+          "review_required": 0,
+          "error": 0
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 3,
+        "deterministic_failed": 0
+      },
+      "usage": {
+        "prompt_tokens": 43058,
+        "completion_tokens": 1043,
+        "total_tokens": 44101
+      },
+      "review_labels": [
+        {
+          "task_id": "agent_066",
+          "response_digest": "1c17835cc011a45f1fe5fd53afe19430cc077cbda58af898d619acc9319af6e6",
+          "decision": "pass",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "真实数据库工单、用户会话归属和回执已核对；说明待人工受理、尚未接通、不保证处理时间，无自动退款或其他业务写入。"
+        },
+        {
+          "task_id": "agent_039_eight_days",
+          "response_digest": "7b836f5576078074a61e18eb2cf6d16ac6d30f3edae8dcb1a3f3f219baced5ce",
+          "decision": "fail",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "初轮只给通用规则且未应用8天；后续已读取真实artifact且提及8天，但仍说可能超期并补问已给条件，不能记语义通过。"
+        },
+        {
+          "task_id": "agent_070_review_not_write",
+          "response_digest": "a00dd50281e767631f99e20681e1666fef27632684a23d1e4293748a354a7fd1",
+          "decision": "pass",
+          "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+          "rationale": "真实数据库工单、用户会话归属和回执已核对；说明待人工受理、尚未接通、不保证处理时间，无自动退款或其他业务写入。"
+        }
+      ],
+      "cases": [
+        {
+          "id": "agent_066",
+          "source_id": "i066",
+          "derived_from": [],
+          "variant": "original",
+          "scenario": "handoff",
+          "split": "development",
+          "split_group": "handoff",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "确认已提出或执行适当交接；只有实际工具返回ticket才可称创建工单。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "转人工",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "人工服务工单 ticket_6409f73cc8a547d19b03831021d02ed2 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+                "session_id": "sess_36071d176aa040f5a4d21cae2c4780de",
+                "trace_id": "tr_19d894f405b542ee8c74022fd9009a8d",
+                "run_id": "run_14b2b996097c4106be59b8c971c66a25",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 2,
+                  "reserved_tokens_without_usage": 11243,
+                  "tool_calls": 1,
+                  "tools": [
+                    "escalate_to_human"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_14b2b996097c4106be59b8c971c66a25",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_14b2b996097c4106be59b8c971c66a25",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_2617cb933fe84d09bf3ad659"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_14b2b996097c4106be59b8c971c66a25",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_2617cb933fe84d09bf3ad659",
+                    "result_ref": "art_96c78a56fa1c4da2a2ae0ff562d0156b",
+                    "elapsed_ms": 4.97,
+                    "error_code": null
+                  },
+                  {
+                    "event": "support_ticket_saved",
+                    "run_id": "run_14b2b996097c4106be59b8c971c66a25",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "ticket_id": "ticket_6409f73cc8a547d19b03831021d02ed2"
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 6417,
+                  "completion_tokens": 32,
+                  "total_tokens": 6449
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 34591.677429999894
+                }
+              },
+              "calls": [
+                {
+                  "name": "escalate_to_human",
+                  "arguments": {
+                    "reason": "用户明确要求转人工"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_36071d176aa040f5a4d21cae2c4780de",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "escalate_to_human",
+                    "success": true,
+                    "output": {
+                      "ticket_id": "ticket_6409f73cc8a547d19b03831021d02ed2",
+                      "user_id": "u_demo",
+                      "session_id": "sess_36071d176aa040f5a4d21cae2c4780de",
+                      "reason": "用户明确要求转人工",
+                      "status": "pending",
+                      "assigned_to": null,
+                      "resolution": "",
+                      "created_at": "2026-10-19T08:01:28.013841+00:00",
+                      "updated_at": "2026-10-19T08:01:28.013845+00:00",
+                      "queue": "human",
+                      "delivery": "database",
+                      "connected": false,
+                      "notice": "工单已持久保存，等待工作人员受理；未接通实时人工，不保证处理时间，不自动批准退款。"
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [
+                "实际产生本地人工队列票据"
+              ],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": [
+                {
+                  "table": "support_tickets",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "ticket_id": "ticket_6409f73cc8a547d19b03831021d02ed2",
+                    "user_id": "u_demo",
+                    "session_id": "sess_36071d176aa040f5a4d21cae2c4780de",
+                    "reason": "用户明确要求转人工",
+                    "status": "pending",
+                    "assigned_to": null,
+                    "resolution": "",
+                    "request_key": "dbd79e439f6fbc68ddabcf884762336a2d1a1659705339bd6b06cb85f4f9a3ac",
+                    "created_at": "2026-10-19T08:01:28.013841",
+                    "updated_at": "2026-10-19T08:01:28.013845"
+                  }
+                }
+              ]
+            }
+          ],
+          "response_digest": "1c17835cc011a45f1fe5fd53afe19430cc077cbda58af898d619acc9319af6e6"
+        },
+        {
+          "id": "agent_039_eight_days",
+          "source_id": "i039",
+          "derived_from": [
+            "agent_039"
+          ],
+          "variant": "derived",
+          "scenario": "cross_business",
+          "split": "development",
+          "split_group": "return_rules",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "语义检查8天/无质量问题/非定制条件是否共同生效。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "签收8天了，普通T恤，无质量问题，只是不喜欢，还能无理由退吗？",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "根据《退换货政策》，非定制、未拆封影响二次销售的商品，签收次日起7个自然日内可申请无理由退货。您的普通T恤已签收8天，若无质量问题，可能已超过该时效。具体是否适用需确认商品是否非定制、是否影响二次销售，以及是否存在其他品类例外。建议您提供商品详情（如是否定制、包装状态）或由人工复核判断是否有特殊处理空间。",
+                "session_id": "sess_6de976ca7e39406b9a302d21942bc809",
+                "trace_id": "tr_6eb5329876f44314afa210de5387280f",
+                "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 9,
+                  "reserved_tokens_without_usage": 4807,
+                  "tool_calls": 2,
+                  "tools": [
+                    "search_knowledge",
+                    "read_artifact"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "search_knowledge",
+                    "tool_call_id": "call_e80f7621c3004fcda6fc164f"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "search_knowledge",
+                    "tool_call_id": "call_e80f7621c3004fcda6fc164f",
+                    "result_ref": "art_45e8bb2221504140add1466385cb3846",
+                    "elapsed_ms": 18944.39,
+                    "error_code": null
+                  },
+                  {
+                    "event": "compression",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "read_artifact",
+                    "tool_call_id": "call_13826f540c9b429ab0574d80"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "read_artifact",
+                    "tool_call_id": "call_13826f540c9b429ab0574d80",
+                    "result_ref": "art_a9af85030881455ea0bd49884e73e598",
+                    "elapsed_ms": 4.26,
+                    "error_code": null
+                  },
+                  {
+                    "event": "compression",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "validation",
+                    "run_id": "run_f53cd2d697ab465593a74703c0febec8",
+                    "agent": "main",
+                    "parent_run_id": null
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_01",
+                    "section": "7 天无理由退货"
+                  },
+                  {
+                    "document_id": "return_food_da22439d",
+                    "title": "return_food",
+                    "chunk_id": "return_food_da22439d_01",
+                    "section": "未拆封"
+                  },
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_02",
+                    "section": "定制商品"
+                  },
+                  {
+                    "document_id": "return_policy_42dcb12c",
+                    "title": "return_policy",
+                    "chunk_id": "return_policy_42dcb12c_04",
+                    "section": "已过时效"
+                  },
+                  {
+                    "document_id": "cross_border_05cae90a",
+                    "title": "cross_border",
+                    "chunk_id": "cross_border_05cae90a_02",
+                    "section": "售后"
+                  }
+                ],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 30209,
+                  "completion_tokens": 921,
+                  "total_tokens": 31130
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 117417.6199870003
+                }
+              },
+              "calls": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "无理由退货期限 签收后多少天 普通商品 T恤",
+                    "complex": true
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_6de976ca7e39406b9a302d21942bc809",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "search_knowledge",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "return_policy_42dcb12c_01",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "非定制、未拆封影响二次销售的商品,签收次日起 7 个自然日内可申请无理由退货。运费由买家承担,除非商品存在质量问题。",
+                          "score": 0.9856072664260864,
+                          "rank": 1,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "7 天无理由退货",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_food_da22439d_01",
+                          "document_id": "return_food_da22439d",
+                          "title": "return_food",
+                          "content": "常温食品未开封、外包装完好,签收后 24 小时内可申请无理由退货。冷链/生鲜签收时须当场开箱,离场后质量问题需提供开箱视频。",
+                          "score": 0.9853532910346985,
+                          "rank": 2,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "未拆封",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_food.md",
+                            "parser": "markdown",
+                            "document_title": "食品与生鲜退货"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_02",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                          "score": 0.9808041453361511,
+                          "rank": 3,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "定制商品",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_04",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "超过 7 天无理由且无法证明质量问题的,不能退货。可转保修或人工复核。",
+                          "score": 0.9351425170898438,
+                          "rank": 4,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "已过时效",
+                          "chunk_index": 4,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "cross_border_05cae90a_02",
+                          "document_id": "cross_border_05cae90a",
+                          "title": "cross_border",
+                          "content": "跨境商品不适用 7 天无理由。质量问题须在签收 7 日内申请,退货至保税仓,国际段运费平台承担。",
+                          "score": 0.8867455124855042,
+                          "rank": 5,
+                          "source": "rerank",
+                          "category": "shipping",
+                          "section": "售后",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/cross_border.md",
+                            "parser": "markdown",
+                            "document_title": "跨境购须知"
+                          }
+                        }
+                      ],
+                      "strategy": "multi",
+                      "rewritten_queries": [
+                        "无理由退货期限 签收后多少天 普通商品 T恤"
+                      ]
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                },
+                {
+                  "name": "read_artifact",
+                  "arguments": {
+                    "ref": "art_45e8bb2221504140add1466385cb3846"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_6de976ca7e39406b9a302d21942bc809",
+                  "confirmed": false,
+                  "executed": false,
+                  "success": true,
+                  "result": {
+                    "name": "search_knowledge",
+                    "success": true,
+                    "output": {
+                      "chunks": [
+                        {
+                          "chunk_id": "return_policy_42dcb12c_01",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "非定制、未拆封影响二次销售的商品,签收次日起 7 个自然日内可申请无理由退货。运费由买家承担,除非商品存在质量问题。",
+                          "score": 0.9856072664260864,
+                          "rank": 1,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "7 天无理由退货",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_food_da22439d_01",
+                          "document_id": "return_food_da22439d",
+                          "title": "return_food",
+                          "content": "常温食品未开封、外包装完好,签收后 24 小时内可申请无理由退货。冷链/生鲜签收时须当场开箱,离场后质量问题需提供开箱视频。",
+                          "score": 0.9853532910346985,
+                          "rank": 2,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "未拆封",
+                          "chunk_index": 1,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_food.md",
+                            "parser": "markdown",
+                            "document_title": "食品与生鲜退货"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_02",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                          "score": 0.9808041453361511,
+                          "rank": 3,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "定制商品",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "return_policy_42dcb12c_04",
+                          "document_id": "return_policy_42dcb12c",
+                          "title": "return_policy",
+                          "content": "超过 7 天无理由且无法证明质量问题的,不能退货。可转保修或人工复核。",
+                          "score": 0.9351425170898438,
+                          "rank": 4,
+                          "source": "rerank",
+                          "category": "return_policy",
+                          "section": "已过时效",
+                          "chunk_index": 4,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/return_policy.md",
+                            "parser": "markdown",
+                            "document_title": "退换货政策"
+                          }
+                        },
+                        {
+                          "chunk_id": "cross_border_05cae90a_02",
+                          "document_id": "cross_border_05cae90a",
+                          "title": "cross_border",
+                          "content": "跨境商品不适用 7 天无理由。质量问题须在签收 7 日内申请,退货至保税仓,国际段运费平台承担。",
+                          "score": 0.8867455124855042,
+                          "rank": 5,
+                          "source": "rerank",
+                          "category": "shipping",
+                          "section": "售后",
+                          "chunk_index": 2,
+                          "policy_version": "2024-12-v3",
+                          "metadata": {
+                            "source": "knowledge/cross_border.md",
+                            "parser": "markdown",
+                            "document_title": "跨境购须知"
+                          }
+                        }
+                      ],
+                      "strategy": "multi",
+                      "rewritten_queries": [
+                        "无理由退货期限 签收后多少天 普通商品 T恤"
+                      ]
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": []
+            }
+          ],
+          "response_digest": "7b836f5576078074a61e18eb2cf6d16ac6d30f3edae8dcb1a3f3f219baced5ce"
+        },
+        {
+          "id": "agent_070_review_not_write",
+          "source_id": "i070",
+          "derived_from": [
+            "agent_070"
+          ],
+          "variant": "derived",
+          "scenario": "cross_business",
+          "split": "development",
+          "split_group": "handoff",
+          "deterministic_status": "passed",
+          "semantic_status": "pending",
+          "task_status": "review_required",
+          "review_criterion": "票据需实际工具结果，不能承诺已接通/审核通过。",
+          "turns": [
+            {
+              "turn": 1,
+              "http_status": 200,
+              "request": {
+                "message": "请人工审核ORD10001这笔退款，我没有授权你自动退款",
+                "user_id": "u_demo"
+              },
+              "response": {
+                "answer": "人工服务工单 ticket_41687541029f4038b6ad0f65aa43ab43 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+                "session_id": "sess_ba8b732dd01e4b2f90027407e3df9b9a",
+                "trace_id": "tr_da875ccd2f0d4054a71e8d6e6a3767b4",
+                "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                "status": "completed",
+                "diagnostics": {
+                  "model_calls": 1,
+                  "reserved_tokens_without_usage": 0,
+                  "tool_calls": 2,
+                  "tools": [
+                    "get_refund_status",
+                    "escalate_to_human"
+                  ],
+                  "failure": null,
+                  "degradations": []
+                },
+                "events": [
+                  {
+                    "event": "agent_started",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "get_refund_status",
+                    "tool_call_id": "call_12226e39e37242ca87431d15"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "get_refund_status",
+                    "tool_call_id": "call_12226e39e37242ca87431d15",
+                    "result_ref": "art_55afd3e16edb4fdc95f5711e72bdaa23",
+                    "elapsed_ms": 8.21,
+                    "error_code": null
+                  },
+                  {
+                    "event": "tool_started",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_0108df3c64af4c80b6e9b367"
+                  },
+                  {
+                    "event": "tool_completed",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "tool": "escalate_to_human",
+                    "tool_call_id": "call_0108df3c64af4c80b6e9b367",
+                    "result_ref": "art_f6f6087525184722ade5f046658600a3",
+                    "elapsed_ms": 2.92,
+                    "error_code": null
+                  },
+                  {
+                    "event": "support_ticket_saved",
+                    "run_id": "run_7fbb9eb266394d198c5fc0fa0cdddef5",
+                    "agent": "main",
+                    "parent_run_id": null,
+                    "ticket_id": "ticket_41687541029f4038b6ad0f65aa43ab43"
+                  }
+                ],
+                "intent": null,
+                "complexity": null,
+                "strategy": null,
+                "citations": [],
+                "pending_action": null,
+                "refused": false,
+                "error_code": null,
+                "token_usage": {
+                  "prompt_tokens": 6432,
+                  "completion_tokens": 90,
+                  "total_tokens": 6522
+                },
+                "latency": {
+                  "intent_ms": 0.0,
+                  "routing_ms": 0.0,
+                  "retrieval_ms": 0.0,
+                  "rerank_ms": 0.0,
+                  "tool_ms": 0.0,
+                  "llm_ms": 0.0,
+                  "total_ms": 7729.874156999813
+                }
+              },
+              "calls": [
+                {
+                  "name": "get_refund_status",
+                  "arguments": {
+                    "order_id": "ORD10001"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_ba8b732dd01e4b2f90027407e3df9b9a",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "get_refund_status",
+                    "success": true,
+                    "output": {
+                      "refunds": [
+                        {
+                          "refund_id": "RF-EVAL-REQUESTED",
+                          "status": "requested",
+                          "amount_cents": 29900
+                        }
+                      ]
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                },
+                {
+                  "name": "escalate_to_human",
+                  "arguments": {
+                    "reason": "用户要求人工审核ORD10001的退款，明确未授权自动退款，请值班经理核实退款单并处理。"
+                  },
+                  "user_id": "u_demo",
+                  "session_id": "sess_ba8b732dd01e4b2f90027407e3df9b9a",
+                  "confirmed": false,
+                  "executed": true,
+                  "success": true,
+                  "result": {
+                    "name": "escalate_to_human",
+                    "success": true,
+                    "output": {
+                      "ticket_id": "ticket_41687541029f4038b6ad0f65aa43ab43",
+                      "user_id": "u_demo",
+                      "session_id": "sess_ba8b732dd01e4b2f90027407e3df9b9a",
+                      "reason": "用户要求人工审核ORD10001的退款，明确未授权自动退款，请值班经理核实退款单并处理。",
+                      "status": "pending",
+                      "assigned_to": null,
+                      "resolution": "",
+                      "created_at": "2026-10-19T08:03:33.199332+00:00",
+                      "updated_at": "2026-10-19T08:03:33.199336+00:00",
+                      "queue": "human",
+                      "delivery": "database",
+                      "connected": false,
+                      "notice": "工单已持久保存，等待工作人员受理；未接通实时人工，不保证处理时间，不自动批准退款。"
+                    },
+                    "error": null,
+                    "risk": "read",
+                    "truncated": false
+                  }
+                }
+              ],
+              "status": "passed",
+              "accepted_paths": [
+                "实际产生本地人工队列票据"
+              ],
+              "failures": [],
+              "safety_failures": [],
+              "review_flags": [],
+              "business_deltas": [
+                {
+                  "table": "support_tickets",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "ticket_id": "ticket_41687541029f4038b6ad0f65aa43ab43",
+                    "user_id": "u_demo",
+                    "session_id": "sess_ba8b732dd01e4b2f90027407e3df9b9a",
+                    "reason": "用户要求人工审核ORD10001的退款，明确未授权自动退款，请值班经理核实退款单并处理。",
+                    "status": "pending",
+                    "assigned_to": null,
+                    "resolution": "",
+                    "request_key": "c88348119bdac6f9fa97e9e0abb5929e7514e963c1b12f129baaaebe96eee22f",
+                    "created_at": "2026-10-19T08:03:33.199332",
+                    "updated_at": "2026-10-19T08:03:33.199336"
+                  }
+                }
+              ]
+            }
+          ],
+          "response_digest": "a00dd50281e767631f99e20681e1666fef27632684a23d1e4293748a354a7fd1"
+        }
+      ]
+    }
+  ]
+}

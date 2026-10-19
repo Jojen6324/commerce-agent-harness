@@ -34,33 +34,58 @@ class FaithfulnessChecker:
         tool_results_text: str,
     ) -> FaithfulnessResult:
         evidence = "\n\n".join(evidence_text(c) for c in chunks[:8]) or "(none)"
-        try:
-            response = await self._llm.generate(
-                [
-                    {"role": "system", "content": FAITHFULNESS_SYSTEM},
-                    {
-                        "role": "user",
-                        "content": FAITHFULNESS_USER.format(
-                            query=query,
-                            answer=answer,
-                            evidence=evidence,
-                            tool_results=tool_results_text or "(none)",
-                        ),
+        messages = [
+            {"role": "system", "content": FAITHFULNESS_SYSTEM},
+            {
+                "role": "user",
+                "content": FAITHFULNESS_USER.format(
+                    query=query,
+                    answer=answer,
+                    evidence=evidence,
+                    tool_results=tool_results_text or "(none)",
+                ),
+            },
+        ]
+        for attempt in range(2):
+            try:
+                response = await self._llm.generate(
+                    messages,
+                    temperature=0.0,
+                    max_tokens=512 if attempt == 0 else 768,
+                    response_format={"type": "json_object"},
+                )
+                if response.finish_reason != "stop":
+                    raise LLMProviderError(
+                        "faithfulness response incomplete",
+                        retryable=False,
+                        finish_reason=response.finish_reason,
+                    )
+                return parse_model(response.content, FaithfulnessResult)
+            except (LLMProviderError, LLMOutputError) as exc:
+                # Format/length recovery only. Authentication errors, rate limits,
+                # content filtering and transport failures retain provider policy.
+                recoverable = isinstance(exc, LLMOutputError) or (
+                    isinstance(exc, LLMProviderError) and exc.finish_reason == "length"
+                )
+                if attempt == 0 and recoverable:
+                    messages = [
+                        *messages,
+                        {
+                            "role": "system",
+                            "content": "上次校验JSON未完整生成或格式无效。请重新核对相同证据，输出完整且精简的JSON；理由最多80字。不得默认通过。",
+                        },
+                    ]
+                    continue
+                return FaithfulnessResult(
+                    supported=False,
+                    rationale="checker_unavailable",
+                    failure={
+                        "code": exc.error_code.value,
+                        "reason": exc.message,
+                        "retryable": exc.retryable,
+                        "stage": "faithfulness",
+                        "finish_reason": getattr(exc, "finish_reason", None),
+                        "attempts": attempt + 1,
                     },
-                ],
-                temperature=0.0,
-                max_tokens=256,
-                response_format={"type": "json_object"},
-            )
-            return parse_model(response.content, FaithfulnessResult)
-        except (LLMProviderError, LLMOutputError) as exc:
-            return FaithfulnessResult(
-                supported=False,
-                rationale="checker_unavailable",
-                failure={
-                    "code": exc.error_code.value,
-                    "reason": exc.message,
-                    "retryable": exc.retryable,
-                    "stage": "faithfulness",
-                },
-            )
+                )
+        raise AssertionError("unreachable")

@@ -201,6 +201,58 @@ class OrderRepository:
             for row in rows
         ]
 
+    async def recommend_products(
+        self,
+        *,
+        query: str = "",
+        category: str | None = None,
+        max_price_cents: int | None = None,
+        in_stock_only: bool = True,
+        limit: int = 3,
+    ) -> tuple[list[Product], str]:
+        # Hard constraints are SQL predicates BEFORE LIMIT, never LLM filtering.
+        statement = select(ProductRow)
+        if category:
+            statement = statement.where(ProductRow.category == category)
+        if max_price_cents is not None:
+            statement = statement.where(ProductRow.price_cents <= max_price_cents)
+        if in_stock_only:
+            statement = statement.where(ProductRow.inventory > 0)
+        statement = statement.order_by(ProductRow.price_cents, ProductRow.sku).limit(limit)
+        rows = []
+        mode = "constraints_only"
+        if query.strip():
+            pattern = f"%{escape_like(query.strip())}%"
+            rows = list(
+                (
+                    await self._session.scalars(
+                        statement.where(
+                            or_(
+                                ProductRow.name.ilike(pattern, escape="\\"),
+                                ProductRow.tags.ilike(pattern, escape="\\"),
+                                ProductRow.description.ilike(pattern, escape="\\"),
+                            )
+                        )
+                    )
+                ).all()
+            )
+            if rows:
+                mode = "text_and_constraints"
+        if not rows:
+            rows = list((await self._session.scalars(statement)).all())
+        return [
+            Product(
+                sku=r.sku,
+                name=r.name,
+                category=r.category,
+                price_cents=r.price_cents,
+                inventory=r.inventory,
+                tags=[t for t in r.tags.split(",") if t],
+                description=r.description,
+            )
+            for r in rows
+        ], mode
+
     async def get_refunds(self, order_id: str) -> list[RefundRow]:
         result = await self._session.execute(
             select(RefundRow).where(RefundRow.order_id == order_id)

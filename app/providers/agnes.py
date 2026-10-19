@@ -84,7 +84,9 @@ class AgnesProvider(DeepSeekProvider):
                     finish = choice.get("finish_reason", "stop")
                     # Truncated output cannot enter either JSON or tool execution paths.
                     if finish not in ("stop", "tool_calls"):
-                        raise LLMProviderError("AGNES incomplete response", retryable=False)
+                        raise LLMProviderError(
+                            "AGNES incomplete response", retryable=False, finish_reason=finish
+                        )
                     raw = body.get("usage") or {}
                     usage = TokenUsage(
                         **{

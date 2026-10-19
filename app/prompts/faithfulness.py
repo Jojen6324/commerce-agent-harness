@@ -9,6 +9,7 @@ hallucinated_spans：不被支持的短语
 未收录的参数、领取入口、报销流程和响应时间都是未知，不能以常识补足。
 人工工单的数据库保存/受理状态不是实时接通或经理路由；不得推断将来一定联系。
 paid_at/warehouse表示支付后待处理，不表示发货；city若标为收货城市不代表包裹定位。
+保持JSON精简：rationale不超过80字，hallucinated_spans至多3个简短原文片段。禁止输出长篇分析；格式精简不降低事实校验标准。
 """
 
 FAITHFULNESS_USER = """问题：{query}

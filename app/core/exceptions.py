@@ -59,7 +59,9 @@ class LLMProviderError(AppError):
         timeout: bool = False,
         rate_limited: bool = False,
         retryable: bool | None = None,
+        finish_reason: str | None = None,
     ) -> None:
+        self.finish_reason = finish_reason
         if timeout:
             code = ErrorCode.LLM_TIMEOUT
         elif rate_limited:

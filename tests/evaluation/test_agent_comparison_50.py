@@ -1,7 +1,9 @@
 """Schema and pairing regression for the separate agent comparison corpus."""
 import json
+import pytest
 
 from eval.task_schema import AgentTask, DATA_DIR
+from eval.behavior import evaluate
 from scripts.compare_agent_benchmark import pair_results
 
 DATASET = DATA_DIR / "agent_comparison_50.jsonl"
@@ -32,6 +34,28 @@ def test_comparison_requires_same_ids_and_digest():
              "deterministic_status": "passed", "turns": []} for i in ids
         ]}
     assert len(pair_results(report(["a"]), report(["a"]))) == 1
-    import pytest
     with pytest.raises(ValueError):
         pair_results(report(["a"]), report(["b"]))
+
+
+@pytest.mark.asyncio
+async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation():
+    report = await evaluate(
+        dataset_path=DATASET,
+        split="development",
+        limit=1,
+        delegation_enabled=True,
+        monitor=True,
+    )
+    case = report["cases"][0]
+    task_events = [
+        event
+        for event in report["monitoring"]["events"]
+        if event["event"] == "task_finished" and event["task_id"] == case["id"]
+    ]
+    assert report["delegation_enabled"] is True
+    assert case["turns"][0]["wall_elapsed_ms"] >= 0
+    assert len(task_events) == 1
+    assert task_events[0]["delegation_expected"] is True
+    assert task_events[0]["delegation_used"] is False
+    assert task_events[0]["delegation_status"] == "missing"

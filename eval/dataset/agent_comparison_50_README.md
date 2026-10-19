@@ -25,6 +25,6 @@ python -m scripts.compare_agent_benchmark --split development --limit 3 --live -
 DEEPSEEK_MODEL=deepseek-flash python -m scripts.compare_agent_benchmark --split development --limit 3 --live --provider deepseek --monitor
 ```
 
-结果写入 `eval/reports/agent_comparison_50_ab.json`，保留两组逐题/逐轮结果与配对摘要。`--monitor` 会将不含用户消息、工具参数或工具结果的 JSON Lines 进度写到 stderr，并把同一份监控事件保存在报告的 `monitoring.events`。预算事件会区分 Agent 上下文、总 token 预算与模型调用次数，并记录估算值和上限。真实比较应锁定 AGNES 模型、提示词、模型参数、资源预算、检索配置和数据版本，并记录每组 token、耗时、模型/工具调用及错误类型。两次先后运行可能受限流、系统负载和非确定性影响，最好交叉随机运行顺序并重测。当前脚本按 A→B 串行，未控制环境时间漂移，不能从一次小样本结果断言多 Agent 必然更优。
+结果写入 `eval/reports/agent_comparison_50_ab.json`，保留两组逐题/逐轮结果与配对摘要。`--monitor` 会将不含用户消息、工具参数或工具结果的 JSON Lines 进度实时写到 stderr，并把同一份监控事件保存在报告的 `monitoring.events`。事件包含单轮墙钟耗时、委派开关、是否预期委派、`delegate_task` 调用和专家 Agent 实际启动情况；`scenario=multi_agent` 的任务在多 Agent 组标记为预期委派，缺失时会显示 `delegation_status=missing`，但 runner 不会自动停止，操作者可按日志人工中断。预算事件会区分 Agent 上下文、总 token 预算与模型调用次数，并记录估算值和上限。真实比较应锁定模型、提示词、模型参数、资源预算、检索配置和数据版本，并记录每组 token、耗时、模型/工具调用及错误类型。两次先后运行可能受限流、系统负载和非确定性影响，最好交叉随机运行顺序并重测。当前脚本按 A→B 串行，未控制环境时间漂移，不能从一次小样本结果断言多 Agent 必然更优。
 
 注意：**第 18 条跨域任务**使用 `refund_requested_v1` 作为真实申请中退款场景；如任务文件拆改，须同步维护这一 fixture。评测器只允许已知 fixture，不会自动扩展数据库对象。

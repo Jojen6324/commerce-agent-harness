@@ -8,6 +8,7 @@ import json
 import re
 import sys
 import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from collections import Counter, defaultdict
@@ -139,6 +140,7 @@ async def evaluate(
     results = []
     monitor_events = []
     arm = "multi" if delegation_enabled else "single" if delegation_enabled is not None else "default"
+    task_monitor_state = {}
 
     def log_progress(event, *, task_id=None, turn=None, **details):
         if not monitor:
@@ -146,21 +148,32 @@ async def evaluate(
         record = {
             "at": datetime.now(UTC).isoformat(),
             "arm": arm,
+            "delegation_enabled": delegation_enabled,
             "task_id": task_id,
             "turn": turn,
             "event": event,
             **details,
         }
+        state = task_monitor_state.get(task_id)
+        if state is not None:
+            if event == "delegation" and details.get("tool") == "delegate_task":
+                call_id = details.get("tool_call_id")
+                if call_id:
+                    state["delegation_call_ids"].add(call_id)
+            if event == "agent_started" and details.get("agent") not in (None, "main"):
+                state["specialist_agents"].add(details["agent"])
         monitor_events.append(record)
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr, flush=True)
 
     async def request_chat(client, payload, *, task_id, turn):
+        request_started = time.perf_counter()
         if not monitor:
             response = await client.post("/api/v1/chat", json=payload)
             try:
-                return response.status_code, response.json()
+                body = response.json()
             except ValueError:
-                return response.status_code, {"error": "non_json_api_response"}
+                body = {"error": "non_json_api_response"}
+            return response.status_code, body, round((time.perf_counter() - request_started) * 1000, 2)
 
         log_progress("turn_started", task_id=task_id, turn=turn)
         status_code = 0
@@ -225,6 +238,7 @@ async def evaluate(
             final_body.setdefault("stream_error_type", stream_error_type)
         diagnostics = final_body.get("diagnostics", {})
         usage = final_body.get("token_usage", {})
+        elapsed_ms = round((time.perf_counter() - request_started) * 1000, 2)
         log_progress(
             "turn_finished",
             task_id=task_id,
@@ -238,10 +252,11 @@ async def evaluate(
             prompt_tokens=usage.get("prompt_tokens"),
             completion_tokens=usage.get("completion_tokens"),
             total_tokens=usage.get("total_tokens"),
+            wall_elapsed_ms=elapsed_ms,
             reserved_tokens_without_usage=diagnostics.get("reserved_tokens_without_usage"),
             failure=diagnostics.get("failure"),
         )
-        return status_code, final_body
+        return status_code, final_body, elapsed_ms
     with tempfile.TemporaryDirectory(prefix="agent-tasks-") as directory:
         settings = Settings(
             database_url=f"sqlite+aiosqlite:///{directory}/tasks.db",
@@ -322,7 +337,19 @@ async def evaluate(
                 base_url="http://task-eval",
             ) as client:
                 for task in selected:
-                    log_progress("task_started", task_id=task.id, scenario=task.scenario)
+                    delegation_expected = bool(
+                        delegation_enabled and task.scenario == "multi_agent"
+                    )
+                    task_monitor_state[task.id] = {
+                        "delegation_call_ids": set(),
+                        "specialist_agents": set(),
+                    }
+                    log_progress(
+                        "task_started",
+                        task_id=task.id,
+                        scenario=task.scenario,
+                        delegation_expected=delegation_expected,
+                    )
                     await install_fixture(c.session_factory, task.fixtures)
                     calls.clear()
                     session_id = None
@@ -362,7 +389,7 @@ async def evaluate(
                         )
                         before = await snapshot(c.session_factory)
                         start = len(calls)
-                        status_code, body = await request_chat(
+                        status_code, body, elapsed_ms = await request_chat(
                             client, payload, task_id=task.id, turn=n
                         )
                         responses.append(body)
@@ -393,6 +420,7 @@ async def evaluate(
                                 "http_status": status_code,
                                 "request": payload,
                                 "response": body,
+                                "wall_elapsed_ms": elapsed_ms,
                                 "calls": audit,
                                 "status": "error"
                                 if unavailable
@@ -434,7 +462,25 @@ async def evaluate(
                             "turns": turns,
                         }
                     )
-                    log_progress("task_finished", task_id=task.id, status=results[-1]["task_status"])
+                    state = task_monitor_state[task.id]
+                    specialist_agents = sorted(state["specialist_agents"])
+                    delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
+                    log_progress(
+                        "task_finished",
+                        task_id=task.id,
+                        status=results[-1]["task_status"],
+                        delegation_expected=delegation_expected,
+                        delegation_used=delegation_used,
+                        delegation_calls=len(state["delegation_call_ids"]),
+                        specialist_agents=specialist_agents,
+                        delegation_status=(
+                            "used"
+                            if delegation_used
+                            else "missing"
+                            if delegation_expected
+                            else "not_expected"
+                        ),
+                    )
         finally:
             await c.aclose()
     for case in results:
@@ -453,6 +499,7 @@ async def evaluate(
         "corpus_digest": digest,
         "mode": "real_model" if live else "deterministic_offline",
         "provider": provider if live else "offline",
+        "delegation_enabled": delegation_enabled,
         "model": (
             settings.agnes_model if live and provider == "agnes" else settings.deepseek_model
         ) if live else "offline",

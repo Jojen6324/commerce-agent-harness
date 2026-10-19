@@ -183,6 +183,7 @@ async def evaluate(
                     session_id = None
                     responses = []
                     turns = []
+                    session_calls = []
                     known_order_ids = set()
                     for n, turn in enumerate(task.turns, 1):
                         payload = {"message": turn.message, "user_id": turn.user_id}
@@ -235,7 +236,9 @@ async def evaluate(
                             index,
                             task.forbidden_claims,
                             known_order_ids,
+                            session_calls,
                         )
+                        session_calls.extend(audit)
                         unavailable = response.status_code >= 500 or body.get("status") in (
                             "failed",
                             "budget_exhausted",

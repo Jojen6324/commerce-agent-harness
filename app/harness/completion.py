@@ -17,7 +17,8 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
         for o in observations
     )
     claimed_handoff = re.search(
-        r"(?:我(?:会|将|来)|现在|正在|已为|马上).{0,24}(?:转接人工|转交人工|转人工|接通人工|创建.{0,6}工单|人工审核|反馈给.{0,4}经理)",
+        r"(?:我(?:会|将|来)|现在|正在|已为|马上).{0,24}"
+        r"(?:转接.{0,8}(?:人工|经理)|转交人工|转人工|接通人工|创建.{0,6}工单|人工审核|反馈给.{0,4}经理)",
         answer,
     )
     unfinished_offer = not re.search(r"如果|如需|需要我|若", answer) and re.search(
@@ -47,7 +48,7 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
         and not re.search(r"如果|如需|需要我|可以帮", answer)
         and re.search(
             r"我(?:来|先)?(?:帮您|帮你)?查一下.{0,30}[。！!\s]*$|"
-            r"^(?:好的[，,\s]*)?(?:正在|我来|我先|先|马上)(?:为您|帮您|为你|帮你)?(?:查一下|查询|核对|查看).{0,60}[。！!\s]*$",
+            r"^(?:好的[，,\s]*)?(?:让我|正在|我来|我先|先|马上)(?:为您|帮您|为你|帮你)?(?:查一下|查询|核对|查看).{0,60}[。！!\s]*$",
             answer,
         )
     ):
@@ -55,9 +56,46 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
     return None
 
 
+def policy_evidence_issue(query: str, observations=()):
+    """Require a source lookup before answering a policy-style question.
+
+    This is a completion guard, not an intent router: it never chooses a tool.
+    It only asks the existing bounded repair turn to retrieve policy evidence.
+    """
+    policy_topic = re.search(
+        r"退款|退货|退换|退钱|原路|运费|包邮|优惠券|新客券|领券|保修|质保|"
+        r"发货|预售|工作时间|客服时间|质量问题|破损|错发|签收|售后",
+        query,
+    )
+    policy_question = re.search(
+        r"吗|呢[？?]?$|怎么|如何|哪里|在哪|什么时候|何时|多久|几天|是否|能不能|可不可以|"
+        r"能否|规则|政策|时效|条件|流程|多少",
+        query,
+    )
+    if not policy_topic or not policy_question:
+        return None
+
+    grounded_tools = {
+        "answer_question",
+        "search_knowledge",
+        "get_coupon",
+        "mcp_store_hours",
+        "mcp_warehouse_cutoff",
+    }
+    if any(
+        observation.get("name") in grounded_tools
+        and observation.get("output", {}).get("success")
+        for observation in observations
+    ):
+        return None
+
+    return "policy_without_evidence"
+
+
 REPAIR_GUIDANCE = """你的上一条回复尚未形成可交付结果：{issue}。
 不要只承诺稍后查询或用文字确认代替持久提案。需要操作且业务参数齐全时，调用对应业务工具；
 写工具在未确认时只生成pending_action，不执行写入，后端会等待用户确认。不要用ask_user索要提交批准。
 确实缺少订单号、原因等业务信息时继续补问；政策/查询应给出已核实结论与来源。
+政策问题若尚无成功的知识、优惠券或受信只读查询结果，先检索证据；没有适用来源时明确说明未找到，不要用常识作答。
 用户明确要求人工时使用可用入队能力取得真实回执，无需先有订单号。简单回答可直接给出答案，不要只输出省略号。
 若缺能力或证据，请明确说明限制。不要编造参数、票据、提案或操作结果。"""

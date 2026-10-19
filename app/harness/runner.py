@@ -13,7 +13,7 @@ from pydantic import ValidationError
 from app.core.exceptions import AppError, InvalidRequestError, LLMProviderError, ToolPermissionError
 from app.core.ids import new_id
 from app.harness.budget import BudgetExceeded
-from app.harness.completion import REPAIR_GUIDANCE, completion_issue
+from app.harness.completion import REPAIR_GUIDANCE, completion_issue, policy_evidence_issue
 from app.harness.context import ContextBuilder
 from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
@@ -118,6 +118,7 @@ class AgentRunner:
         seen: dict[str, int] = {}
         call_ids: set[str] = set()
         repairs = 0
+        skill_recovery_attempts = 0
         await event("agent_started")
         try:
             for _step in range(spec.max_steps):
@@ -138,6 +139,8 @@ class AgentRunner:
                     issue = completion_issue(
                         text or "", main=spec.name == "main", observations=observations
                     )
+                    if not issue and spec.name == "main":
+                        issue = policy_evidence_issue(query, observations)
                     if issue:
                         await event("completion_repair", reason=issue)
                         if repairs < 1 and _step + 1 < spec.max_steps:
@@ -225,6 +228,7 @@ class AgentRunner:
                         tool_call_id=call["id"],
                     )
                     began = time.perf_counter()
+                    recover_unknown_skill = False
                     try:
                         output = (
                             precomputed[call["id"]]
@@ -250,6 +254,14 @@ class AgentRunner:
                             else "INVALID_REQUEST",
                             "retryable": exc.retryable if isinstance(exc, AppError) else False,
                         }
+                        recover_unknown_skill = (
+                            name == "load_skill"
+                            and isinstance(exc, InvalidRequestError)
+                            and exc.message == "unknown skill"
+                            and skill_recovery_attempts < 1
+                        )
+                        if recover_unknown_skill:
+                            skill_recovery_attempts += 1
                         if isinstance(exc, AppError) and "order not found" in exc.message:
                             observations.append(
                                 {
@@ -276,6 +288,7 @@ class AgentRunner:
                             name != "read_artifact"
                             and isinstance(exc, InvalidRequestError)
                             and not exc.message.startswith("invalid arguments for")
+                            and not recover_unknown_skill
                         ):
                             observations.append(
                                 {
@@ -313,7 +326,11 @@ class AgentRunner:
                     if getattr(self.executor, "artifacts", None):
                         result_ref = await self.executor.artifacts.put(output, context)
                     await event(
-                        "delegation_completed" if name == "delegate_task" else "tool_completed",
+                        "tool_failed"
+                        if recover_unknown_skill
+                        else "delegation_completed"
+                        if name == "delegate_task"
+                        else "tool_completed",
                         tool=name,
                         tool_call_id=call["id"],
                         result_ref=result_ref,
@@ -377,6 +394,17 @@ class AgentRunner:
                             "content": json.dumps(message_output, ensure_ascii=False),
                         }
                     )
+                    if recover_unknown_skill:
+                        available = ", ".join(item["name"] for item in catalog) or "无"
+                        messages.append(
+                            {
+                                "role": "system",
+                                "content": (
+                                    "刚才调用的技能名不存在。不要声称已加载；最多仅允许一次修正。"
+                                    f"当前可用技能名：{available}。如果没有相关技能，继续使用现有业务工具或依据证据回答。"
+                                ),
+                            }
+                        )
                 if pending:
                     await event("needs_confirmation")
                     return {
@@ -412,6 +440,8 @@ class AgentRunner:
                         main=spec.name == "main",
                         observations=observations,
                     )
+                    if not issue and spec.name == "main":
+                        issue = policy_evidence_issue(query, observations)
                     if issue:
                         await event("completion_repair", reason=issue)
                         if repairs < 1 and _step + 1 < spec.max_steps:

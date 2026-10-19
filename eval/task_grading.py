@@ -28,7 +28,16 @@ def has_phrase(answer, phrase):
 
 
 def grade_turn(
-    turn, body, status, calls, before, after, index, forbidden_claims, known_order_ids=None
+    turn,
+    body,
+    status,
+    calls,
+    before,
+    after,
+    index,
+    forbidden_claims,
+    known_order_ids=None,
+    prior_calls=(),
 ):
     failures = []
     review = []
@@ -114,6 +123,8 @@ def grade_turn(
         elif check.kind == "target_observed":
             ok = any(
                 c["success"]
+                and c.get("user_id") == turn.user_id
+                and c.get("session_id") == body.get("session_id")
                 and (
                     matches(c["arguments"], value)
                     or any(
@@ -123,7 +134,7 @@ def grade_turn(
                         )
                     )
                 )
-                for c in calls
+                for c in (*prior_calls, *calls)
             )
         elif check.kind == "evidence":
             ok = any(
@@ -198,7 +209,16 @@ def grade_turn(
         for path in turn.alternatives:
             branch = turn.model_copy(update={"checks": path.checks, "alternatives": []})
             result = grade_turn(
-                branch, body, status, calls, before, after, index, forbidden_claims, known_order_ids
+                branch,
+                body,
+                status,
+                calls,
+                before,
+                after,
+                index,
+                forbidden_claims,
+                known_order_ids,
+                prior_calls,
             )
             if not result["failures"]:
                 accepted_paths.append(path.description)

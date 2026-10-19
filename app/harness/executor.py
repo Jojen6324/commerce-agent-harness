@@ -268,6 +268,9 @@ class ToolExecutor:
                     "用户请求操作且参数完整时应立即调用以准备提案，不要先口头要求确认。"
                     "后端收到confirm_action_id才执行已保存参数；申请提交不代表退款到账。"
                 )
+        from app.skills.loader import load_skills
+
+        skill_names = [skill["name"] for skill in load_skills()]
         extras = {
             "ask_user": (
                 "仅缺少必要订单号、原因或政策例外条件时补问，不猜参数。不要用本工具请求操作批准；参数齐全时调用业务工具生成pending_action，由后端处理确认。",
@@ -278,10 +281,10 @@ class ToolExecutor:
                 DelegateInput.model_json_schema(),
             ),
             "load_skill": (
-                "按名称读取技能步骤；不改变权限。",
+                "仅从列出的名称中按需读取技能步骤；无相关技能时不要调用。技能不改变权限。",
                 {
                     "type": "object",
-                    "properties": {"name": {"type": "string"}},
+                    "properties": {"name": {"type": "string", "enum": skill_names}},
                     "required": ["name"],
                     "additionalProperties": False,
                 },
@@ -298,6 +301,8 @@ class ToolExecutor:
         }
         for name, (description, parameters) in extras.items():
             if name in spec.tools:
+                if name == "load_skill" and not skill_names:
+                    continue
                 schemas.append(
                     {
                         "type": "function",

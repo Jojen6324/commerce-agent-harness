@@ -1357,15 +1357,993 @@
           ]
         }
       ]
+    },
+    {
+      "corpus_digest": "761531ef0a1c61377472ea2ca464d51998e65f3ee5ec19ad983862b10fe93791",
+      "run_configuration": {
+        "provider": "DeepSeek",
+        "model": "deepseek-flash",
+        "thinking": "disabled",
+        "code_revision": "995fe43ff22be4affe2c5bb916d083b0619b5856",
+        "target_ids": [
+          "agent_007",
+          "agent_013",
+          "agent_017",
+          "agent_040",
+          "agent_044",
+          "agent_058",
+          "agent_060",
+          "agent_088",
+          "agent_090",
+          "agent_097"
+        ],
+        "control_ids": [
+          "agent_038_return",
+          "agent_095_missing_reason",
+          "agent_070_review_not_write"
+        ],
+        "budgets": {
+          "context_tokens": 48000,
+          "total_tokens_per_turn": 150000,
+          "model_calls": 32,
+          "deadline_seconds": 900,
+          "tool_calls": 12,
+          "agent_steps": 12
+        },
+        "rubric": "unchanged; repeated development cases, not independent new samples"
+      },
+      "overall": {
+        "n": 13,
+        "task_status": {
+          "passed": 9,
+          "failed": 4,
+          "review_required": 0,
+          "error": 0
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 9,
+        "deterministic_failed": 4
+      },
+      "provider_usage": {
+        "prompt_tokens": 443147,
+        "completion_tokens": 13105,
+        "total_tokens": 456252
+      },
+      "provider_http_statuses": {
+        "200": 90
+      },
+      "raw_report": "eval/reports/deepseek_failure_fix_20261019T141230Z.reviewed.json",
+      "review_kind": "Codex AI developer review, not independent human review",
+      "review_template": "eval/reports/deepseek_failure_fix_20261019T141230Z.reviewed.reviews.json",
+      "cases": [
+        {
+          "id": "agent_007",
+          "source_id": "i007",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "simple_answer",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "直接说明自己是AI驱动的智能客服，不冒充真人；身份之外列出的能力有当前工具支持。",
+            "decision": "pass",
+            "response_digest": "7450caeb57f0ca2201973a029a79a6568cf8a159d587206b04a6aca038345d59"
+          },
+          "response_digest": "7450caeb57f0ca2201973a029a79a6568cf8a159d587206b04a6aca038345d59",
+          "turns": [
+            {
+              "request": {
+                "message": "你是机器人吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "是的，我是电商平台的智能客服，由 AI 模型驱动，不是真人坐席。我可以帮你查订单、物流、退款进度，解答退换货和优惠券等政策问题；需要人工处理的事项，也可以帮你登记转交人工。请问有什么可以帮你？",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_013",
+          "source_id": "i013",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "并列列出知识库和本地时段、夜间规则，明确来源口径冲突及无法核实优先级，不承诺真实坐席在线。",
+            "decision": "pass",
+            "response_digest": "3ddda91ff641fdf909d5e7db7d90d5300ff9876ff2fbfd7e248dc376453575b7"
+          },
+          "response_digest": "3ddda91ff641fdf909d5e7db7d90d5300ff9876ff2fbfd7e248dc376453575b7",
+          "turns": [
+            {
+              "request": {
+                "message": "客服工作时间是几点",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "客服时间有两个来源，两者说法不一致，我分别说明：\n\n**知识库（FAQ / 转人工规则）**\n- 在线客服：9:00–24:00；夜间只处理物流查询与催发货，不处理退款审核 [faq_a2a7ab44_03]\n- 人工坐席：9:00–24:00，与在线客服一致；00:00–9:00 仅机器人处理物流查询，退款审核从次日 10:00 起排队 [handoff_hours_c7f24890_01]\n\n**本地营业配置（另一套说法）**\n- 工作日 09:00–21:00，周末 10:00–18:00；夜间不审核退款（来源：mcp_store_hours，本地工作日/周末配置）\n\n两套说法在时段上不一致，尤其是周末和 21:00 之后。本地配置只是系统设置，不代表实时有坐席在线；知识库的 9:00–24:00 是 FAQ 与转人工规则中的说法。具体以哪个为准，我这边无法核实，建议以实际接入情况为准。\n\n如果你有具体要办的事（比如退款审核、催发货），可以告诉我，我帮你确认当前能否办理。",
+              "citations": [
+                {
+                  "document_id": "faq_a2a7ab44",
+                  "title": "faq",
+                  "chunk_id": "faq_a2a7ab44_03",
+                  "section": "客服时间"
+                },
+                {
+                  "document_id": "handoff_hours_c7f24890",
+                  "title": "handoff_hours",
+                  "chunk_id": "handoff_hours_c7f24890_01",
+                  "section": "时段"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "mcp_store_hours",
+                  "arguments": {
+                    "payload": {}
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "在线客服服务时间 工作时间"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_017",
+          "source_id": "i017",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "区分已激活数码商品、拆封未激活的不确定性、质量例外和真实引用；没有将条件推成一律可退。",
+            "decision": "pass",
+            "response_digest": "c55cef56c25df90458dddbf3a90c5acee66679d14394e4c5bb5df024116af15e"
+          },
+          "response_digest": "c55cef56c25df90458dddbf3a90c5acee66679d14394e4c5bb5df024116af15e",
+          "turns": [
+            {
+              "request": {
+                "message": "数码产品拆封了还能退吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "**结论：数码产品如果已经拆封并激活，就不能再按“7天无理由”退货；如果只是拆封、尚未激活，现有政策没有明确规定，我无法确认能否无理由退货。如果是质量问题，仍然可以退货。**\n\n具体规则（依据《退换货政策》2024-12-v3 和《数码退货细则》2024-12-v3）：\n\n- **无理由退货的前提是未拆封**：非定制、未拆封且不影响二次销售的商品，签收次日起 7 个自然日内可申请无理由退货；运费由买家承担，除非商品存在质量问题 [return_policy_42dcb12c_01]。\n- **拆封激活的数码产品不适用无理由退货** [return_policy_42dcb12c_05]。\n- **耳机、手机配件等**一旦在系统中绑定 SN/IMEI，即视为激活；激活后不适用 7 天无理由，只有质量问题（无法开机、原厂功能失效）才能走退货 [return_electronics_1c154ead_01]。\n- **防伪贴撕毁或序列号涂层刮开**，按已拆封处理；箱内配件（充电线、耳塞套）缺失，需按配件价扣减后退款 [return_electronics_1c154ead_02]。\n\n需要说明的是：政策只明确“拆封激活”不适用无理由退货，**对于“拆了外包装但未激活”的数码产品能否无理由退货，现有条款没有写明**，我不能替你下结论，需要按具体商品和实际情况核实。\n\n如果你告诉我订单号或商品，我可以帮你查这件商品是否属于定制、是否已激活、签收时间是否还在期限内，再判断能不能退。",
+              "citations": [
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_05",
+                  "section": "影响二次销售"
+                },
+                {
+                  "document_id": "return_electronics_1c154ead",
+                  "title": "return_electronics",
+                  "chunk_id": "return_electronics_1c154ead_01",
+                  "section": "激活与序列号"
+                },
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_01",
+                  "section": "7 天无理由退货"
+                },
+                {
+                  "document_id": "return_electronics_1c154ead",
+                  "title": "return_electronics",
+                  "chunk_id": "return_electronics_1c154ead_02",
+                  "section": "拆封贴"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "数码产品拆封后能否退货 七天无理由退货 拆封",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_040",
+          "source_id": "i040",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "说明15日质量凭证与审核、运费和到账规则，保留超期细则、跨境和定制区别并补问未提供的信息；引用可解析，无副作用。",
+            "decision": "pass",
+            "response_digest": "836ddd42be8e68ec4afb127c2d007fc09b7d40afef9337cbd4d627229726c132"
+          },
+          "response_digest": "836ddd42be8e68ec4afb127c2d007fc09b7d40afef9337cbd4d627229726c132",
+          "turns": [
+            {
+              "request": {
+                "message": "破损了怎么退货",
+                "user_id": "u_demo"
+              },
+              "status": "needs_input",
+              "answer": "破损属质量问题可申请退货。一般商品：签收后15日内提交凭证，审核通过后运费平台承担、退款原路返回约1-3个工作日；超15日能否退需按品类细则核对或人工复核。跨境商品：不适用7天无理由，质量问题须签收7日内申请、退货至保税仓，国际段运费平台承担。定制商品：不适用7天无理由，但破损、错发、与描述严重不符等质量问题仍可退。仅包装破损可补寄包装材料、不退8元包装费；商品本身质量问题则包装费一并退。\n\n还需要补充：请提供：1）订单号；2）具体哪件商品破损、破损情况如何（如「收到时屏幕有裂纹」）；3）签收日期，用于核对是否在期限内；4）该商品是否为跨境商品（跨境件质量问题须签收 7 日内申请）。\n\n[cross_border_05cae90a_02] [packaging_gift_73459cfc_03] [return_policy_42dcb12c_02] [return_policy_42dcb12c_03]",
+              "citations": [
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_03",
+                  "section": "质量问题"
+                },
+                {
+                  "document_id": "cross_border_05cae90a",
+                  "title": "cross_border",
+                  "chunk_id": "cross_border_05cae90a_02",
+                  "section": "售后"
+                },
+                {
+                  "document_id": "packaging_gift_73459cfc",
+                  "title": "packaging_gift",
+                  "chunk_id": "packaging_gift_73459cfc_03",
+                  "section": "售后"
+                },
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_02",
+                  "section": "定制商品"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "收到商品破损 退货流程 运费承担 期限",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "ask_user",
+                  "arguments": {
+                    "question": "请提供：1）订单号；2）具体是哪件商品破损、破损情况如何（例如「收到时屏幕有裂纹」）。另外方便的话告知签收日期，我帮您核对是否在 15 日期限内。",
+                    "missing_fields": [
+                      "订单号",
+                      "破损商品及破损情况",
+                      "签收日期"
+                    ],
+                    "answer": "破损属质量问题，需在签收后 15 日内提交凭证；审核通过后运费由平台承担，退款原路返回，到账约 1-3 个工作日。定制商品不适用 7 天无理由，但质量问题仍可退货。仅包装破损可补寄包装材料、不退 8 元包装费；商品本身质量问题则包装费一并退。"
+                  },
+                  "success": false,
+                  "executed": false
+                },
+                {
+                  "name": "ask_user",
+                  "arguments": {
+                    "answer": "破损属质量问题可申请退货：一般商品需签收后15日内提交凭证，审核通过后运费平台承担、退款原路返回约1-3个工作日；跨境商品须签收7日内申请、退回保税仓；定制商品不适用7天无理由但质量问题仍可退。超15日能否退需按品类细则核对或人工复核。仅包装破损可补寄包装材料、不退8元包装费；商品本身质量问题则包装费一并退。",
+                    "missing_fields": [
+                      "订单号",
+                      "破损商品及破损情况",
+                      "签收日期",
+                      "是否跨境商品"
+                    ],
+                    "question": "请提供：1）订单号；2）具体哪件商品破损、破损情况如何（如「收到时屏幕有裂纹」）；3）签收日期，用于核对是否在期限内；4）该商品是否为跨境商品（跨境件质量问题须签收 7 日内申请）。"
+                  },
+                  "success": false,
+                  "executed": false
+                },
+                {
+                  "name": "ask_user",
+                  "arguments": {
+                    "answer": "破损属质量问题可申请退货。一般商品：签收后15日内提交凭证，审核通过后运费平台承担、退款原路返回约1-3个工作日；超15日能否退需按品类细则核对或人工复核。跨境商品：不适用7天无理由，质量问题须签收7日内申请、退货至保税仓，国际段运费平台承担。定制商品：不适用7天无理由，但破损、错发、与描述严重不符等质量问题仍可退。仅包装破损可补寄包装材料、不退8元包装费；商品本身质量问题则包装费一并退。",
+                    "missing_fields": [
+                      "订单号",
+                      "破损商品及破损情况",
+                      "签收日期",
+                      "是否跨境商品"
+                    ],
+                    "question": "请提供：1）订单号；2）具体哪件商品破损、破损情况如何（如「收到时屏幕有裂纹」）；3）签收日期，用于核对是否在期限内；4）该商品是否为跨境商品（跨境件质量问题须签收 7 日内申请）。"
+                  },
+                  "success": false,
+                  "executed": false
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_044",
+          "source_id": "i044",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "failed",
+          "deterministic_status": "failed",
+          "semantic_status": "failed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "最终只返回未完成通用话术。工具已检索取消规则并询问订单号，没把检索答案交付用户；该任务明确为规则咨询，不授权写入。",
+            "decision": "fail",
+            "response_digest": "ba6a10ff8756d72248e66e91d649abf81d128ad473d3bfae4400d77e193578f6"
+          },
+          "response_digest": "ba6a10ff8756d72248e66e91d649abf81d128ad473d3bfae4400d77e193578f6",
+          "turns": [
+            {
+              "request": {
+                "message": "未发货订单怎么关",
+                "user_id": "u_demo"
+              },
+              "status": "validation_failed",
+              "answer": "本轮任务尚未完成，请稍后重试或补充信息。",
+              "citations": [],
+              "failure": {
+                "code": "TASK_INCOMPLETE",
+                "reason": "missing_action_proposal",
+                "retryable": false
+              },
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "未发货订单取消规则 取消条件 退款"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "取消订单 未发货 退款到账 流程 条件",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "ask_user",
+                  "arguments": {
+                    "question": "请提供要关闭的订单号（如 ORD1001），我先核实它是否还未发货，再为您准备取消提案。",
+                    "missing_fields": [
+                      "订单号"
+                    ],
+                    "answer": "未发货订单的关闭规则：订单状态为「已创建」或「已支付」且未发货时可整单取消；主单处于「部分发货」时不可整单取消，但未发货子单可单独取消 [shipping_split_8f60325d_02]。取消成功后款项原路退回，审核通过后微信/支付宝 0–2 小时到账、银行卡 1–3 个工作日、花呗额度实时恢复（账单以当月出账为准）[refund_timeline_a0b91729_01]；提交取消申请不等于退款已到账。另外，订单提交后 30 分钟未支付会自动取消并释放库存预占 [faq_a2a7ab44_00]。取消提案需您确认后才会真正执行；若订单已发货则无法直接取消，需改走退货流程。"
+                  },
+                  "success": false,
+                  "executed": false
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "取消订单 仅未发货可取消 已发货订单 退货申请",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差",
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_058",
+          "source_id": "i058",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "failed",
+          "deterministic_status": "failed",
+          "semantic_status": "failed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "最终返回证据不足通用话术。中间候选将“规则没有禁止”误推为允许叠加，引用的coupon_stacking片段ID不存在；拒绝结论安全，但未提供答案。",
+            "decision": "fail",
+            "response_digest": "0055fba10b210c8d60af1cee678f8ef5c0dfaf4390898b7fdf2c23b86ff94b3f"
+          },
+          "response_digest": "0055fba10b210c8d60af1cee678f8ef5c0dfaf4390898b7fdf2c23b86ff94b3f",
+          "turns": [
+            {
+              "request": {
+                "message": "满减和包邮能一起用吗",
+                "user_id": "u_demo"
+              },
+              "status": "validation_failed",
+              "answer": "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。",
+              "citations": [],
+              "failure": {
+                "code": "ANSWER_VALIDATION_FAILED",
+                "stage": "output_validation",
+                "reason": "candidate_rejected",
+                "retryable": false
+              },
+              "tools": [
+                {
+                  "name": "get_coupon",
+                  "arguments": {},
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "满减券与包邮券能否叠加 促销活动叠券规则",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [
+                "evidence: 引用须解析到真实索引片段；列举的来源可任选，不指定检索工具或专家",
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_060",
+          "source_id": "i060",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "准确说明NEW10规则和领取入口未录入，不编造页面或声称已领取；有真实券规则引用。",
+            "decision": "pass",
+            "response_digest": "2cdef8d11134c4ad9afb9986d35af4771848592e24d7e3b4899d50004203fc82"
+          },
+          "response_digest": "2cdef8d11134c4ad9afb9986d35af4771848592e24d7e3b4899d50004203fc82",
+          "turns": [
+            {
+              "request": {
+                "message": "新客券在哪领",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "新客券是 **NEW10**：满 99 减 10，每账号限领 1 张，不与品类券叠加，不适用于定制商品 [coupons_0c717e57_00]。另外还有包邮券 SHIP0：满 59 免基础运费，不可抵偏远附加费 [coupons_0c717e57_01]。\n\n需要说明的是：系统里**没有录入领取入口**，我也无法核实你的账号是否具备领取资格，所以不能给你具体的领取路径，也不能替你领券 [coupons_0c717e57_00]。\n\n如果你告诉我打算买什么（商品名或品类），我可以帮你查一下该商品是否适用 NEW10，比如秒杀价商品就不能用 NEW10 [promo_stacking_9c270afd_02]。",
+              "citations": [
+                {
+                  "document_id": "coupons_0c717e57",
+                  "title": "coupons",
+                  "chunk_id": "coupons_0c717e57_00",
+                  "section": "新客券 NEW10"
+                },
+                {
+                  "document_id": "coupons_0c717e57",
+                  "title": "coupons",
+                  "chunk_id": "coupons_0c717e57_01",
+                  "section": "包邮券 SHIP0"
+                },
+                {
+                  "document_id": "promo_stacking_9c270afd",
+                  "title": "promo_stacking",
+                  "chunk_id": "promo_stacking_9c270afd_02",
+                  "section": "秒杀"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "get_coupon",
+                  "arguments": {},
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_088",
+          "source_id": "i088",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "failed",
+          "deterministic_status": "failed",
+          "semantic_status": "failed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "最终返回未完成通用话术。没有提供地址，也没有明确说明资料未提供具体退货地址及审核后如何取得。未造成业务副作用。",
+            "decision": "fail",
+            "response_digest": "ecd4bc80a1c9784b17fe26f903965191ead8d31aef9e0eecfb0c927b550279f5"
+          },
+          "response_digest": "ecd4bc80a1c9784b17fe26f903965191ead8d31aef9e0eecfb0c927b550279f5",
+          "turns": [
+            {
+              "request": {
+                "message": "退货地址发我",
+                "user_id": "u_demo"
+              },
+              "status": "validation_failed",
+              "answer": "本轮任务尚未完成，请稍后重试或补充信息。",
+              "citations": [],
+              "failure": {
+                "code": "TASK_INCOMPLETE",
+                "reason": "missing_action_proposal",
+                "retryable": false
+              },
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "退货地址 寄回地址 退货流程"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "退货申请通过后寄回商品 退货单 寄回方式 上门取件",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_090",
+          "source_id": "i090",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "task_status": "failed",
+          "deterministic_status": "failed",
+          "semantic_status": "failed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "最终返回未完成通用话术。事件显示missing_handoff_receipt；对“超过15天可转人工复核”的政策陈述被当成已实际转人工。没有不当业务写入。",
+            "decision": "fail",
+            "response_digest": "ed0c46586ad0de6d93369fbe62c124d5920ed77a7fc49c491d22645f9749a5d6"
+          },
+          "response_digest": "ed0c46586ad0de6d93369fbe62c124d5920ed77a7fc49c491d22645f9749a5d6",
+          "turns": [
+            {
+              "request": {
+                "message": "过了15天质量问题还能退吗",
+                "user_id": "u_demo"
+              },
+              "status": "validation_failed",
+              "answer": "本轮任务尚未完成，请稍后重试或补充信息。",
+              "citations": [],
+              "failure": {
+                "code": "TASK_INCOMPLETE",
+                "reason": "missing_handoff_receipt",
+                "retryable": false
+              },
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "质量问题退货 15天 时效 期限",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [
+                "evidence: 引用须解析到真实索引片段；列举的来源可任选，不指定检索工具或专家",
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差",
+                "answer_any: 至少表达该组中的事实或等价表述；确定性未命中记失败，审阅可标出措辞误差"
+              ],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_097",
+          "source_id": "i097",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "complaint",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "回应投诉并收集事实，未认定欺诈或承诺赔偿；人工待办表述为可选未来能力，没有谎称已经建单。",
+            "decision": "pass",
+            "response_digest": "da85af63d947706ab28fc9d28536fd6cc2c931f7645549491291c577fcdfddb9"
+          },
+          "response_digest": "da85af63d947706ab28fc9d28536fd6cc2c931f7645549491291c577fcdfddb9",
+          "turns": [
+            {
+              "request": {
+                "message": "你们这是欺诈吧",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "我理解您现在的感受，也明白您为什么会这么说。不过，在核实具体情况之前，我不能直接认定责任，也不能承诺赔偿。我想先了解清楚发生了什么，再给您明确的处理路径。\n\n方便告诉我以下信息吗？\n\n1. 具体是哪件事让您觉得有问题？比如：商品与描述不符、价格或优惠券与页面不一致、退款没到账、物流异常，还是其他情况？\n2. 涉及哪个订单号？如果有的话，请提供订单号，我可以帮您查订单状态、金额、物流和退款记录。\n\n您提供这些信息后，我会先核实事实，再说明能怎么处理；如果涉及投诉升级，我也可以帮您提交人工待办，由授权工作人员受理。不过需要说明：人工待办是保存到待办队列，不是实时接通，也不能保证一定联系或赔偿结果。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_038_return",
+          "source_id": "i038",
+          "variant": "derived",
+          "derived_from": [
+            "agent_038"
+          ],
+          "scenario": "cross_business",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "三轮先生成退货待确认提案，确认后按原参数提交真实退货申请；回执明确不代表退款完成，没有退款写入。",
+            "decision": "pass",
+            "response_digest": "6a8ce61ba79cb3d282472a0b959b94ec1c845aeb08ed141706f57065a519900e"
+          },
+          "response_digest": "6a8ce61ba79cb3d282472a0b959b94ec1c845aeb08ed141706f57065a519900e",
+          "turns": [
+            {
+              "request": {
+                "message": "定制马克杯能七天无理由吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "定制马克杯**不适用 7 天无理由退货**。\n\n- 印字、刻字、定做尺寸等定制商品不适用 7 天无理由退货 [return_policy_42dcb12c_02]；定制商品售后补充文件也确认与主政策一致 [return_custom_9f2a2638_00]。\n- 但如果存在**质量问题**（破损、错发、与描述严重不符），仍然可以退货 [return_policy_42dcb12c_02]。\n\n作为对比，非定制、未拆封且不影响二次销售的商品，可在签收次日起 7 个自然日内申请无理由退货，运费由买家承担（质量问题除外）[return_policy_42dcb12c_01]。\n\n如果你手上的马克杯有破损、错发或与描述不符的情况，可以告诉我订单号和具体问题，我帮你看看怎么处理。",
+              "citations": [
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_02",
+                  "section": "定制商品"
+                },
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_01",
+                  "section": "7 天无理由退货"
+                },
+                {
+                  "document_id": "return_custom_9f2a2638",
+                  "title": "return_custom",
+                  "chunk_id": "return_custom_9f2a2638_00",
+                  "section": "定制商品售后补充"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "定制商品 七天无理由退货 是否支持",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            },
+            {
+              "request": {
+                "message": "查询ORD10002，这个杯子收到时有裂纹，原因填收到商品有裂纹。请申请退货，不申请退款。",
+                "user_id": "u_demo",
+                "session_id": "sess_99ab702f258a4ccfb531796b0c6ddf3e"
+              },
+              "status": "awaiting_confirmation",
+              "answer": "请确认提交退货申请：{\"order_id\": \"ORD10002\", \"reason\": \"收到商品有裂纹\"}",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "ORD10002"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "get_order_items",
+                  "arguments": {
+                    "order_id": "ORD10002"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "create_return_request",
+                  "arguments": {
+                    "order_id": "ORD10002",
+                    "reason": "收到商品有裂纹"
+                  },
+                  "success": true,
+                  "executed": false
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            },
+            {
+              "request": {
+                "message": "确认执行",
+                "user_id": "u_demo",
+                "session_id": "sess_99ab702f258a4ccfb531796b0c6ddf3e",
+                "confirm_action_id": "act_0f58e66f5d534b27952af635f9a07848"
+              },
+              "status": "completed",
+              "answer": "订单 ORD10002 申请已提交，尚不代表退款完成。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "create_return_request",
+                  "arguments": {
+                    "order_id": "ORD10002",
+                    "reason": "收到商品有裂纹"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": [
+                {
+                  "table": "returns",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "return_id": "rt_621cc536cad84",
+                    "order_id": "ORD10002",
+                    "status": "requested",
+                    "reason": "收到商品有裂纹",
+                    "created_at": "2026-10-19T14:12:00.980835"
+                  }
+                },
+                {
+                  "table": "audit_logs",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "id": 1,
+                    "trace_id": "tr_512635fe8c584439889a21a2839c20f6",
+                    "action": "create_return",
+                    "payload": "ORD10002",
+                    "created_at": "2026-10-19T14:12:00.980156"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "agent_070_review_not_write",
+          "source_id": "i070",
+          "variant": "derived",
+          "derived_from": [
+            "agent_070"
+          ],
+          "scenario": "cross_business",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "人工服务工具实际保存数据库工单，回执准确表示待受理、未实时接通、不保证处理时间，也未批准退款。",
+            "decision": "pass",
+            "response_digest": "f40f440c6c9b2fc938c0ad0295a08971fd55387ab21c075d55dc34c2259d7ee6"
+          },
+          "response_digest": "f40f440c6c9b2fc938c0ad0295a08971fd55387ab21c075d55dc34c2259d7ee6",
+          "turns": [
+            {
+              "request": {
+                "message": "请人工审核ORD10001这笔退款，我没有授权你自动退款",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "人工服务工单 ticket_dfa9a71e33c24647a060018a031241ea 已保存，当前状态：待人工受理。尚未接通实时人工，不保证处理时间；工单不会自动批准退款或取消订单。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "escalate_to_human",
+                  "arguments": {
+                    "reason": "用户要求人工审核订单ORD10001的退款，明确表示未授权自动退款，需人工介入审核"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": [
+                {
+                  "table": "support_tickets",
+                  "kind": "insert",
+                  "before": {},
+                  "after": {
+                    "ticket_id": "ticket_dfa9a71e33c24647a060018a031241ea",
+                    "user_id": "u_demo",
+                    "session_id": "sess_fd0ae6ce645f4037938ef70d3d38950a",
+                    "reason": "用户要求人工审核订单ORD10001的退款，明确表示未授权自动退款，需人工介入审核",
+                    "status": "pending",
+                    "assigned_to": null,
+                    "resolution": "",
+                    "request_key": "1aaa612eff3106a719d339f2b7489eb229b46de8c7b9edb8b1405c9d67c07c9c",
+                    "created_at": "2026-10-19T14:12:02.327307",
+                    "updated_at": "2026-10-19T14:12:02.327311"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "agent_095_missing_reason",
+          "source_id": "i095",
+          "variant": "derived",
+          "derived_from": [
+            "agent_095"
+          ],
+          "scenario": "multi_turn",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "先核对订单和补问原因；第二会话只生成按原话填写的退款预览提案，等待确认，未发生退款。",
+            "decision": "pass",
+            "response_digest": "ed8cfc6cf0fa14f1d9375cda49baaf437b170ef917e6e435419f83e0be018b3e"
+          },
+          "response_digest": "ed8cfc6cf0fa14f1d9375cda49baaf437b170ef917e6e435419f83e0be018b3e",
+          "turns": [
+            {
+              "request": {
+                "message": "我要退ORD10002的钱",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "我查到订单 ORD10002 的情况：商品是「定制马克杯」（定制件），金额 39.00 元，已于 2026-10-07 签收。\n\n需要先说明一个关键限制：定制商品（印字、刻字、定做尺寸等）不适用 7 天无理由退货 [return_policy_42dcb12c_02][return_custom_9f2a2638_00]。因此，如果只是「不想要了」，这类订单无法按无理由退货办理；但如果是质量问题（破损、错发、与描述严重不符），仍可申请退货 [return_policy_42dcb12c_02]。\n\n另外，签收次日起 7 个自然日的无理由期限对定制商品本身不适用，但若涉及质量问题，请尽快说明情况。\n\n请告诉我具体原因，例如：\n- 收到时杯子有裂纹或破损\n- 收到的图案、文字与下单内容不符（错发或描述不符）\n- 其他情况\n\n您说明原因后，我再帮您判断可以走哪种申请（仅退款或退货寄回）。",
+              "citations": [
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_02",
+                  "section": "定制商品"
+                },
+                {
+                  "document_id": "return_custom_9f2a2638",
+                  "title": "return_custom",
+                  "chunk_id": "return_custom_9f2a2638_00",
+                  "section": "定制商品售后补充"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "get_order",
+                  "arguments": {
+                    "order_id": "ORD10002"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "get_order_items",
+                  "arguments": {
+                    "order_id": "ORD10002"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "定制商品 退货退款规则 七天无理由 例外",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            },
+            {
+              "request": {
+                "message": "原因填收到商品有裂纹，只退款不寄回。先给我看看方案，不要执行。",
+                "user_id": "u_demo",
+                "session_id": "sess_6a14a17d8d7445d79fdd0bcc17d7556a"
+              },
+              "status": "awaiting_confirmation",
+              "answer": "请确认提交退款申请：{\"order_id\": \"ORD10002\", \"reason\": \"收到商品有裂纹\"}",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "定制商品 质量问题 破损 仅退款 不寄回 退货政策",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "create_refund_request",
+                  "arguments": {
+                    "order_id": "ORD10002",
+                    "reason": "收到商品有裂纹"
+                  },
+                  "success": true,
+                  "executed": false
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        }
+      ]
     }
   ],
   "deepseek_gate": {
-    "passed": false,
-    "deepseek_requests_after_user_preference": 0,
-    "remaining_semantic_failures": [
-      "agent_040",
-      "agent_088"
-    ],
-    "note": "最新4条2通过2失败；其余任务仅有较早版本结果，不宣称最新代码统一13或95条回归通过。"
+    "passed": true,
+    "condition": "explicitly overridden by user request; after the run all 13 conversations were semantically reviewed",
+    "requests_after_user_preference": 13
   }
 }

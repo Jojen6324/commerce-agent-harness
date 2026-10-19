@@ -240,3 +240,113 @@ def test_real_unexecuted_action_promises_still_require_a_proposal(answer):
     from app.harness.completion import completion_issue
 
     assert completion_issue(answer) == "missing_action_proposal"
+
+
+def test_externalization_retains_policy_body_scope_limits_and_order_dates():
+    from app.harness.context import artifact_digest
+
+    source = chunk().model_dump()
+    result = artifact_digest(
+        {
+            "success": True,
+            "output": {
+                "chunks": [source],
+                "order_id": "ORD1",
+                "delivered_at": "2026-10-07",
+                "limitations": {"claim_entry": "not_recorded"},
+                "notice": "本地配置与政策口径可能不同",
+            },
+        },
+        "art_real",
+    )
+    assert result["evidence"][0]["content"] == source["content"]
+    assert result["evidence"][0]["title"] == "数码退货细则"
+    assert result["facts"]["delivered_at"] == "2026-10-07"
+    assert result["facts"]["limitations"]["claim_entry"] == "not_recorded"
+    assert result["facts_complete"] and result["evidence_complete"]
+
+
+def test_digest_omits_only_whole_passages_and_reports_missing_evidence():
+    from app.harness.context import artifact_digest
+
+    passages = [
+        {"chunk_id": "long", "content": "原始证据" * 5000},
+        {"chunk_id": "brief", "content": "已知短规则"},
+    ]
+    result = artifact_digest({"chunks": passages}, "art_real", max_chars=500)
+    assert result["evidence_refs"] == ["long", "brief"]
+    assert result["evidence"] == [passages[1]]
+    assert not result["evidence_complete"] and result["artifact_ref"] == "art_real"
+
+
+@pytest.mark.asyncio
+async def test_failed_output_returns_to_main_agent_with_tools_for_missing_evidence():
+    from app.config.settings import Settings
+    from app.harness.runner import AgentRunner, AgentSpec
+    from app.tools.base import ToolContext
+
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse("尚未核实的答复"),
+                LLMResponse(
+                    "",
+                    tool_calls=[
+                        {
+                            "id": "lookup",
+                            "type": "function",
+                            "function": {
+                                "name": "search_knowledge",
+                                "arguments": '{"query":"核对具体范围"}',
+                            },
+                        }
+                    ],
+                    finish_reason="tool_calls",
+                ),
+                LLMResponse("数码超15天转保修，其他品类需核实。[digital]"),
+            ]
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            return_value={
+                "success": True,
+                "output": {"chunks": [chunk().model_dump()]},
+            }
+        ),
+    )
+    runner = AgentRunner(llm, executor, Settings())
+
+    async def validate(query, candidate, *, allow_correction):
+        assert not allow_correction
+        if not candidate["observations"]:
+            return {
+                **candidate,
+                "status": "validation_failed",
+                "failure": {"stage": "output_validation"},
+                "validation": {
+                    "status": "rejected",
+                    "attempts": [
+                        {
+                            "stage": "initial",
+                            "verdict": {"missing_conditions": ["需要核实品类范围"]},
+                        }
+                    ],
+                },
+            }
+        return {**candidate, "validation": {"status": "passed", "attempts": []}}
+
+    runner.output_validator = validate
+    result = await runner.run(
+        "核对这条规则",
+        ToolContext(user_id="u", session_id="s", trace_id="t"),
+        AgentSpec("main", frozenset({"search_knowledge"}), max_steps=5),
+    )
+    assert result["status"] == "completed" and "[digital]" in result["answer"]
+    assert result["_output_validated"]
+    assert executor.execute.await_count == 1
+    assert any(e["event"] == "output_repair" for e in result["events"])
+    feedback = llm.generate.await_args_list[1].args[0][-1]["content"]
+    assert "需要核实品类范围" in feedback and "不是政策证据" in feedback
+    assert len(result["validation"]["attempts"]) == 1

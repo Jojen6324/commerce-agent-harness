@@ -77,6 +77,7 @@ class ChatService:
         self.validator = AnswerValidator(
             self.provider, tool_contracts=self.executor.schemas(self.spec)
         )
+        self.runner.output_validator = self.validator.validate
         self._locks: dict[str, asyncio.Lock] = {}
 
     async def chat(self, request: ChatRequest, *, trace_id: str, emit=None) -> ChatResponse:
@@ -167,7 +168,7 @@ class ChatService:
                         facts=facts,
                         emit=record_event,
                     )
-            if not request.confirm_action_id:
+            if not request.confirm_action_id and not result.get("_output_validated"):
                 result = await self.validator.validate(request.message, result)
             await self.store.record(result, context)
             for observation in result.get("observations", []):

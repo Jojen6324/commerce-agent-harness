@@ -19,7 +19,7 @@ from app.harness.completion import (
     missing_input_issue,
     policy_evidence_issue,
 )
-from app.harness.context import ContextBuilder
+from app.harness.context import ContextBuilder, artifact_digest
 from app.harness.receipts import support_receipt
 from app.prompts.evidence_rules import EVIDENCE_RULES
 from app.providers.fake import OfflineLLMProvider
@@ -60,6 +60,7 @@ class AgentSpec:
 class AgentRunner:
     def __init__(self, llm, executor, settings):
         self.llm, self.executor, self.settings = llm, executor, settings
+        self.output_validator = None
 
     async def run(
         self,
@@ -130,6 +131,8 @@ class AgentRunner:
         repairs = 0
         repaired_issues: set[str] = set()
         skill_recovery_attempts = 0
+        output_repairs = 0
+        output_audit = []
 
         def reserve_repair(issue: str, step: int) -> bool:
             nonlocal repairs
@@ -138,6 +141,44 @@ class AgentRunner:
             repairs += 1
             repaired_issues.add(issue)
             return True
+
+        async def deliver(candidate, step):
+            nonlocal output_repairs
+            if spec.name != "main" or self.output_validator is None:
+                return candidate
+            checked = await self.output_validator(query, candidate, allow_correction=False)
+            validation = checked.get("validation")
+            if validation:
+                output_audit.extend(validation["attempts"])
+                await event("output_validation", **validation)
+                checked["validation"] = {**validation, "attempts": list(output_audit)}
+            checked["events"] = events
+            checked["_output_validated"] = True
+            if (
+                checked["status"] == "validation_failed"
+                and (checked.get("failure") or {}).get("stage") == "output_validation"
+                and output_repairs < 2
+                and step + 1 < spec.max_steps
+            ):
+                output_repairs += 1
+                messages.extend(
+                    [
+                        {"role": "assistant", "content": candidate["answer"]},
+                        {
+                            "role": "system",
+                            "content": (
+                                "候选答复未通过输出校验。反馈仅是待核实的问题，不是政策证据；"
+                                "先对照文档标题、适用对象和起算事件复核反馈，不要盲目套用其中的期限。"
+                                "缺少必要政策或事实时可以继续用现有工具补查，再回答或提出必要补问。"
+                                "保持原有写入确认边界，不扩大用户授权，不把已知结论丢成泛泛的证据不足。"
+                                "本轮校验反馈：" + json.dumps(validation, ensure_ascii=False)
+                            ),
+                        },
+                    ]
+                )
+                await event("output_repair", attempt=output_repairs)
+                return None
+            return checked
 
         await event("agent_started")
         try:
@@ -190,13 +231,17 @@ class AgentRunner:
                             },
                         }
                     await event("validation")
-                    return {
+                    candidate = {
                         "answer": text or "请补充信息或联系人工客服。",
                         "observations": observations,
                         "events": events,
                         "run_id": run_id,
                         "status": "completed",
                     }
+                    delivered = await deliver(candidate, _step)
+                    if delivered is not None:
+                        return delivered
+                    continue
                 ids = [c.get("id") for c in calls]
                 if not all(ids) or len(set(ids)) != len(ids) or call_ids.intersection(ids):
                     raise LLMProviderError("invalid tool call identifiers", retryable=False)
@@ -364,50 +409,16 @@ class AgentRunner:
                     if "pending_action" in output:
                         pending = output["pending_action"]
                     message_output = output
-                    # Give every inline result its real store reference, even
-                    # below the externalization threshold. ContextBuilder may
-                    # need to compress it on a later iteration.
                     if result_ref and isinstance(output, dict):
-                        data = output.get("output", output)
-                        message_output = {
-                            **output,
-                            "artifact_ref": result_ref,
-                            "summary": str(
-                                data.get("answer")
-                                or data.get("notice")
-                                or "工具结果已保存；需要原文时读取artifact_ref。"
-                            )[:1500],
-                            "facts": data.get("facts", {}),
-                            "evidence_refs": [c["chunk_id"] for c in data.get("chunks", [])],
-                        }
-                    if (
-                        getattr(self.executor, "artifacts", None)
-                        and name != "read_artifact"
-                        and len(json.dumps(output, ensure_ascii=False)) > 3000
-                    ):
-                        ref = result_ref or await self.executor.artifacts.put(output, context)
-                        data = output.get("output", output)
-                        message_output = {
-                            "artifact_ref": ref,
-                            "status": output.get("status", "complete"),
-                            "summary": str(
-                                data.get("summary")
-                                or data.get("answer")
-                                or "大结果已保存，需要原文时调用read_artifact。"
-                            )[:1500],
-                            "facts": data.get(
-                                "facts",
-                                {
-                                    k: v
-                                    for k, v in data.items()
-                                    if k in ("order_id", "status", "missing_fields")
-                                },
-                            ),
-                            "missing_fields": data.get("missing_fields", []),
-                            "evidence_refs": data.get("evidence_refs")
-                            or [c["chunk_id"] for c in data.get("chunks", [])],
-                        }
-                        await event("artifact_saved", ref=ref)
+                        # Small inline results keep all data. Large results carry
+                        # a usable evidence projection, not just source IDs.
+                        message_output = {**output, "artifact_ref": result_ref}
+                        if (
+                            name != "read_artifact"
+                            and len(json.dumps(output, ensure_ascii=False)) > 3000
+                        ):
+                            message_output = artifact_digest(output, result_ref)
+                            await event("artifact_saved", ref=result_ref)
                     messages.append(
                         {
                             "role": "tool",
@@ -486,13 +497,17 @@ class AgentRunner:
                     answer = partial_answer or follow_up
                     if partial_answer and follow_up and follow_up not in partial_answer:
                         answer = f"{partial_answer}\n\n还需要补充：{follow_up}"
-                    return {
+                    candidate = {
                         "answer": answer,
                         "observations": observations,
                         "events": events,
                         "run_id": run_id,
                         "status": "needs_input",
                     }
+                    delivered = await deliver(candidate, _step)
+                    if delivered is not None:
+                        return delivered
+                    continue
                 if (
                     len(observations) == 1
                     and len(parsed) == 1

@@ -38,7 +38,7 @@ class AnswerValidator:
             for item in (tool_contracts or [])
         ]
 
-    async def validate(self, query, result):
+    async def validate(self, query, result, *, allow_correction=True):
         if result["status"] not in ("completed", "needs_input"):
             return result
         answer = result["answer"]
@@ -170,6 +170,21 @@ class AnswerValidator:
             )
         if judged.supported:
             return finish(result, "passed")
+        if not allow_correction:
+            return finish(
+                {
+                    **result,
+                    "answer": "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。",
+                    "status": "validation_failed",
+                    "failure": {
+                        "code": "ANSWER_VALIDATION_FAILED",
+                        "stage": "output_validation",
+                        "reason": "candidate_rejected",
+                        "retryable": False,
+                    },
+                },
+                "rejected",
+            )
         rewritten, judge, _ = await self_correct_answer(
             llm=self.llm,
             checker=checker,

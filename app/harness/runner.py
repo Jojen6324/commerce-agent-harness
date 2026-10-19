@@ -12,7 +12,7 @@ from pydantic import ValidationError
 
 from app.core.exceptions import AppError, InvalidRequestError, LLMProviderError, ToolPermissionError
 from app.core.ids import new_id
-from app.harness.budget import BudgetExceeded
+from app.harness.budget import BudgetExceeded, current_budget
 from app.harness.completion import (
     REPAIR_GUIDANCE,
     completion_issue,
@@ -187,8 +187,23 @@ class AgentRunner:
         await event("agent_started")
         try:
             for _step in range(spec.max_steps):
-                prepared, compressed = ContextBuilder(self.settings.agent_context_tokens).build(
-                    messages, tools
+                context_builder = ContextBuilder(self.settings.agent_context_tokens)
+                try:
+                    prepared, compressed = context_builder.build(messages, tools)
+                except BudgetExceeded as exc:
+                    await event(
+                        "context_budget_exceeded",
+                        reason=str(exc),
+                        **exc.details,
+                    )
+                    raise
+                await event(
+                    "context_prepared",
+                    context_tokens=context_builder.estimate(prepared, tools),
+                    context_limit_tokens=context_builder.limit,
+                    compressed=compressed,
+                    message_count=len(prepared),
+                    tool_count=len(tools),
                 )
                 if compressed:
                     await event("compression")
@@ -196,7 +211,20 @@ class AgentRunner:
                 if isinstance(provider, OfflineLLMProvider):
                     calls, text = self._offline(query, observations, history or [])
                 else:
+                    model_started = time.perf_counter()
+                    await event("model_started", stage="agent", step=_step + 1)
                     response = await self.llm.generate(prepared, tools=tools, max_tokens=1000)
+                    await event(
+                        "model_completed",
+                        stage="agent",
+                        step=_step + 1,
+                        elapsed_ms=round((time.perf_counter() - model_started) * 1000, 2),
+                        model=response.model,
+                        finish_reason=response.finish_reason,
+                        prompt_tokens=response.usage.prompt_tokens,
+                        completion_tokens=response.usage.completion_tokens,
+                        total_tokens=response.usage.total_tokens,
+                    )
                     if response.finish_reason not in ("stop", "tool_calls"):
                         raise LLMProviderError("incomplete response", retryable=False)
                     calls, text = response.tool_calls, response.content
@@ -548,7 +576,26 @@ class AgentRunner:
                         }
             raise BudgetExceeded("steps")
         except (BudgetExceeded, TimeoutError) as exc:
-            await event("stopped", reason=str(exc))
+            budget = current_budget.get()
+            budget_state = (
+                {
+                    "model_calls": budget.models,
+                    "model_call_limit": budget.max_models,
+                    "tool_calls": budget.tools,
+                    "tool_call_limit": budget.max_tools,
+                    "total_tokens": budget.usage.total_tokens,
+                    "reserved_tokens_without_usage": budget.reserved_tokens,
+                    "max_total_tokens": budget.max_tokens,
+                }
+                if budget is not None
+                else {}
+            )
+            await event(
+                "stopped",
+                reason=str(exc),
+                **budget_state,
+                **(exc.details if isinstance(exc, BudgetExceeded) else {}),
+            )
             return {
                 "answer": "本轮执行已达预算或时间限制，请补充信息或转人工。",
                 "observations": observations,

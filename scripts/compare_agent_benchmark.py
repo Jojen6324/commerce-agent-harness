@@ -2,6 +2,7 @@
 
 Examples:
  python -m scripts.compare_agent_benchmark --split development --limit 3 --live
+ python -m scripts.compare_agent_benchmark --split development --limit 3 --live --monitor
  python -m scripts.compare_agent_benchmark --split all --live
  python -m scripts.compare_agent_benchmark --split all   # offline plumbing smoke; NOT model quality
 """
@@ -60,11 +61,12 @@ async def main() -> None:
     parser.add_argument("--split", choices=["development", "holdout", "all"], default="development")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--live", action="store_true", help="Use configured AGNES; may incur cost or rate limits")
+    parser.add_argument("--monitor", action="store_true", help="Stream per-task, context, model, tool and validation progress to stderr")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be positive")
-    options = dict(dataset_path=DATASET, live=args.live, split=args.split, limit=args.limit)
+    options = dict(dataset_path=DATASET, live=args.live, split=args.split, limit=args.limit, monitor=args.monitor)
     # Each evaluation creates its own temporary DB and reinstalls fixtures before EVERY case.
     a = await evaluate(**options, delegation_enabled=False)
     b = await evaluate(**options, delegation_enabled=True)

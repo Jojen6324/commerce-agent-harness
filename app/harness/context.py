@@ -94,15 +94,19 @@ class ContextBuilder:
     def __init__(self, limit=16000, reserve=1200):
         self.limit, self.reserve = limit, reserve
 
+    def estimate(self, messages, tools):
+        """Return the same conservative estimate used for the context limit."""
+        return (
+            estimate_tokens(json.dumps(messages, ensure_ascii=False))
+            + estimate_tokens(json.dumps(tools, ensure_ascii=False))
+            + self.reserve
+        )
+
     def build(self, messages, tools):
         messages = deepcopy(messages)
 
         def used():
-            return (
-                estimate_tokens(json.dumps(messages, ensure_ascii=False))
-                + estimate_tokens(json.dumps(tools, ensure_ascii=False))
-                + self.reserve
-            )
+            return self.estimate(messages, tools)
 
         changed = False
         # Keep system, current task, and tool pairing. Replace large results with
@@ -140,5 +144,13 @@ class ContextBuilder:
             m.pop("current_task", None)
             m.pop("protected", None)
         if used() > self.limit:
-            raise BudgetExceeded("context_cannot_fit_without_losing_protected_facts")
+            raise BudgetExceeded(
+                "context_cannot_fit_without_losing_protected_facts",
+                budget_scope="agent_context_tokens",
+                context_tokens=used(),
+                context_limit_tokens=self.limit,
+                reserve_tokens=self.reserve,
+                message_count=len(messages),
+                tool_count=len(tools),
+            )
         return messages, changed

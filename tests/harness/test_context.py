@@ -50,6 +50,30 @@ def test_compression_preserves_call_pair_current_goal_and_facts():
     assert messages[-1]["content"] != compressed[-1]["content"]
 
 
+def test_context_overflow_reports_estimate_and_limit():
+    builder = ContextBuilder(limit=1, reserve=0)
+    with pytest.raises(BudgetExceeded) as raised:
+        builder.build([{"role": "system", "content": "long enough to exceed the limit"}], [])
+
+    assert raised.value.context_tokens == builder.estimate(
+        [{"role": "system", "content": "long enough to exceed the limit"}], []
+    )
+    assert raised.value.context_limit_tokens == 1
+    assert raised.value.message_count == 1
+    assert raised.value.tool_count == 0
+
+
+def test_run_token_budget_is_distinct_from_model_call_limit():
+    budget = RunBudget(time.monotonic() + 10, max_models=24, max_tokens=10)
+    with pytest.raises(BudgetExceeded, match="run_token_budget") as raised:
+        budget.reserve_model(11)
+
+    assert raised.value.budget_scope == "run_tokens"
+    assert raised.value.requested_tokens == 11
+    assert raised.value.projected_tokens == 11
+    assert raised.value.max_total_tokens == 10
+
+
 @pytest.mark.asyncio
 async def test_budget_shared_across_provider_calls():
     provider = SimpleNamespace(generate=AsyncMock(return_value=LLMResponse("ok")))

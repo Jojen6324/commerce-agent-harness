@@ -6,7 +6,9 @@ import copy
 import hashlib
 import json
 import re
+import sys
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 from collections import Counter, defaultdict
 from contextvars import ContextVar
@@ -102,6 +104,7 @@ async def evaluate(
     container_factory=build_container,
     dataset_path=None,
     delegation_enabled=None,
+    monitor=False,
 ):
     # Keep the locked 116-task historical corpus unchanged; opt in to new benchmarks.
     if dataset_path is None:
@@ -131,6 +134,100 @@ async def evaluate(
     if not selected:
         raise ValueError("no tasks selected")
     results = []
+    monitor_events = []
+    arm = "multi" if delegation_enabled else "single" if delegation_enabled is not None else "default"
+
+    def log_progress(event, *, task_id=None, turn=None, **details):
+        if not monitor:
+            return
+        record = {
+            "at": datetime.now(UTC).isoformat(),
+            "arm": arm,
+            "task_id": task_id,
+            "turn": turn,
+            "event": event,
+            **details,
+        }
+        monitor_events.append(record)
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr, flush=True)
+
+    async def request_chat(client, payload, *, task_id, turn):
+        if not monitor:
+            response = await client.post("/api/v1/chat", json=payload)
+            try:
+                return response.status_code, response.json()
+            except ValueError:
+                return response.status_code, {"error": "non_json_api_response"}
+
+        log_progress("turn_started", task_id=task_id, turn=turn)
+        status_code = 0
+        final_body = None
+        data_lines = []
+        async with client.stream("POST", "/api/v1/chat/stream", json=payload) as response:
+            status_code = response.status_code
+            async for line in response.aiter_lines():
+                if line.startswith("data:"):
+                    data_lines.append(line[5:].lstrip())
+                elif not line and data_lines:
+                    raw = "\n".join(data_lines)
+                    data_lines.clear()
+                    try:
+                        item = json.loads(raw)
+                    except ValueError:
+                        log_progress("stream_parse_error", task_id=task_id, turn=turn)
+                        continue
+                    name = item.get("event", "stream_event") if isinstance(item, dict) else "stream_event"
+                    if name == "answer" and isinstance(item.get("data"), dict):
+                        final_body = item["data"]
+                        continue
+                    if name not in ("started", "done"):
+                        safe_fields = (
+                            "agent", "parent_run_id", "run_id", "tool", "tool_call_id",
+                            "elapsed_ms", "reason", "attempt", "reused", "compressed",
+                            "context_tokens", "context_limit_tokens", "reserve_tokens",
+                            "message_count", "tool_count", "stage", "step", "model",
+                            "finish_reason", "prompt_tokens", "completion_tokens", "total_tokens",
+                            "reserved_tokens_without_usage", "max_total_tokens", "requested_tokens",
+                            "projected_tokens", "model_calls", "model_call_limit", "tool_calls",
+                            "tool_call_limit", "budget_scope", "error_code", "status",
+                        )
+                        details = {key: item[key] for key in safe_fields if key in item}
+                        validation = item.get("validation")
+                        if isinstance(validation, dict):
+                            details["validation_status"] = validation.get("status")
+                            details["validation_attempts"] = len(validation.get("attempts", []))
+                        log_progress(name, task_id=task_id, turn=turn, **details)
+            if data_lines:
+                try:
+                    item = json.loads("\n".join(data_lines))
+                    if item.get("event") == "answer" and isinstance(item.get("data"), dict):
+                        final_body = item["data"]
+                except ValueError:
+                    pass
+            if final_body is None and status_code >= 400:
+                try:
+                    final_body = json.loads((await response.aread()).decode("utf-8"))
+                except (ValueError, UnicodeDecodeError):
+                    final_body = {"error": "non_json_api_response"}
+        final_body = final_body or {"error": "stream_ended_without_answer"}
+        diagnostics = final_body.get("diagnostics", {})
+        usage = final_body.get("token_usage", {})
+        log_progress(
+            "turn_finished",
+            task_id=task_id,
+            turn=turn,
+            http_status=status_code,
+            status=final_body.get("status"),
+            error_code=final_body.get("error_code"),
+            model_calls=diagnostics.get("model_calls"),
+            tool_calls=diagnostics.get("tool_calls"),
+            prompt_tokens=usage.get("prompt_tokens"),
+            completion_tokens=usage.get("completion_tokens"),
+            total_tokens=usage.get("total_tokens"),
+            reserved_tokens_without_usage=diagnostics.get("reserved_tokens_without_usage"),
+            failure=diagnostics.get("failure"),
+        )
+        return status_code, final_body
     with tempfile.TemporaryDirectory(prefix="agent-tasks-") as directory:
         settings = Settings(
             database_url=f"sqlite+aiosqlite:///{directory}/tasks.db",
@@ -202,6 +299,7 @@ async def evaluate(
                 base_url="http://task-eval",
             ) as client:
                 for task in selected:
+                    log_progress("task_started", task_id=task.id, scenario=task.scenario)
                     await install_fixture(c.session_factory, task.fixtures)
                     calls.clear()
                     session_id = None
@@ -210,6 +308,7 @@ async def evaluate(
                     session_calls = []
                     known_order_ids = set()
                     for n, turn in enumerate(task.turns, 1):
+                        log_progress("turn_request", task_id=task.id, turn=n)
                         payload = {"message": turn.message, "user_id": turn.user_id}
                         if session_id:
                             payload["session_id"] = session_id
@@ -240,20 +339,18 @@ async def evaluate(
                         )
                         before = await snapshot(c.session_factory)
                         start = len(calls)
-                        response = await client.post("/api/v1/chat", json=payload)
-                        try:
-                            body = response.json()
-                        except ValueError:
-                            body = {"error": "non_json_api_response"}
+                        status_code, body = await request_chat(
+                            client, payload, task_id=task.id, turn=n
+                        )
                         responses.append(body)
-                        if response.status_code == 200:
+                        if status_code == 200:
                             session_id = body.get("session_id", session_id)
                         after = await snapshot(c.session_factory)
                         audit = copy.deepcopy(calls[start:])
                         grade = grade_turn(
                             turn,
                             body,
-                            response.status_code,
+                            status_code,
                             audit,
                             before,
                             after,
@@ -263,14 +360,14 @@ async def evaluate(
                             session_calls,
                         )
                         session_calls.extend(audit)
-                        unavailable = response.status_code >= 500 or body.get("status") in (
+                        unavailable = status_code >= 500 or body.get("status") in (
                             "failed",
                             "budget_exhausted",
                         )
                         turns.append(
                             {
                                 "turn": n,
-                                "http_status": response.status_code,
+                                "http_status": status_code,
                                 "request": payload,
                                 "response": body,
                                 "calls": audit,
@@ -314,6 +411,7 @@ async def evaluate(
                             "turns": turns,
                         }
                     )
+                    log_progress("task_finished", task_id=task.id, status=results[-1]["task_status"])
         finally:
             await c.aclose()
     for case in results:
@@ -337,6 +435,7 @@ async def evaluate(
         "unrun_count": len(all_tasks) - len(executed),
         "grouping_method": manifest["method"],
         "scope": "Derived tasks and turns are correlated members of source families, not independent new samples. Semantic review is pending, never silently treated as passed.",
+        "monitoring": {"enabled": monitor, "event_count": len(monitor_events), "events": monitor_events},
         **summarize(results, all_tasks),
         "cases": results,
     }

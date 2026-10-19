@@ -10,7 +10,11 @@ from app.schemas.common import TokenUsage
 
 
 class BudgetExceeded(RuntimeError):
-    pass
+    def __init__(self, message, **details):
+        super().__init__(message)
+        self.details = details
+        for name, value in details.items():
+            setattr(self, name, value)
 
 
 @dataclass
@@ -30,11 +34,26 @@ class RunBudget:
 
     def reserve_model(self, estimate):
         self.check()
-        if (
-            self.models >= self.max_models
-            or self.usage.total_tokens + self.reserved_tokens + estimate > self.max_tokens
-        ):
-            raise BudgetExceeded("model_or_token_budget")
+        if self.models >= self.max_models:
+            raise BudgetExceeded(
+                "model_call_budget",
+                budget_scope="model_calls",
+                model_calls=self.models,
+                model_call_limit=self.max_models,
+            )
+        projected_tokens = self.usage.total_tokens + self.reserved_tokens + estimate
+        if projected_tokens > self.max_tokens:
+            raise BudgetExceeded(
+                "run_token_budget",
+                budget_scope="run_tokens",
+                requested_tokens=estimate,
+                projected_tokens=projected_tokens,
+                max_total_tokens=self.max_tokens,
+                total_tokens=self.usage.total_tokens,
+                reserved_tokens_without_usage=self.reserved_tokens,
+                model_calls=self.models,
+                model_call_limit=self.max_models,
+            )
         self.models += 1
         # Conservative reservation stays charged even on transport failure.
         self.reserved_tokens += estimate
@@ -62,7 +81,13 @@ class BudgetedProvider:
         estimate += estimate_tokens(json.dumps(kwargs.get("tools", []), ensure_ascii=False))
         output = kwargs.get("max_tokens", 1024)
         if estimate + output > self.context_tokens:
-            raise BudgetExceeded("context_budget")
+            raise BudgetExceeded(
+                "context_budget",
+                budget_scope="model_context_tokens",
+                context_tokens=estimate + output,
+                context_limit_tokens=self.context_tokens,
+                requested_output_tokens=output,
+            )
         if budget is None:
             return await self.provider.generate(messages, **kwargs)
         budget.reserve_model(estimate + output)

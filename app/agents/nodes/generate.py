@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 
 from pydantic import BaseModel, Field
@@ -77,6 +78,7 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
             ),
         },
     ]
+    generation_failure = None
     try:
         response = await llm.generate(
             messages,
@@ -86,7 +88,13 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
         )
         payload = parse_model(response.content, AnswerPayload)
         usage = response.usage
-    except (LLMProviderError, LLMOutputError):
+    except (LLMProviderError, LLMOutputError) as exc:
+        generation_failure = {
+            "code": exc.error_code.value,
+            "reason": exc.message,
+            "retryable": exc.retryable,
+            "stage": "generation",
+        }
         payload = AnswerPayload(
             answer=_extractive_fallback(state["user_query"], evidence, tool_text),
             citation_chunk_ids=[chunks[0].chunk_id] if chunks else [],
@@ -116,6 +124,7 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
         "refused": payload.refused,
         "latency": latency,
         "token_usage": merged,
+        "extra": {**(state.get("extra") or {}), "generation_failure": generation_failure},
     }
 
 
@@ -129,8 +138,13 @@ async def refuse_node(state: AgentState) -> dict:
 
 def _extractive_fallback(query: str, evidence: str, tool_text: str) -> str:
     if evidence and evidence != "(无检索结果)":
-        snippet = evidence.split("\n", 1)[-1][:240].strip()
-        return f"暂时无法生成完整答复。相关资料节选：\n\n> {snippet}\n\n请以原文为准。"
+        header, _, content = evidence.partition("\n")
+        # Quote one coherent source, without cutting into the next source's ID.
+        content = re.split(r"\n\n(?=\[[A-Za-z0-9_-]+\])", content, maxsplit=1)[0]
+        snippet = content[:240].strip()
+        reference = re.match(r"\[([A-Za-z0-9_-]+)\]", header)
+        citation = f" [{reference.group(1)}]" if reference else ""
+        return f"暂时无法生成完整答复。相关资料节选：\n\n> {snippet}{citation}\n\n请以原文为准。"
     if tool_text and tool_text != "(无)":
         return "已查询到系统数据，但暂时无法可靠地整理答复。请稍后重试或转人工。"
     return "暂时无法基于现有信息给出可靠答复，请补充相关信息或转人工。"

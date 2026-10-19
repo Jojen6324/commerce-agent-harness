@@ -6,7 +6,12 @@ import asyncio
 import time
 
 from app.config.settings import Settings
-from app.core.exceptions import GuardrailError, InvalidRequestError, RateLimitError
+from app.core.exceptions import (
+    GuardrailError,
+    InvalidRequestError,
+    LLMProviderError,
+    RateLimitError,
+)
 from app.core.ids import new_id
 from app.guardrails.injection import detect_prompt_injection
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
@@ -49,7 +54,12 @@ class ChatService:
         self.knowledge = KnowledgeService(retriever, reranker, self.provider, settings)
         self.registry.register(EvidenceTool(self.knowledge))
         self.registry.register(PolicyAnswerTool(self.knowledge))
-        self.executor = ToolExecutor(self.registry, session_factory, settings.agent_tool_timeout)
+        self.executor = ToolExecutor(
+            self.registry,
+            session_factory,
+            settings.agent_tool_timeout,
+            settings.agent_knowledge_timeout,
+        )
         self.runner = AgentRunner(self.provider, self.executor, settings)
         self.store = RuntimeStore(session_factory)
         self.executor.artifacts = self.store
@@ -90,6 +100,12 @@ class ChatService:
             summary = row.summary or ""
             history = await repo.recent_messages(session_id)
             await db.commit()
+        context = context.model_copy(
+            update={
+                "user_messages": [m.content for m in history if m.role == "user"]
+                + [request.message]
+            }
+        )
         budget = RunBudget(
             time.monotonic() + self._settings.agent_deadline_seconds,
             max_models=self._settings.agent_model_calls,
@@ -98,6 +114,18 @@ class ChatService:
         )
         facts = await self.store.facts(context)
         token = current_budget.set(budget)
+        run_id = None
+        run_events = []
+        result = {}
+
+        async def record_event(event):
+            nonlocal run_id
+            if event.get("parent_run_id") is None:
+                run_id = event.get("run_id", run_id)
+            run_events.append(event)
+            if emit:
+                await emit(event)
+
         try:
             detect_prompt_injection(request.message)
             if request.confirm_action_id:
@@ -134,7 +162,7 @@ class ChatService:
                         history=history,
                         summary=summary,
                         facts=facts,
-                        emit=emit,
+                        emit=record_event,
                     )
             if not request.confirm_action_id:
                 result = await self.validator.validate(request.message, result)
@@ -166,8 +194,19 @@ class ChatService:
                 else None
             )
             citations = {}
+            degradations = []
             for observation in result.get("observations", []):
                 data = observation["output"].get("output", observation["output"])
+                if data.get("generation_failure") or data.get("degraded"):
+                    degradations.append(
+                        {
+                            "tool": observation["name"],
+                            "generation_failure": data.get("generation_failure"),
+                            "validation_failure": data.get("failure")
+                            if data.get("degraded")
+                            else None,
+                        }
+                    )
                 for c in data.get("chunks", []):
                     citations[c["chunk_id"]] = Citation(
                         document_id=c["document_id"],
@@ -179,11 +218,15 @@ class ChatService:
                 answer=result["answer"],
                 run_id=result.get("run_id"),
                 status=result.get("status", "completed"),
+                error_code=(result.get("failure") or {}).get("code"),
+                events=result.get("events", []),
                 diagnostics={
                     "model_calls": budget.models,
                     "reserved_tokens_without_usage": budget.reserved_tokens,
                     "tool_calls": budget.tools,
                     "tools": [o["name"] for o in result.get("observations", [])],
+                    "failure": result.get("failure"),
+                    "degradations": degradations,
                 },
                 session_id=session_id,
                 trace_id=trace_id,
@@ -192,13 +235,50 @@ class ChatService:
                 token_usage=budget.usage,
                 latency=LatencyBreakdown(total_ms=(time.perf_counter() - started) * 1000),
             )
-        except (BudgetExceeded, TimeoutError):
+        except (BudgetExceeded, TimeoutError) as exc:
+            failure = {
+                "code": "RUN_BUDGET_EXHAUSTED",
+                "reason": str(exc) or "deadline",
+                "retryable": True,
+            }
+            run_events.append({"event": "stopped", "run_id": run_id, **failure})
             response = ChatResponse(
                 answer="本轮执行达到预算或时间限制，请稍后重试。",
+                status="budget_exhausted",
+                error_code=failure["code"],
+                run_id=run_id,
+                events=run_events,
+                diagnostics={"failure": failure},
                 session_id=session_id,
                 trace_id=trace_id,
                 token_usage=budget.usage,
             )
+            if run_id:
+                await self.store.record(
+                    {"run_id": run_id, "status": response.status, "events": run_events}, context
+                )
+        except LLMProviderError as exc:
+            failure = {
+                "code": exc.error_code.value,
+                "reason": exc.message,
+                "retryable": exc.retryable,
+            }
+            run_events.append({"event": "error", "run_id": run_id, **failure})
+            response = ChatResponse(
+                answer="模型暂不可用，本轮未能完成结果校验，请稍后重试。",
+                status="failed",
+                error_code=exc.error_code.value,
+                run_id=run_id,
+                session_id=session_id,
+                trace_id=trace_id,
+                token_usage=budget.usage,
+                diagnostics={"failure": failure},
+                events=run_events,
+            )
+            if run_id:
+                await self.store.record(
+                    {"run_id": run_id, "status": response.status, "events": run_events}, context
+                )
         except GuardrailError as exc:
             response = ChatResponse(
                 answer=exc.message,
@@ -209,6 +289,10 @@ class ChatService:
             )
         finally:
             current_budget.reset(token)
+        response.latency.total_ms = (time.perf_counter() - started) * 1000
+        response.diagnostics.setdefault("model_calls", budget.models)
+        response.diagnostics.setdefault("tool_calls", budget.tools)
+        response.diagnostics.setdefault("reserved_tokens_without_usage", budget.reserved_tokens)
         async with self._session_factory() as db:
             repo = SessionRepository(db)
             await repo.append_message(session_id, "user", request.message)

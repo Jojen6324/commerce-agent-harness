@@ -33,8 +33,9 @@ class DelegateInput(BaseModel):
 
 
 class ToolExecutor:
-    def __init__(self, registry, session_factory, timeout=30):
+    def __init__(self, registry, session_factory, timeout=30, knowledge_timeout=180):
         self.registry, self.session_factory, self.timeout = registry, session_factory, timeout
+        self.knowledge_timeout = knowledge_timeout
         self.delegate = None
         self.artifacts = None
 
@@ -71,6 +72,35 @@ class ToolExecutor:
         # Model-provided identity is never authoritative.
         if "user_id" in args:
             args["user_id"] = context.user_id
+        if (
+            name in ("create_refund_request", "create_return_request")
+            and not confirmed
+            and context.user_messages
+        ):
+            reason = args.get("reason", "").strip()
+            placeholders = {
+                "退款",
+                "退货",
+                "退钱",
+                "申请退款",
+                "申请退货",
+                "用户要求退款",
+                "用户要求退货",
+                "用户申请退款",
+                "用户申请退货",
+                "未提供",
+                "未知",
+                "其他",
+                "售后",
+                "退款申请",
+                "退货申请",
+            }
+            if reason in placeholders or not any(
+                reason in message for message in context.user_messages
+            ):
+                raise InvalidRequestError(
+                    f"invalid arguments for {name}: 售后原因必须引用用户已提供的具体原因原话，不能填写申请意愿或猜测原因。缺少原因请ask_user补问。"
+                )
 
         async def perform(db):
             if "order_id" in args:
@@ -153,7 +183,14 @@ class ToolExecutor:
             assert_permitted(tool, confirmed=confirmed)
             if confirmed and transaction is None:
                 raise ToolPermissionError("写入必须通过持久化Action确认入口。")
-            async with asyncio.timeout(self.timeout):
+            timeout = (
+                self.knowledge_timeout
+                if name in ("answer_question", "search_knowledge")
+                else self.timeout
+            )
+            if budget:
+                timeout = min(timeout, max(0.001, budget.deadline - time.monotonic()))
+            async with asyncio.timeout(timeout):
                 result = await tool.run(args, context)
             return result.model_dump(mode="json")
 
@@ -224,9 +261,16 @@ class ToolExecutor:
 
     def schemas(self, spec):
         schemas = [t.openai_schema() for t in self.registry.all() if t.name in spec.tools]
+        for schema in schemas:
+            if self.registry.get(schema["function"]["name"]).risk in WRITE_RISKS:
+                schema["function"]["description"] += (
+                    " 调用本工具只校验参数并生成持久化pending_action，绝不会立即写入业务。"
+                    "用户请求操作且参数完整时应立即调用以准备提案，不要先口头要求确认。"
+                    "后端收到confirm_action_id才执行已保存参数；申请提交不代表退款到账。"
+                )
         extras = {
             "ask_user": (
-                "缺少必要订单号、原因或政策例外条件时补问用户，不猜测参数。",
+                "仅缺少必要订单号、原因或政策例外条件时补问，不猜参数。不要用本工具请求操作批准；参数齐全时调用业务工具生成pending_action，由后端处理确认。",
                 AskInput.model_json_schema(),
             ),
             "delegate_task": (

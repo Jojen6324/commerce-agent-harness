@@ -27,7 +27,7 @@ class RefundCreateInput(BaseModel):
     reason: str = Field(
         min_length=1,
         max_length=200,
-        description="用户原因，1–200 字，如「尺码不合适」；不要填订单号",
+        description="必须引用当前或历史用户消息中的具体原因原话，如「尺码不合适」。不能猜测、改写或填「用户要求退款」。缺少原因先ask_user；不要填订单号。",
     )
 
 

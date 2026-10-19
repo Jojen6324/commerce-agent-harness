@@ -51,9 +51,14 @@ class KnowledgeService:
                 AgentState, await faithfulness_node(state, FaithfulnessChecker(self.llm), self.llm)
             )
         )
+        extra = state.get("extra") or {}
         return {
             **evidence,
             "answer": state["final_answer"],
             "citations": [c.model_dump() for c in state.get("citations", [])],
-            "validated": not state.get("refused", False),
+            "validated": not state.get("refused", False) and not extra.get("degraded", False),
+            "degraded": extra.get("degraded", False),
+            "degradation_reason": extra.get("degradation_reason"),
+            "failure": (extra.get("faithfulness") or {}).get("failure"),
+            "generation_failure": extra.get("generation_failure"),
         }

@@ -13,7 +13,7 @@ class SearchInput(BaseModel):
     query: str = Field(
         min_length=1,
         max_length=80,
-        description="商品关键词，如「降噪耳机」；不要填 sku 或订单号",
+        description="商品原名或核心品类词，如「T恤」「降噪耳机」。多个关键词可用空格或斜线分隔，需同时匹配；不要填 sku 或订单号",
     )
 
 
@@ -48,6 +48,7 @@ class SearchProductsTool(RepositoryBackedTool, Tool):
         "优先使用 search_products 当有明确关键词；模糊需求或推荐语气则用 recommend_products。"
         "参数 query：1–80 字搜索词，不是 sku。例 query=「降噪耳机」，不要填 SKU-A1 或 ORD1001。"
         "返回 products[]：sku、name、category、price_cents（分）、inventory；后续详情用返回的 sku 调 get_product_detail。"
+        "没有匹配时可用更短的核心品类词再查一次；不要猜SKU或把空结果说成商品无库存。"
     )
     risk = ToolRisk.READ
     input_model = SearchInput

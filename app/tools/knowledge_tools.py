@@ -129,6 +129,7 @@ class EscalateToHumanTool(Tool):
         "何时不用：先能用 get_order、search_knowledge 等解决时不要转；不要用它查订单、物流或政策。"
         "优先：业务可工具化 → 先调对应读工具；明确要人工或工具穷尽 → 本工具。"
         "参数 reason：1–200 字概括为何转人工，如「用户要求值班经理审核退款」。"
+        "用户明确要求人工时无需先提供订单号，可以先入队再补充订单背景，不要代替用户申请退款。"
         "返回 {ticket_id, queue:human, reason} 表示已排队，不是已经接通人工。"
     )
     risk = ToolRisk.EXTERNAL

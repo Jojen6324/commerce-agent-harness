@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from app.core.exceptions import LLMOutputError, LLMProviderError
@@ -15,6 +17,7 @@ class FaithfulnessResult(BaseModel):
     supported: bool
     hallucinated_spans: list[str] = Field(default_factory=list)
     rationale: str = ""
+    failure: dict[str, Any] | None = None
 
 
 class FaithfulnessChecker:
@@ -49,5 +52,14 @@ class FaithfulnessChecker:
                 response_format={"type": "json_object"},
             )
             return parse_model(response.content, FaithfulnessResult)
-        except (LLMProviderError, LLMOutputError):
-            return FaithfulnessResult(supported=False, rationale="checker_unavailable")
+        except (LLMProviderError, LLMOutputError) as exc:
+            return FaithfulnessResult(
+                supported=False,
+                rationale="checker_unavailable",
+                failure={
+                    "code": exc.error_code.value,
+                    "reason": exc.message,
+                    "retryable": exc.retryable,
+                    "stage": "faithfulness",
+                },
+            )

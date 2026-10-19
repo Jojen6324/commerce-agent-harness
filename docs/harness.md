@@ -24,7 +24,7 @@ cd ..
 已真实验证文本、JSON object 和原生 function tool calling。无 AGNES 时进入确定性离线演示，不切换其他付费服务。
 没有通用的自然语言动作解析器，也没有自动 JSON 兼容模式：截断、非法 JSON、缺参数均不能执行。
 
-核心默认值见 `.env.example`：16K 上下文（含 Schema 和输出预留）、60K 总 Token、24 次模型尝试、120 秒 deadline、30 秒工具超时、8 个 Agent 步骤、6 次工具调用。多步骤演示可显式提高 `MAX_TOOL_CALLS=16`。
+核心默认值见 `.env.example`：16K 上下文（含 Schema 和输出预留）、60K 总 Token、24 次模型尝试、300 秒 deadline、普通工具 30 秒超时、RAG 工具 180 秒超时、8 个 Agent 步骤、6 次工具调用。多步骤演示可显式提高 `MAX_TOOL_CALLS=16`。
 Token 估计是 CJK 字符启发式，不能替代供应商精确 tokenizer；不能安全放下关键上下文时停止。
 `token_usage` 仅累计已返回的 usage，失败请求保守预留单独列在 `diagnostics.reserved_tokens_without_usage`，不能当作已计费 Token。
 
@@ -118,3 +118,18 @@ PY
 
 
 新的任务语料、逐题人工审阅目录、fixture与分组协议见 [任务行为评测](agent-task-evaluation.md)。原intent工具命中指标已移除；语义待审阅与实际通过分开计数，保留集必须显式选择。
+
+
+## 提案、结束状态与慢环境配置
+
+用户明确请求业务操作且参数齐全时，主Agent调用写工具以生成持久化`pending_action`；这一步不改变业务状态。`ask_user`只补业务信息，不代替提案或索要操作批准。只有后续携带`confirm_action_id`的请求执行保存参数，确认与重试不重新调用模型。针对只承诺“马上处理”“查一下”或口头要求批准而没有提案的回复，Runner最多纠正一次，仍未交付则返回`validation_failed`；纠正不增加角色权限，不选择固定业务工具，不猜参数。
+
+退款/退货原因必须引用当前或历史用户消息中的具体原因原话，不能用“用户要求退款”等意愿充数。ChatService把可信用户轮次填入Context，执行器在准备新提案时检查原因来源；不读取助手摘要作为原因证明。确认阶段重放已保存参数。内部直接调用执行器的代码若没有用户轮次Context，仍须由调用方保证参数来源。
+
+商品查询优先原词匹配；无匹配时支持空格、斜线、逗号分隔的多个关键词同时匹配。每词仍保留SQL LIKE转义，不因组合搜索扩大通配符权限。
+
+慢云环境可配置`AGENT_KNOWLEDGE_TIMEOUT`（默认180秒），只影响`answer_question`与`search_knowledge`。`AGENT_TOOL_TIMEOUT`仍为30秒；`AGENT_DEADLINE_SECONDS`默认300秒。RAG和子Agent不能越过剩余父级deadline，Token、模型次数、工具次数限制保持不变。此配置适应较慢环境，不代表已确认超时根因。
+
+HTTP 200只表示API正常返回结构。调用方需检查`status`、`error_code`、`diagnostics.failure`与`events`，区分`completed`、`needs_input`、`awaiting_confirmation`、`failed`、`budget_exhausted`、`validation_failed`和`denied`。错误记录包含安全的错误码、原因和可重试性；不会返回认证头或密钥。外层deadline也保留run_id和终止状态。校验器不可用时不能声称“未配置模型”或把未校验答复标记为已校验；生成降级会保留原因，资料摘录限于一个完整来源并附原引用。
+
+本轮未修改任务语料、划分或语义评测规则。验证结果见后续运行记录。

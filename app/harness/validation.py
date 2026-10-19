@@ -92,6 +92,18 @@ class AnswerValidator:
         judged = await checker.check(
             query=query, answer=answer, chunks=list(chunks.values()), tool_results_text=text
         )
+        if judged.rationale == "checker_unavailable":
+            return {
+                **result,
+                "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请核对引用原文或稍后重试。",
+                "status": "failed",
+                "failure": judged.failure
+                or {
+                    "code": "VALIDATION_UNAVAILABLE",
+                    "reason": "checker_unavailable",
+                    "retryable": True,
+                },
+            }
         if judged.supported:
             return result
         rewritten, judge, _ = await self_correct_answer(

@@ -30,8 +30,9 @@ class Settings(BaseSettings):
     agent_context_tokens: int = 16000
     agent_total_tokens: int = 60000
     agent_model_calls: int = 24
-    agent_deadline_seconds: float = 120
+    agent_deadline_seconds: float = 300
     agent_tool_timeout: float = 30
+    agent_knowledge_timeout: float = 180
     agent_delegation_enabled: bool = True
 
     deepseek_api_key: SecretStr = SecretStr("")

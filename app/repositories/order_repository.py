@@ -1,5 +1,7 @@
 """Order, refund and return queries."""
 
+import re
+
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -159,13 +161,30 @@ class OrderRepository:
             select(ProductRow)
             .where(
                 or_(
-                    ProductRow.name.ilike(pattern),
-                    ProductRow.category.ilike(pattern),
-                    ProductRow.tags.ilike(pattern),
+                    ProductRow.name.ilike(pattern, escape="\\"),
+                    ProductRow.category.ilike(pattern, escape="\\"),
+                    ProductRow.tags.ilike(pattern, escape="\\"),
                 )
             )
             .limit(limit)
         )
+        rows = result.scalars().all()
+        # Prefer an exact phrase; models and users also supply separated terms.
+        # Each term must match, with literal LIKE escaping retained throughout.
+        terms = [t for t in re.split(r"[\s/、,，]+", query.strip()) if t]
+        if not rows and 1 < len(terms) <= 8:
+            filters = []
+            for term in terms:
+                term_pattern = f"%{escape_like(term)}%"
+                filters.append(
+                    or_(
+                        ProductRow.name.ilike(term_pattern, escape="\\"),
+                        ProductRow.category.ilike(term_pattern, escape="\\"),
+                        ProductRow.tags.ilike(term_pattern, escape="\\"),
+                    )
+                )
+            result = await self._session.execute(select(ProductRow).where(*filters).limit(limit))
+            rows = result.scalars().all()
         return [
             Product(
                 sku=row.sku,
@@ -176,7 +195,7 @@ class OrderRepository:
                 tags=[tag for tag in row.tags.split(",") if tag],
                 description=row.description,
             )
-            for row in result.scalars().all()
+            for row in rows
         ]
 
     async def get_refunds(self, order_id: str) -> list[RefundRow]:

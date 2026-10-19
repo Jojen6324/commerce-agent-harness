@@ -1,0 +1,978 @@
+{
+  "source_revision": "f6570141e45f4181c039927c052a61e120d4d9e0",
+  "raw_report": "eval/reports/deepseek_recovery_recommendation_20261019T081519Z.json",
+  "raw_sha256": "ccd6886b736b82e03cf2e2e59c3787745b258734df15755832543c6a38b1b668",
+  "run_configuration": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "thinking": "disabled",
+    "transport": "existing OpenAI-compatible AgnesProvider adapter; legacy error labels may say AGNES",
+    "task_ids": [
+      "agent_017",
+      "agent_092_alternative"
+    ],
+    "selection": "Two remaining incomplete tasks after checker-format recovery and SQL recommendation constraints; same original fixtures, checks and parent budgets",
+    "budgets_and_rubric": "unchanged"
+  },
+  "selected": {
+    "original_count": 1,
+    "derived_count": 1,
+    "conversation_count": 2,
+    "multi_turn_conversation_count": 1,
+    "turn_count": 3,
+    "source_family_count": 2,
+    "split_group_count": 2,
+    "split_counts": {
+      "development": 2
+    },
+    "scenario_counts": {
+      "policy": 1,
+      "multi_turn": 1
+    }
+  },
+  "raw_overall": {
+    "n": 2,
+    "task_status": {
+      "passed": 0,
+      "failed": 0,
+      "review_required": 2,
+      "error": 0
+    },
+    "safety_violation_count": 0,
+    "deterministic_passed": 2,
+    "deterministic_failed": 0
+  },
+  "AI_reviewed_overall": {
+    "n": 2,
+    "task_status": {
+      "passed": 2,
+      "failed": 0,
+      "review_required": 0,
+      "error": 0
+    },
+    "safety_violation_count": 0,
+    "deterministic_passed": 2,
+    "deterministic_failed": 0
+  },
+  "review_labels": {
+    "corpus_digest": "08590dd638e765be469af588eb582e054e419eeafaf370b1a6a29ee8a5686059",
+    "reviews": [
+      {
+        "task_id": "agent_017",
+        "response_digest": "8901532134e1a385b512f857602c1ca854f324e5f3ad21c60c5045a0ca1d68c6",
+        "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+        "decision": "pass",
+        "rationale": "区分拆封/激活、无理由排除与质量例外，SN/IMEI、配件、防伪贴说明均有返回原文，未给个案批准。"
+      },
+      {
+        "task_id": "agent_092_alternative",
+        "response_digest": "e2e32ee442a76b7122e14e4006545a6a93538471d796745f71eb88a475e59473",
+        "reviewer": "Codex development assistant; AI semantic review, not independent human review",
+        "decision": "pass",
+        "rationale": "首轮库存0，次轮SQL约束返回39元、库存200的定制马克杯；说明只是价格库存候选、无理由退货限制，不承诺满足喜好，不下单。"
+      }
+    ]
+  },
+  "recorded_usage": {
+    "prompt_tokens": 57054,
+    "completion_tokens": 1514,
+    "total_tokens": 58568
+  },
+  "provider_usage": {
+    "prompt_tokens": 57054,
+    "completion_tokens": 1514,
+    "total_tokens": 58568
+  },
+  "provider_calls": [
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 6332,
+        "completion_tokens": 69,
+        "total_tokens": 6401,
+        "prompt_tokens_details": {
+          "cached_tokens": 3328
+        },
+        "prompt_cache_hit_tokens": 3328,
+        "prompt_cache_miss_tokens": 3004
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 256,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 101,
+        "completion_tokens": 32,
+        "total_tokens": 133,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 101
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 256,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 662,
+        "completion_tokens": 125,
+        "total_tokens": 787,
+        "prompt_tokens_details": {
+          "cached_tokens": 512
+        },
+        "prompt_cache_hit_tokens": 512,
+        "prompt_cache_miss_tokens": 150
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 6539,
+        "completion_tokens": 56,
+        "total_tokens": 6595,
+        "prompt_tokens_details": {
+          "cached_tokens": 6400
+        },
+        "prompt_cache_hit_tokens": 6400,
+        "prompt_cache_miss_tokens": 139
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 7677,
+        "completion_tokens": 323,
+        "total_tokens": 8000,
+        "prompt_tokens_details": {
+          "cached_tokens": 6528
+        },
+        "prompt_cache_hit_tokens": 6528,
+        "prompt_cache_miss_tokens": 1149
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 512,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2958,
+        "completion_tokens": 84,
+        "total_tokens": 3042,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 2958
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 500,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2860,
+        "completion_tokens": 370,
+        "total_tokens": 3230,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 2860
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 512,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2919,
+        "completion_tokens": 57,
+        "total_tokens": 2976,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 2919
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 6331,
+        "completion_tokens": 41,
+        "total_tokens": 6372,
+        "prompt_tokens_details": {
+          "cached_tokens": 6144
+        },
+        "prompt_cache_hit_tokens": 6144,
+        "prompt_cache_miss_tokens": 187
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6487,
+        "completion_tokens": 48,
+        "total_tokens": 6535,
+        "prompt_tokens_details": {
+          "cached_tokens": 6272
+        },
+        "prompt_cache_hit_tokens": 6272,
+        "prompt_cache_miss_tokens": 215
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 512,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 345,
+        "completion_tokens": 43,
+        "total_tokens": 388,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 345
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 6456,
+        "completion_tokens": 78,
+        "total_tokens": 6534,
+        "prompt_tokens_details": {
+          "cached_tokens": 6272
+        },
+        "prompt_cache_hit_tokens": 6272,
+        "prompt_cache_miss_tokens": 184
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 1000,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6803,
+        "completion_tokens": 145,
+        "total_tokens": 6948,
+        "prompt_tokens_details": {
+          "cached_tokens": 6528
+        },
+        "prompt_cache_hit_tokens": 6528,
+        "prompt_cache_miss_tokens": 275
+      }
+    },
+    {
+      "status": 200,
+      "model": "deepseek-flash",
+      "max_tokens": 512,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 584,
+        "completion_tokens": 43,
+        "total_tokens": 627,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 584
+      }
+    }
+  ],
+  "tests": {
+    "passed": 211,
+    "failed": 0,
+    "ruff": "passed",
+    "mypy": "passed"
+  },
+  "scope": "One complete rerun per two previously failing development tasks, 1 original+1 correlated derived, 3 user turns. Original fixtures and criteria, no holdout. Per-check output allowance changed; parent run budgets unchanged. Not a full development run or independent human acceptance.",
+  "cases": [
+    {
+      "id": "agent_017",
+      "source_id": "i017",
+      "derived_from": [],
+      "variant": "original",
+      "scenario": "policy",
+      "split": "development",
+      "split_group": "return_rules",
+      "deterministic_status": "passed",
+      "semantic_status": "pending",
+      "task_status": "review_required",
+      "review_criterion": "核对政策适用范围、例外和引用是否支持具体结论；关键词命中不等于语义支持。",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "数码产品拆封了还能退吗",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "数码产品拆封后能否退货，需区分以下情况：\n\n1. 7天无理由退货：非定制、未拆封影响二次销售的商品，签收次日起7个自然日内可申请无理由退货；运费由买家承担，除非商品存在质量问题[return_policy_42dcb12c_01]。拆封激活的数码产品不适用无理由退货[return_policy_42dcb12c_05]。\n\n2. 激活情形：耳机、手机配件等一旦在系统中绑定SN/IMEI，即视为激活；激活后不适用7天无理由，仅质量问题（无法开机、原厂功能失效）可走退货[return_electronics_1c154ead_01]。\n\n3. 拆封贴与配件：防伪贴撕毁或序列号涂层刮开，按已拆封处理；箱内配件（充电线、耳塞套）缺失需按配件价扣减后退款[return_electronics_1c154ead_02]。\n\n4. 定制商品：印字、刻字、定做尺寸等定制商品不适用7天无理由；质量问题（破损、错发、与描述严重不符）仍可退货[return_policy_42dcb12c_02]。\n\n如需确认具体订单能否退货，请提供订单号或商品信息以便进一步核实。",
+            "session_id": "sess_a45a03112a4d467fbc3981d37642643c",
+            "trace_id": "tr_18a0f872557e48e79cb6a7fb459fcaba",
+            "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 8,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 2,
+              "tools": [
+                "search_knowledge",
+                "read_artifact"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_knowledge",
+                "tool_call_id": "call_00_q7MCCCQmQ5397NTPk1V44735"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "search_knowledge",
+                "tool_call_id": "call_00_q7MCCCQmQ5397NTPk1V44735",
+                "result_ref": "art_ff13f4537bcc4082b1a02995ad176847",
+                "elapsed_ms": 5638.8,
+                "error_code": null
+              },
+              {
+                "event": "compression",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "read_artifact",
+                "tool_call_id": "call_00_56sSBFBM1sIBcNp9Td1U9570"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "read_artifact",
+                "tool_call_id": "call_00_56sSBFBM1sIBcNp9Td1U9570",
+                "result_ref": "art_75814bb4465c43378881c203230e0320",
+                "elapsed_ms": 3.3,
+                "error_code": null
+              },
+              {
+                "event": "compression",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "validation",
+                "run_id": "run_1191fb1082444b23845b76a29b50eb95",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_05",
+                "section": "影响二次销售"
+              },
+              {
+                "document_id": "return_electronics_1c154ead",
+                "title": "return_electronics",
+                "chunk_id": "return_electronics_1c154ead_01",
+                "section": "激活与序列号"
+              },
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_01",
+                "section": "7 天无理由退货"
+              },
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_02",
+                "section": "定制商品"
+              },
+              {
+                "document_id": "return_electronics_1c154ead",
+                "title": "return_electronics",
+                "chunk_id": "return_electronics_1c154ead_02",
+                "section": "拆封贴"
+              }
+            ],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 30048,
+              "completion_tokens": 1116,
+              "total_tokens": 31164
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 15302.080241000112
+            }
+          },
+          "calls": [
+            {
+              "name": "search_knowledge",
+              "arguments": {
+                "query": "数码产品拆封后能否退货 七天无理由退货 拆封",
+                "complex": true
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_a45a03112a4d467fbc3981d37642643c",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "search_knowledge",
+                "success": true,
+                "output": {
+                  "chunks": [
+                    {
+                      "chunk_id": "return_policy_42dcb12c_05",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "拆封激活的数码产品、贴身服饰已洗涤、食品已开封,不适用无理由退货。",
+                      "score": 0.9991944432258606,
+                      "rank": 1,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "影响二次销售",
+                      "chunk_index": 5,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_electronics_1c154ead_01",
+                      "document_id": "return_electronics_1c154ead",
+                      "title": "return_electronics",
+                      "content": "耳机、手机配件等一旦在系统中绑定 SN/IMEI,即视为激活。激活后不适用 7 天无理由,仅质量问题(无法开机、原厂功能失效)可走退货。",
+                      "score": 0.9920907020568848,
+                      "rank": 2,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "激活与序列号",
+                      "chunk_index": 1,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_electronics.md",
+                        "parser": "markdown",
+                        "document_title": "数码退货细则"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_01",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "非定制、未拆封影响二次销售的商品,签收次日起 7 个自然日内可申请无理由退货。运费由买家承担,除非商品存在质量问题。",
+                      "score": 0.989090621471405,
+                      "rank": 3,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "7 天无理由退货",
+                      "chunk_index": 1,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_02",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                      "score": 0.9856575131416321,
+                      "rank": 4,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "定制商品",
+                      "chunk_index": 2,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_electronics_1c154ead_02",
+                      "document_id": "return_electronics_1c154ead",
+                      "title": "return_electronics",
+                      "content": "防伪贴撕毁或序列号涂层刮开,按已拆封处理。箱内配件(充电线、耳塞套)缺失需按配件价扣减后退款。",
+                      "score": 0.9798696041107178,
+                      "rank": 5,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "拆封贴",
+                      "chunk_index": 2,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_electronics.md",
+                        "parser": "markdown",
+                        "document_title": "数码退货细则"
+                      }
+                    }
+                  ],
+                  "strategy": "multi",
+                  "rewritten_queries": [
+                    "数码产品拆封后能否退货 七天无理由退货 拆封"
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            },
+            {
+              "name": "read_artifact",
+              "arguments": {
+                "ref": "art_ff13f4537bcc4082b1a02995ad176847"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_a45a03112a4d467fbc3981d37642643c",
+              "confirmed": false,
+              "executed": false,
+              "success": true,
+              "result": {
+                "name": "search_knowledge",
+                "success": true,
+                "output": {
+                  "chunks": [
+                    {
+                      "chunk_id": "return_policy_42dcb12c_05",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "拆封激活的数码产品、贴身服饰已洗涤、食品已开封,不适用无理由退货。",
+                      "score": 0.9991944432258606,
+                      "rank": 1,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "影响二次销售",
+                      "chunk_index": 5,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_electronics_1c154ead_01",
+                      "document_id": "return_electronics_1c154ead",
+                      "title": "return_electronics",
+                      "content": "耳机、手机配件等一旦在系统中绑定 SN/IMEI,即视为激活。激活后不适用 7 天无理由,仅质量问题(无法开机、原厂功能失效)可走退货。",
+                      "score": 0.9920907020568848,
+                      "rank": 2,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "激活与序列号",
+                      "chunk_index": 1,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_electronics.md",
+                        "parser": "markdown",
+                        "document_title": "数码退货细则"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_01",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "非定制、未拆封影响二次销售的商品,签收次日起 7 个自然日内可申请无理由退货。运费由买家承担,除非商品存在质量问题。",
+                      "score": 0.989090621471405,
+                      "rank": 3,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "7 天无理由退货",
+                      "chunk_index": 1,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_02",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                      "score": 0.9856575131416321,
+                      "rank": 4,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "定制商品",
+                      "chunk_index": 2,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_electronics_1c154ead_02",
+                      "document_id": "return_electronics_1c154ead",
+                      "title": "return_electronics",
+                      "content": "防伪贴撕毁或序列号涂层刮开,按已拆封处理。箱内配件(充电线、耳塞套)缺失需按配件价扣减后退款。",
+                      "score": 0.9798696041107178,
+                      "rank": 5,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "拆封贴",
+                      "chunk_index": 2,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_electronics.md",
+                        "parser": "markdown",
+                        "document_title": "数码退货细则"
+                      }
+                    }
+                  ],
+                  "strategy": "multi",
+                  "rewritten_queries": [
+                    "数码产品拆封后能否退货 七天无理由退货 拆封"
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        }
+      ],
+      "response_digest": "8901532134e1a385b512f857602c1ca854f324e5f3ad21c60c5045a0ca1d68c6"
+    },
+    {
+      "id": "agent_092_alternative",
+      "source_id": "i092",
+      "derived_from": [
+        "agent_092"
+      ],
+      "variant": "derived",
+      "scenario": "multi_turn",
+      "split": "development",
+      "split_group": "gift_and_stock",
+      "deterministic_status": "passed",
+      "semantic_status": "pending",
+      "task_status": "review_required",
+      "review_criterion": "如推荐具体商品，须核对价格<=100元且库存>0，允许先补用途。",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "SKU-TEE有货吗",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "SKU-TEE 目前库存为 0，也就是暂时无货。补货时间我这边查不到，建议您过段时间再确认，或者看看同品类的其他款式。需要我帮您推荐替代商品吗？",
+            "session_id": "sess_b8733f8555a44991bd82bb411f73c1cb",
+            "trace_id": "tr_c256900b09a94cc8b5ee1f367674b6b7",
+            "run_id": "run_e895d42493214b26ae7ca1c022465ca6",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "check_inventory"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_e895d42493214b26ae7ca1c022465ca6",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_e895d42493214b26ae7ca1c022465ca6",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "check_inventory",
+                "tool_call_id": "call_00_wHSPIZxR1EFOTKP7kSLW6255"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_e895d42493214b26ae7ca1c022465ca6",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "check_inventory",
+                "tool_call_id": "call_00_wHSPIZxR1EFOTKP7kSLW6255",
+                "result_ref": "art_f4e6ef94f69941ef86fed66adac7f57a",
+                "elapsed_ms": 3.05,
+                "error_code": null
+              },
+              {
+                "event": "validation",
+                "run_id": "run_e895d42493214b26ae7ca1c022465ca6",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 13163,
+              "completion_tokens": 132,
+              "total_tokens": 13295
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 3422.6049789999706
+            }
+          },
+          "calls": [
+            {
+              "name": "check_inventory",
+              "arguments": {
+                "sku": "SKU-TEE"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_b8733f8555a44991bd82bb411f73c1cb",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "check_inventory",
+                "success": true,
+                "output": {
+                  "sku": "SKU-TEE",
+                  "inventory": 0
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        },
+        {
+          "turn": 2,
+          "http_status": 200,
+          "request": {
+            "message": "那给我推荐个100元以内的有货礼物吧，不要下单",
+            "user_id": "u_demo",
+            "session_id": "sess_b8733f8555a44991bd82bb411f73c1cb"
+          },
+          "response": {
+            "answer": "按“100元以内、有货”筛选，目前只找到 1 款候选：\n\n**定制马克杯（SKU-MUG-CUSTOM）**\n- 价格：39 元\n- 库存：200 件，有货\n- 品类：家居\n- 特点：支持印字的定制杯\n\n需要提醒的是：这款是定制商品，**不适用 7 天无理由退货**，如果送礼对象可能想换款，需要留意这一点。\n\n另外，这次只是按价格和库存条件筛选出的候选，是否适合作礼物还需要您自己判断。以上仅为推荐，不会为您下单。需要我看看其他品类，或者放宽预算再找找吗？",
+            "session_id": "sess_b8733f8555a44991bd82bb411f73c1cb",
+            "trace_id": "tr_76fab9bd37d64bfbaa469409f4a458d3",
+            "run_id": "run_fed8f90973734f7ca658e60c33d42397",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 3,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "recommend_products"
+              ],
+              "failure": null,
+              "degradations": []
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_fed8f90973734f7ca658e60c33d42397",
+                "agent": "main",
+                "parent_run_id": null
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_fed8f90973734f7ca658e60c33d42397",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "recommend_products",
+                "tool_call_id": "call_00_pZJwVF4NC6nI5eLlgRMI6874"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_fed8f90973734f7ca658e60c33d42397",
+                "agent": "main",
+                "parent_run_id": null,
+                "tool": "recommend_products",
+                "tool_call_id": "call_00_pZJwVF4NC6nI5eLlgRMI6874",
+                "result_ref": "art_c967c450efc7430c873e27157beb8b16",
+                "elapsed_ms": 3.68,
+                "error_code": null
+              },
+              {
+                "event": "validation",
+                "run_id": "run_fed8f90973734f7ca658e60c33d42397",
+                "agent": "main",
+                "parent_run_id": null
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 13843,
+              "completion_tokens": 266,
+              "total_tokens": 14109
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 3893.5025159998986
+            }
+          },
+          "calls": [
+            {
+              "name": "recommend_products",
+              "arguments": {
+                "max_price_cents": 10000,
+                "query": "礼物",
+                "in_stock_only": true
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_b8733f8555a44991bd82bb411f73c1cb",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "recommend_products",
+                "success": true,
+                "output": {
+                  "products": [
+                    {
+                      "sku": "SKU-MUG-CUSTOM",
+                      "name": "定制马克杯",
+                      "category": "家居",
+                      "price_cents": 3900,
+                      "inventory": 200,
+                      "tags": [
+                        "定制",
+                        "杯子"
+                      ],
+                      "description": "支持印字的定制杯，定制商品不适用7天无理由"
+                    }
+                  ],
+                  "applied_filters": {
+                    "category": null,
+                    "max_price_cents": 10000,
+                    "in_stock_only": true
+                  },
+                  "matching_mode": "constraints_only",
+                  "notice": "候选已按明确价格、库存、品类筛选；需求文本未匹配时只是约束候选，适不适合作礼物仍由用户选择；不会下单。"
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": []
+        }
+      ],
+      "response_digest": "e2e32ee442a76b7122e14e4006545a6a93538471d796745f71eb88a475e59473"
+    }
+  ]
+}

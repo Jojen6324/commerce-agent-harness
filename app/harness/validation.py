@@ -134,9 +134,16 @@ class AnswerValidator:
         if isinstance(provider, OfflineLLMProvider):
             return result
         checker = FaithfulnessChecker(self.llm)
-        text = json.dumps(
-            {"observations": tool_facts, "available_tools": self.tool_contracts},
-            ensure_ascii=False,
+        text = (
+            "实际调用结果（订单状态与执行结果只能由这里证明）：\n"
+            + json.dumps(tool_facts, ensure_ascii=False)
+            + "\n\n应用声明的可用办理能力 available_tools（独立于知识库的接口契约；"
+            "可证明可申请的路径、参数与状态条件，不能证明已执行或已获批准）：\n"
+            + "\n".join(
+                f"[capability:{item['name']}] {item['description']} "
+                f"必填参数：{','.join(item['required_parameters'])}"
+                for item in self.tool_contracts
+            )
         )
         audit: list[dict] = []
 

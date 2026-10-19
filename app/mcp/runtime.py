@@ -13,6 +13,7 @@ LOCAL_CATALOG: list[dict[str, str]] = [
         "name": "mcp_store_hours",
         "description": (
             "查询客服营业时间与夜间是否审核退款。"
+            "只返回本地工作日/周末配置；知识库FAQ的在线客服时间是另一口径，回答综合服务时间时须核对并说明差异。"
             "何时用：客服几点上班、周末时段、夜间退款会不会审。"
             "何时不用：仓库截单/当日发货用 mcp_warehouse_cutoff；退款规则用 search_knowledge；退款进度用 get_refund_status。"
             "优先：营业时间/夜间审核 → 本工具；截单发货 → mcp_warehouse_cutoff。"
@@ -41,7 +42,7 @@ _LOCAL_HANDLERS: dict[str, dict[str, Any]] = {
         "weekend": "10:00-18:00",
         "night_refund_review": False,
         "source": "mcp_local",
-        "source_label": "本地配置时段，非实时坐席状态",
+        "source_label": "本地工作日/周末配置（与知识库在线客服时段为不同口径），非实时坐席状态",
         "notice": "本地时段配置与知识库可能不同，须标明来源；夜间不审核退款不代表不能查询进度。不能据此保证真实人工在线。",
     },
     "mcp_warehouse_cutoff": {

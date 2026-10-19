@@ -67,6 +67,7 @@ class CreateRefundRequestTool(RepositoryBackedTool, Tool):
     name = "create_refund_request"
     description = (
         "提交退款申请（destructive，须用户确认后才真正执行）。只退款、不创建退货单。"
+        "支持准备仅退款、不寄回商品的申请；这是可申请能力，不保证审核批准。用户要求先看方案不要执行时，只生成待确认提案。"
         "何时用：用户明确要求退钱/申请退款，且已有订单号。"
         "何时不用：只问退款规则用 search_knowledge；只查进度用 get_refund_status；要寄回商品用 create_return_request；未发货取消订单用 cancel_order。"
         "优先：未发货取消 → cancel_order；已发货要退货 → create_return_request；只要退款不要寄回 → 本工具。"

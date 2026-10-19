@@ -50,6 +50,7 @@ async def test_deepseek_forwards_tools_and_returns_tool_calls():
                 deepseek_api_key=SecretStr("test-only"),
                 deepseek_base_url="https://provider.test",
                 deepseek_model="deepseek-flash",
+                deepseek_thinking="disabled",
             ),
             client,
         )
@@ -59,6 +60,7 @@ async def test_deepseek_forwards_tools_and_returns_tool_calls():
 
     assert request_payload["model"] == "deepseek-flash"
     assert request_payload["tools"] == tools
+    assert request_payload["thinking"] == {"type": "disabled"}
     assert response.tool_calls == [tool_call]
     assert response.finish_reason == "tool_calls"
     assert response.usage.total_tokens == 22

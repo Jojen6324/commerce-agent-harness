@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     deepseek_api_key: SecretStr = SecretStr("")
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
+    deepseek_thinking: Literal["enabled", "disabled"] | None = None
     llm_timeout_seconds: float = 30.0
     llm_max_retries: int = 3
 

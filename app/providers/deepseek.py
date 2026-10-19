@@ -68,6 +68,8 @@ class DeepSeekProvider:
             payload["response_format"] = response_format
         if tools:
             payload["tools"] = tools
+        if self._settings.deepseek_thinking is not None:
+            payload["thinking"] = {"type": self._settings.deepseek_thinking}
 
         async def _call() -> LLMResponse:
             try:
@@ -147,6 +149,8 @@ class DeepSeekProvider:
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if self._settings.deepseek_thinking is not None:
+            payload["thinking"] = {"type": self._settings.deepseek_thinking}
 
         try:
             async with self._client.stream(

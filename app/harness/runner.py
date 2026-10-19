@@ -464,8 +464,22 @@ class AgentRunner:
                             },
                         }
                     await event("needs_input", missing_fields=missing["missing_fields"])
+                    prior_answer = next(
+                        (
+                            message["content"].strip()
+                            for message in reversed(messages)
+                            if message.get("role") == "assistant"
+                            and message.get("content", "").strip()
+                            and not message.get("tool_calls")
+                        ),
+                        "",
+                    )
+                    follow_up = missing["question"].strip()
+                    answer = prior_answer or follow_up
+                    if prior_answer and follow_up and follow_up not in prior_answer:
+                        answer = f"{prior_answer}\n\n还需要补充：{follow_up}"
                     return {
-                        "answer": missing["question"],
+                        "answer": answer,
                         "observations": observations,
                         "events": events,
                         "run_id": run_id,

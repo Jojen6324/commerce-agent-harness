@@ -37,7 +37,14 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
             answer,
         )
         or re.search(r"即将.{0,30}(取消|退款|退货|提交).{0,40}(确认|是否)", answer, re.S)
-        or re.search(r"(?:我|为您|为你|现在).{0,20}(?:生成|准备).{0,15}(?:提案|待确认)", answer)
+        or (
+            re.search(r"(?:我|为您|为你|现在).{0,20}(?:生成|准备).{0,15}(?:提案|待确认)", answer)
+            and not re.search(
+                r"(?:提供|补充|告知).{0,24}(?:后.{0,8}(?:才能|才可|再)|才能|才可|再)|"
+                r"有了.{0,24}(?:才能|才可|就能|再)",
+                answer,
+            )
+        )
         or any(
             re.search(r"确认提交|确认执行|confirmation|approval", f, re.I) for f in missing_fields
         )

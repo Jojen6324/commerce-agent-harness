@@ -132,4 +132,4 @@ PY
 
 HTTP 200只表示API正常返回结构。调用方需检查`status`、`error_code`、`diagnostics.failure`与`events`，区分`completed`、`needs_input`、`awaiting_confirmation`、`failed`、`budget_exhausted`、`validation_failed`和`denied`。错误记录包含安全的错误码、原因和可重试性；不会返回认证头或密钥。外层deadline也保留run_id和终止状态。校验器不可用时不能声称“未配置模型”或把未校验答复标记为已校验；生成降级会保留原因，资料摘录限于一个完整来源并附原引用。
 
-本轮未修改任务语料、划分或语义评测规则。验证结果见后续运行记录。
+本轮未修改任务语料、划分或语义评测规则。验证结果见 [任务执行优化与验证](agent-optimization-results.md)。

@@ -149,12 +149,6 @@ class AnswerValidator:
             return result
         if answer in verified and len(observations) == 1:
             return result
-        if not allow_correction and result["status"] == "completed" and chunks and not cited:
-            return reject(
-                "missing_evidence_citation",
-                "答复缺少可核对的证据引用。",
-                available_references=sorted(chunks),
-            )
         if isinstance(provider, OfflineLLMProvider):
             return result
         checker = FaithfulnessChecker(self.llm)
@@ -200,6 +194,23 @@ class AnswerValidator:
                 "unavailable",
             )
         if judged.supported:
+            selected = set(judged.supporting_chunk_ids)
+            if selected - set(chunks):
+                return reject(
+                    "unknown_validation_reference",
+                    "校验引用无法匹配当前证据。",
+                    unknown_references=sorted(selected - set(chunks)),
+                )
+            # Attach only validator-selected primary sources, never every
+            # search hit. Honest unknowns need no unrelated policy citation.
+            missing_refs = selected - cited
+            if missing_refs:
+                result = {
+                    **result,
+                    "answer": answer
+                    + "\n\n"
+                    + " ".join(f"[{ref}]" for ref in sorted(missing_refs)),
+                }
             return finish(result, "passed")
         if not allow_correction:
             return finish(

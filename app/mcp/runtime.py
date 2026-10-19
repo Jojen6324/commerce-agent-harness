@@ -43,7 +43,7 @@ _LOCAL_HANDLERS: dict[str, dict[str, Any]] = {
         "night_refund_review": False,
         "source": "mcp_local",
         "source_label": "本地工作日/周末配置（与知识库在线客服时段为不同口径），非实时坐席状态",
-        "notice": "本地时段配置与知识库可能不同，须标明来源；夜间不审核退款不代表不能查询进度。不能据此保证真实人工在线。",
+        "notice": "本结果尚未核实知识库FAQ的在线客服时段。回答综合服务时间时请查证并对照两种口径；无法查证时须明确另一口径未核实，不能仅说可能不同。夜间不审核退款不代表不能查询进度，配置不保证真实人工在线。",
     },
     "mcp_warehouse_cutoff": {
         "cutoff": "16:00",

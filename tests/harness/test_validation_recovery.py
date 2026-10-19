@@ -359,16 +359,6 @@ async def test_failed_output_returns_to_main_agent_with_tools_for_missing_eviden
         ("退款已到账", [], "unverified_refund_completion"),
         ("业务已提交", [], "unverified_action_completion"),
         ("未知 [invented]", [], "unknown_citation_or_action_claim"),
-        (
-            "数码商品超15天转保修",
-            [
-                {
-                    "name": "search_knowledge",
-                    "output": {"success": True, "output": {"chunks": [chunk().model_dump()]}},
-                }
-            ],
-            "missing_evidence_citation",
-        ),
     ],
 )
 async def test_deterministic_rejections_carry_feedback_for_shared_tool_loop(
@@ -385,3 +375,35 @@ async def test_deterministic_rejections_carry_feedback_for_shared_tool_loop(
     assert result["failure"]["reason"] == reason
     assert result["validation"]["attempts"][0]["reason"] == reason
     llm.generate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "refs,expected_status",
+    [(["digital"], "completed"), ([], "completed"), (["invented"], "validation_failed")],
+)
+async def test_validated_sources_are_attached_without_forcing_irrelevant_search_hits(
+    refs, expected_status
+):
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(verdict(supporting_chunk_ids=refs).model_dump_json())
+        )
+    )
+    result = await AnswerValidator(llm).validate(
+        "核对规则",
+        {
+            "status": "completed",
+            "answer": "已核实的结论" if refs else "本次未查到所需信息，无法确认。",
+            "observations": [
+                {
+                    "name": "search_knowledge",
+                    "output": {"success": True, "output": {"chunks": [chunk().model_dump()]}},
+                }
+            ],
+        },
+        allow_correction=False,
+    )
+    assert result["status"] == expected_status
+    assert ("[digital]" in result["answer"]) == (refs == ["digital"])
+    assert "[invented]" not in result["answer"]

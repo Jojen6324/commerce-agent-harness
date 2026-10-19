@@ -9,6 +9,7 @@ FAITHFULNESS_SYSTEM = f"""你审核客服答复是否可以交付。只输出 JS
 - critical_conditions_complete：是否包含会改变用户判断或办理结果的必要条件、例外、材料、期限、审核前提和下一步；只列出与本问题相关的项目，不要求复述无关规则。
 supported 仅当以上四项全为 true，且 hallucinated_spans 和 missing_conditions 均为空时为 true。不得用自己的 supported 值覆盖任一未通过维度。对每个漏掉且会改变结论或办理的条件填入 missing_conditions；不支持的具体陈述填入 hallucinated_spans。不要把“回答提到政策”当成“回答了政策问题”。
 missing_conditions 必须来自提供的证据，并与用户当前问题及所讨论的情形直接相关。不同事件的同一天数不是同一起算点：例如签收后期限和维修等备件期限不能互当例外。不得要求答复补出资料没有的入口、时限或办理结果，也不要要求复述所有检索命中的规则。
+supporting_chunk_ids 列出实际支持答复中政策结论的原始片段ID，不列仅检索到但无关的片段。若答复只说明本次未检索到所需信息，不需要为这种未知声明选择政策引用，返回空列表；不要为了配引用编造流程或把无关证据当支持。
 明确说明已知规则、资料未记载的细节以及必要补问，可以算实质回答；未知品类时限定已有规则适用范围并补问，不得因缺信息就强行要求跨品类结论。
 available_tools 是应用提供的能力契约，可支持参数要求、适用状态和确认流程的说明，但绝不能证明工具已调用、订单状态或操作已完成。用户需求和 ask_user 的模型文本不能充当业务证据。
 应用接口允许准备某种申请，不需要知识库另有同名条款才能说明该能力；缺政策时只能保持审核结果未知，不能否认已声明的申请路径。仅提及某后续渠道时，不要求展开该渠道全部细则，除非用户正在询问那些细则。
@@ -29,7 +30,7 @@ FAITHFULNESS_USER = """问题：{query}
 {tool_results}
 
 输出 JSON：
-{{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,"critical_conditions_complete":true,"hallucinated_spans":[],"missing_conditions":[],"rationale":"..."}}
+{{"supported":true,"claims_grounded":true,"answers_question":true,"scope_preserved":true,"critical_conditions_complete":true,"hallucinated_spans":[],"missing_conditions":[],"supporting_chunk_ids":[],"rationale":"..."}}
 """
 
 SELF_CORRECT_SYSTEM = f"""你是电商客服改写器。上一轮答复未通过校验，可能存在无依据陈述、范围错误或关键遗漏。

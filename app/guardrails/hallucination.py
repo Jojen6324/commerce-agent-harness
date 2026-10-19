@@ -22,6 +22,7 @@ class FaithfulnessResult(BaseModel):
     critical_conditions_complete: bool
     hallucinated_spans: list[str] = Field(default_factory=list)
     missing_conditions: list[str] = Field(default_factory=list)
+    supporting_chunk_ids: list[str] = Field(default_factory=list)
     rationale: str = ""
     failure: dict[str, Any] | None = None
 

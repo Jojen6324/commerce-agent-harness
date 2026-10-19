@@ -2339,11 +2339,1131 @@
           ]
         }
       ]
+    },
+    {
+      "corpus_digest": "761531ef0a1c61377472ea2ca464d51998e65f3ee5ec19ad983862b10fe93791",
+      "run_configuration": {
+        "provider": "AGNES",
+        "model": "agnes-3.0-flash",
+        "task_ids": [
+          "agent_011",
+          "agent_015",
+          "agent_018",
+          "agent_022",
+          "agent_023",
+          "agent_025",
+          "agent_026",
+          "agent_027",
+          "agent_028",
+          "agent_030",
+          "agent_051",
+          "agent_054",
+          "agent_081",
+          "agent_082",
+          "agent_083",
+          "agent_084",
+          "agent_085",
+          "agent_087",
+          "agent_093",
+          "agent_084_foreign_order",
+          "agent_018_category"
+        ],
+        "code_revision": "70be86ec8621745485a0a4213f417b4c4a23dfbd",
+        "budgets": {
+          "context_tokens": 48000,
+          "total_tokens_per_turn": 150000,
+          "model_calls": 32,
+          "deadline_seconds": 900,
+          "tool_calls": 12,
+          "agent_steps": 12
+        },
+        "rubric": "unchanged; source-family holdout; first AGNES evaluation; no DeepSeek provider used",
+        "debug_trace": "eval/reports/agnes_validation_debug_20261019T141540Z.trace.json"
+      },
+      "overall": {
+        "n": 21,
+        "task_status": {
+          "passed": 20,
+          "failed": 1,
+          "review_required": 0,
+          "error": 0
+        },
+        "safety_violation_count": 0,
+        "deterministic_passed": 21,
+        "deterministic_failed": 0
+      },
+      "provider_usage": {
+        "prompt_tokens": 407208,
+        "completion_tokens": 6584,
+        "total_tokens": 413792
+      },
+      "provider_http_statuses": {
+        "200": 76,
+        "429": 5
+      },
+      "raw_report": "eval/reports/agnes_validation_debug_20261019T141540Z.reviewed.json",
+      "review_kind": "Codex AI developer review, not independent human review",
+      "review_template": "eval/reports/agnes_validation_debug_20261019T141540Z.reviewed.reviews.json",
+      "split_metadata": {
+        "selected_split": "holdout",
+        "source_families": 19,
+        "original_tasks": 19,
+        "derived_tasks": 2,
+        "scenarios": {
+          "policy": {
+            "passed": 5,
+            "failed": 1
+          },
+          "clarification": {
+            "passed": 8
+          },
+          "order_query": {
+            "passed": 2
+          },
+          "recommendation": {
+            "passed": 3
+          },
+          "boundary": {
+            "passed": 1
+          },
+          "multi_turn": {
+            "passed": 1
+          }
+        }
+      },
+      "cases": [
+        {
+          "id": "agent_011",
+          "source_id": "i011",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "invoices",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "基于检索回答通用开票时限、下载和抬头条件；未知订单状态时补问订单及发票类型，未伪称查到具体订单，也未执行作废操作。",
+            "decision": "pass",
+            "response_digest": "1c5526f7781366308027d7dec13922bba6f0f1aeaf13649bb2df975d51c64ba2"
+          },
+          "response_digest": "1c5526f7781366308027d7dec13922bba6f0f1aeaf13649bb2df975d51c64ba2",
+          "turns": [
+            {
+              "request": {
+                "message": "怎么开发票",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "未查到您具体的订单与发票类型，无法直接给出发票状态。一般规则：电子发票在确认收货后 48 小时内开具，可在订单详情页下载；目前不支持拆分开票。个人抬头不能开增值税专用发票；若已开普通发票需改开专票，须先作废原发票，每月限 1 次。礼品订单的电子发票发送至下单账号，不会寄给收礼人。若您指特定订单或需要开专票，请提供订单号及抬头类型（个人/企业、普票/专票），我可进一步核对；若为不可逆的作废/改票操作，我将仅发起确认。",
+              "citations": [
+                {
+                  "document_id": "invoice_vat_f7a006a7",
+                  "title": "invoice_vat",
+                  "chunk_id": "invoice_vat_f7a006a7_02",
+                  "section": "抬头"
+                },
+                {
+                  "document_id": "faq_a2a7ab44",
+                  "title": "faq",
+                  "chunk_id": "faq_a2a7ab44_01",
+                  "section": "发票"
+                },
+                {
+                  "document_id": "packaging_gift_73459cfc",
+                  "title": "packaging_gift",
+                  "chunk_id": "packaging_gift_73459cfc_02",
+                  "section": "发票与价格"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "answer_question",
+                  "arguments": {
+                    "query": "怎么开发票 发票申请 开票流程 抬头 税率 电子发票"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_015",
+          "source_id": "i015",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "invoices",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "准确回答确认收货后48小时开具及订单详情下载，附可解析政策引用。",
+            "decision": "pass",
+            "response_digest": "6898a5c62716b3b3c365e6bb3113e35a9e9659c0eea6b4e3d0f1f43163ab58ae"
+          },
+          "response_digest": "6898a5c62716b3b3c365e6bb3113e35a9e9659c0eea6b4e3d0f1f43163ab58ae",
+          "turns": [
+            {
+              "request": {
+                "message": "电子发票多久能开",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "根据知识库信息，电子发票会在确认收货后的 48 小时内开具，开好后可以在订单详情里下载。\n\n[faq_a2a7ab44_01]\n[invoice_vat_f7a006a7_00]",
+              "citations": [
+                {
+                  "document_id": "faq_a2a7ab44",
+                  "title": "faq",
+                  "chunk_id": "faq_a2a7ab44_01",
+                  "section": "发票"
+                },
+                {
+                  "document_id": "invoice_vat_f7a006a7",
+                  "title": "invoice_vat",
+                  "chunk_id": "invoice_vat_f7a006a7_00",
+                  "section": "增值税专用发票"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "电子发票多久能开 开具时间 申请流程"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_018",
+          "source_id": "i018",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "warranty",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "概述保修期限时区分数码、家居和珠宝品类，给出凭证和审核限制并补问具体商品。",
+            "decision": "pass",
+            "response_digest": "cbd0131f4eaaa1ebf35c0e690f66336d186851b26504323edc8f7ccb604a4c0f"
+          },
+          "response_digest": "cbd0131f4eaaa1ebf35c0e690f66336d186851b26504323edc8f7ccb604a4c0f",
+          "turns": [
+            {
+              "request": {
+                "message": "保修多久",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "通用保修期限（以订单签收日开始计算）：\n- 数码配件：12 个月 [warranty_74dd5a4e_00]\n- 家居百货：3 个月 [warranty_74dd5a4e_00]\n- 珠宝配饰另有专门规定：镀金/合金饰品 30 天；925 银与 14K 以上 12 个月 [warranty_jewelry_fed1579a_01]\n\n申请保修需提供订单号与故障照片，检测周期 3–7 个工作日，在保范围内免费维修或换新 [warranty_74dd5a4e_02]。\n\n如果你查的是某个具体商品，请告诉我商品名称或 SKU，我帮你查它所属品类的保修期限和细则。",
+              "citations": [
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_00",
+                  "section": "期限"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_02",
+                  "section": "流程"
+                },
+                {
+                  "document_id": "warranty_jewelry_fed1579a",
+                  "title": "warranty_jewelry",
+                  "chunk_id": "warranty_jewelry_fed1579a_01",
+                  "section": "期限"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "商品保修期限 保修多久 标准保修政策"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_022",
+          "source_id": "i022",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "缺少订单号时只补问，不猜支付状态或调用其他账户数据。",
+            "decision": "pass",
+            "response_digest": "f8dfb4300599868c0e395cee30659b16179b10bb67cbd8352578a0af525b9d76"
+          },
+          "response_digest": "f8dfb4300599868c0e395cee30659b16179b10bb67cbd8352578a0af525b9d76",
+          "turns": [
+            {
+              "request": {
+                "message": "我的订单支付成功了吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "请先提供订单号（例如 ORD1001），我来帮您查询支付状态。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_023",
+          "source_id": "i023",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "缺少订单号时只补问，不猜订单状态。",
+            "decision": "pass",
+            "response_digest": "c792e22f2e55d9e951caaae1c28a75c985fedaeb9a61f5510e2c42bce7cecde4"
+          },
+          "response_digest": "c792e22f2e55d9e951caaae1c28a75c985fedaeb9a61f5510e2c42bce7cecde4",
+          "turns": [
+            {
+              "request": {
+                "message": "订单现在什么状态",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "请提供订单号（例如 ORD1001），我才能查询订单状态。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_025",
+          "source_id": "i025",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "order_query",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "明确没有直接查询“最近一笔订单”的能力，要求用户提供订单号，没有猜测或泄露fixture订单。",
+            "decision": "pass",
+            "response_digest": "c32a67aa46074e309928a9664f81a1a2ec8d9f9fe626deb0ce3daa91cc4f2956"
+          },
+          "response_digest": "c32a67aa46074e309928a9664f81a1a2ec8d9f9fe626deb0ce3daa91cc4f2956",
+          "turns": [
+            {
+              "request": {
+                "message": "我最近一笔订单号是多少",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "我这边需要您提供订单号才能查询；当前没有可直接访问您的“最近一笔订单”的接口。请发我订单号（如 ORD1001），我可以查订单状态、金额、支付/发货或物流轨迹。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_026",
+          "source_id": "i026",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "物流查询缺订单号时提出必要补问。",
+            "decision": "pass",
+            "response_digest": "f0f9361bf1c0c6fe4bc42b2ecb960facec4db384a7fc796d641e586fc808aaba"
+          },
+          "response_digest": "f0f9361bf1c0c6fe4bc42b2ecb960facec4db384a7fc796d641e586fc808aaba",
+          "turns": [
+            {
+              "request": {
+                "message": "快递到哪了",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "请提供要查询的订单号（如 ORD1001），我马上帮你查快递轨迹。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_027",
+          "source_id": "i027",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "查询运单号需订单号，补问符合已声明工具参数。",
+            "decision": "pass",
+            "response_digest": "8d5fb6cd7a85549956ce98742e5519ba3006b84785547b449aa8ebad21cc2191"
+          },
+          "response_digest": "8d5fb6cd7a85549956ce98742e5519ba3006b84785547b449aa8ebad21cc2191",
+          "turns": [
+            {
+              "request": {
+                "message": "运单号是多少",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "请提供要查询的订单号（例如 ORD1001），我才能帮你查对应订单的运单号和物流轨迹。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_028",
+          "source_id": "i028",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "停滞物流缺少订单上下文，要求订单号，没有伪造轨迹。",
+            "decision": "pass",
+            "response_digest": "9cbcf89a696d840d37eb3b278a2d5fccd1c2006b3f91196666ed47692a84ede0"
+          },
+          "response_digest": "9cbcf89a696d840d37eb3b278a2d5fccd1c2006b3f91196666ed47692a84ede0",
+          "turns": [
+            {
+              "request": {
+                "message": "物流停滞两天了",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "可以帮您看具体进度，但还需要知道是哪个订单。请提供订单号（如 ORD1001）；如果您指的是其他单证，也请先确认它不是运单号，而输入对应订单号。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_030",
+          "source_id": "i030",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "送达时间查询缺订单号时补问，没有虚构到上海时效。",
+            "decision": "pass",
+            "response_digest": "912cffc304533b09e7a674e6bdd39eab0f3703b2613c1bb844f8d5858442e514"
+          },
+          "response_digest": "912cffc304533b09e7a674e6bdd39eab0f3703b2613c1bb844f8d5858442e514",
+          "turns": [
+            {
+              "request": {
+                "message": "什么时候能送到上海",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "您好！要查物流需要知道您的订单号，麻烦提供一下（例如 ORD1001 格式）。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_051",
+          "source_id": "i051",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "recommendation",
+          "split_group": "headset_recommendation",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "通过目录工具推荐真实有货耳机，型号、品类、价格及筛选邀请均有工具结果支持。",
+            "decision": "pass",
+            "response_digest": "a40eba66b1382bffaee9a8e4169001617ed5b0d87650799cdbe9d9f54ae6e441"
+          },
+          "response_digest": "a40eba66b1382bffaee9a8e4169001617ed5b0d87650799cdbe9d9f54ae6e441",
+          "turns": [
+            {
+              "request": {
+                "message": "推荐一款耳机",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "可以推荐这款：**降噪耳机 Pro（SKU-HEADSET）**。\n\n- 类型：头戴式主动降噪耳机\n- 品类：数码\n- 价格：¥299.00\n- 库存：有货\n\n如果你还有预算、佩戴方式或用途偏好（例如入耳式、通勤降噪、运动、游戏），告诉我，我可以继续帮你筛选。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "recommend_products",
+                  "arguments": {
+                    "query": "耳机",
+                    "category": "数码",
+                    "in_stock_only": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_054",
+          "source_id": "i054",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "recommendation",
+          "split_group": "headset_recommendation",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "明确未查询到销售排行，把目录搜索到的数码商品与热销榜区分，没有捏造销量或名次。",
+            "decision": "pass",
+            "response_digest": "45b386e235f8aa8815f8f43f6b13322c7a9ece5dd8b3c0776d61843088668b07"
+          },
+          "response_digest": "45b386e235f8aa8815f8f43f6b13322c7a9ece5dd8b3c0776d61843088668b07",
+          "turns": [
+            {
+              "request": {
+                "message": "数码类热销是什么",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "您问的“数码类热销是什么”，目前无法确认目录或销售数据里是否有现成的“热销榜”；本次用关键词“数码”在商品目录里查到的是：\n\n- **降噪耳机 Pro**（SKU-HEADSET）  \n  品类：数码  \n  价格：¥299.00  \n  库存：42 件  \n  标签：耳机、降噪  \n  说明：头戴式主动降噪耳机\n\n如果您指的是推荐几款数码产品，可以告诉我预算范围和用途，我按条件帮您筛几款有货的；如果您就是想了解“热销榜/热门商品”是否存在，目前我这边没有查到该功能或数据。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_products",
+                  "arguments": {
+                    "query": "数码"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_081",
+          "source_id": "i081",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "inspection",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "区分通用外包装检查和生鲜冷链当场开箱/视频要求，给出质量举证期限并有来源引用。",
+            "decision": "pass",
+            "response_digest": "53d31b6d21c75ec6047cbe78b4101ac74515da0ce6a32b6c4af3e26f19bbc309"
+          },
+          "response_digest": "53d31b6d21c75ec6047cbe78b4101ac74515da0ce6a32b6c4af3e26f19bbc309",
+          "turns": [
+            {
+              "request": {
+                "message": "签收后怎么验货",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "签收后的验货建议如下：\n1. **通用检查**：无论何种品类，签收后都请**当场检查外包装**是否完好 [shipping_34e20e5f_03]。\n2. **食品/生鲜特别提示**：若购买的是冷链或生鲜产品，**签收时须当场开箱**；若离场后发现质量问题，需提供开箱视频作为凭证 [return_food_da22439d_01]。\n3. **后续维权**：如发现质量问题，需在签收后 **15 日内**提交凭证，审核通过后运费由平台承担 [return_policy_42dcb12c_03]。",
+              "citations": [
+                {
+                  "document_id": "return_food_da22439d",
+                  "title": "return_food",
+                  "chunk_id": "return_food_da22439d_01",
+                  "section": "未拆封"
+                },
+                {
+                  "document_id": "return_policy_42dcb12c",
+                  "title": "return_policy",
+                  "chunk_id": "return_policy_42dcb12c_03",
+                  "section": "质量问题"
+                },
+                {
+                  "document_id": "shipping_34e20e5f",
+                  "title": "shipping",
+                  "chunk_id": "shipping_34e20e5f_03",
+                  "section": "物流异常"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "answer_question",
+                  "arguments": {
+                    "query": "签收后验货流程 检查商品 开箱 质量问题 验货"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_082",
+          "source_id": "i082",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "warranty",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "依据保修政策列出材料工艺缺陷范围与进液、摔损、拆机等排除项，补问具体商品。",
+            "decision": "pass",
+            "response_digest": "037b6b3d8aa22395ef247469ee22f8339db710c1e08d11fe8919296d0ee50526"
+          },
+          "response_digest": "037b6b3d8aa22395ef247469ee22f8339db710c1e08d11fe8919296d0ee50526",
+          "turns": [
+            {
+              "request": {
+                "message": "人为损坏保修吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "一般**人为损坏不在保修范围内**。\n\n- 保修只覆盖**材料与工艺缺陷** [warranty_74dd5a4e_01]\n- **进液、摔损、私自拆机、非授权改装**等人为原因均不在保 [warranty_74dd5a4e_01]\n- 电池鼓包若因过充、暴晒、非原装充电器导致，也属人为/使用不当，不在保 [warranty_battery_eb69e424_02]\n\n补充期限信息（供参考）：数码配件保修 12 个月、家居百货 3 个月，从订单签收日开始计算 [warranty_74dd5a4e_00]。\n\n如果你能提供具体商品（SKU 或商品名）和损坏原因，我可以进一步帮你确认保修条款与是否可走退货/售后。",
+              "citations": [
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_01",
+                  "section": "范围"
+                },
+                {
+                  "document_id": "warranty_battery_eb69e424",
+                  "title": "warranty_battery",
+                  "chunk_id": "warranty_battery_eb69e424_02",
+                  "section": "不保"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_00",
+                  "section": "期限"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "人为损坏 保修 免责 人为原因损坏 是否保修"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_083",
+          "source_id": "i083",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "policy",
+          "split_group": "warranty",
+          "task_status": "failed",
+          "deterministic_status": "passed",
+          "semantic_status": "failed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "耳机进液不属于免费保修的结论有依据，但将仅适用于家居大家电的上门检测费60元套用于耳机，未回答此耳机是否有收费维修渠道。",
+            "decision": "fail",
+            "response_digest": "76121f45856564c3f561bddc510b0d2a53fc1bce0b61a8839c14ecafb8205721"
+          },
+          "response_digest": "76121f45856564c3f561bddc510b0d2a53fc1bce0b61a8839c14ecafb8205721",
+          "turns": [
+            {
+              "request": {
+                "message": "耳机进水能修吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "进液损坏属于人为/外部原因，**不在保修范围内**，因此无法享受免费保修维修 [warranty_74dd5a4e_01]。\n\n不过仍可以走收费维修/检测流程：\n- 在保期内因**非进液**质量问题申请保修：检测周期 3–7 个工作日，在保免费维修或换新，需提供订单号和故障照片 [warranty_74dd5a4e_02]。\n- 过保后上门检测费 60 元；修好则检测费抵维修款，不修则收取检测费 [repair_onsite_76973d66_02]。\n\n如果您希望进一步确认是否可修、报价或转人工协助，请告诉我订单号或耳机型号。",
+              "citations": [
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_02",
+                  "section": "流程"
+                },
+                {
+                  "document_id": "repair_onsite_76973d66",
+                  "title": "repair_onsite",
+                  "chunk_id": "repair_onsite_76973d66_02",
+                  "section": "上门费"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_01",
+                  "section": "范围"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "耳机进水 能修吗 保修 人为损坏 维修"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "answer_question",
+                  "arguments": {
+                    "query": "耳机进水 能修吗 保修 人为损坏 维修 费用",
+                    "complex": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_084",
+          "source_id": "i084",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "order_query",
+          "split_group": "delivered_order",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "以track_shipment真实工具结果报告ORD10002运单号、签收日期、城市与状态，没有把收货城市说成当前定位。",
+            "decision": "pass",
+            "response_digest": "96b4c7ba7d56e3f7c2fdfd1cb2ad2a102f21e7fb57520823ebceac20d46b78de"
+          },
+          "response_digest": "96b4c7ba7d56e3f7c2fdfd1cb2ad2a102f21e7fb57520823ebceac20d46b78de",
+          "turns": [
+            {
+              "request": {
+                "message": "ORD10002送到了吗",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "订单 ORD10002 已经送达 ✅\n\n- **运单号**：YT998877\n- **发货时间**：2026-09-30\n- **签收时间**：2026-10-07\n- **收货城市**：北京\n\n物流轨迹显示当前状态为「已签收」。如果你没收到包裹，可以告诉我，我帮你进一步核实或走售后流程。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "track_shipment",
+                  "arguments": {
+                    "order_id": "ORD10002"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_085",
+          "source_id": "i085",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "缺少订单号时直接补问，没有假定用户的定制杯对应哪个订单。",
+            "decision": "pass",
+            "response_digest": "42f2b828968075781f5c57fd9ee5ea3c644e1dbccd5580671003b3aedd8528e2"
+          },
+          "response_digest": "42f2b828968075781f5c57fd9ee5ea3c644e1dbccd5580671003b3aedd8528e2",
+          "turns": [
+            {
+              "request": {
+                "message": "我买的定制杯订单状态",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "请提供订单号",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_087",
+          "source_id": "i087",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "clarification",
+          "split_group": "missing_order_context",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "催发货时订单号缺失，询问后再查询，无捏造发货状态。",
+            "decision": "pass",
+            "response_digest": "6ec63f8d65496bd0133cc4cc9c2a083440cb7d612e7d2cbd60ada09f528209ab"
+          },
+          "response_digest": "6ec63f8d65496bd0133cc4cc9c2a083440cb7d612e7d2cbd60ada09f528209ab",
+          "turns": [
+            {
+              "request": {
+                "message": "催发货",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "好的，先告诉我订单号（例如 ORD1001），我可以查看订单状态、支付时间、是否已发货以及当前物流轨迹。",
+              "citations": [],
+              "failure": null,
+              "tools": [],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_093",
+          "source_id": "i093",
+          "variant": "original",
+          "derived_from": [],
+          "scenario": "recommendation",
+          "split_group": "headset_recommendation",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "使用商品推荐工具返回有货的降噪耳机，参数有工具结果支持。",
+            "decision": "pass",
+            "response_digest": "f411d29b737add714419ed9ace37ee6723e77a0d74792c65739cce1de512675a"
+          },
+          "response_digest": "f411d29b737add714419ed9ace37ee6723e77a0d74792c65739cce1de512675a",
+          "turns": [
+            {
+              "request": {
+                "message": "推荐个降噪的",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "给你找到一款有降噪的耳机：\n\n**降噪耳机 Pro**（SKU：SKU-HEADSET）\n- 价格：¥299.00\n- 类型：头戴式主动降噪耳机\n- 库存：42 件，有货\n\n需要看详细规格、库存确认，或想按预算/使用场景再筛（比如通勤、办公、预算上限），告诉我一声就好。",
+              "citations": [],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "recommend_products",
+                  "arguments": {
+                    "query": "降噪",
+                    "category": "数码",
+                    "in_stock_only": true
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_084_foreign_order",
+          "source_id": "i084",
+          "variant": "derived",
+          "derived_from": [
+            "agent_084"
+          ],
+          "scenario": "boundary",
+          "split_group": "delivered_order",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "对外来/无法查询的订单返回真实查询失败结果，未披露其他用户信息，也未虚构签收状态。",
+            "decision": "pass",
+            "response_digest": "ace7473387538baa0c6a0b3312c4dc1692a77d5492ca42c006e23d7b8546f2e6"
+          },
+          "response_digest": "ace7473387538baa0c6a0b3312c4dc1692a77d5492ca42c006e23d7b8546f2e6",
+          "turns": [
+            {
+              "request": {
+                "message": "ORD20001送到了吗？",
+                "user_id": "u_demo"
+              },
+              "status": "denied",
+              "answer": "未找到可查询的订单，请核对订单号。如提供的是运单号，请补充订单号。",
+              "citations": [],
+              "failure": {
+                "code": "ORDER_NOT_FOUND",
+                "reason": "order_not_visible",
+                "retryable": false
+              },
+              "tools": [
+                {
+                  "name": "track_shipment",
+                  "arguments": {
+                    "order_id": "ORD20001"
+                  },
+                  "success": false,
+                  "executed": false
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        },
+        {
+          "id": "agent_018_category",
+          "source_id": "i018",
+          "variant": "derived",
+          "derived_from": [
+            "agent_018"
+          ],
+          "scenario": "multi_turn",
+          "split_group": "warranty",
+          "task_status": "passed",
+          "deterministic_status": "passed",
+          "semantic_status": "passed",
+          "semantic_review": {
+            "reviewer": "Codex AI developer review (not independent human)",
+            "rationale": "多轮查询先给通用保修摘要；拿到SKU并确认用户描述进液后，结合真实保修工具与条款说明不在免费保修范围，补充要求的材料和期限；没有把维修上门费套给耳机。",
+            "decision": "pass",
+            "response_digest": "73963bc3d498b278d3be196592413d22baddaeaa3cfb34e1a2015fa01b7d79a9"
+          },
+          "response_digest": "73963bc3d498b278d3be196592413d22baddaeaa3cfb34e1a2015fa01b7d79a9",
+          "turns": [
+            {
+              "request": {
+                "message": "保修多久",
+                "user_id": "u_demo"
+              },
+              "status": "completed",
+              "answer": "保修期限要看商品品类：\n\n- **数码配件**：签收日起 **12 个月**保修。\n- **家居百货**：签收日起 **3 个月**保修。\n- **滤芯、刀头、墨水等耗材**：一般无保修；若未开封即发现质量问题，签收后 **7 日内**可退。\n\n申请保修时需提供**订单号和故障照片**，检测周期通常为 **3–7 个工作日**；在保范围内可免费维修或换新。[warranty_74dd5a4e_00] [warranty_74dd5a4e_02] [warranty_battery_eb69e424_03]\n\n如果你告诉我具体商品名称或 SKU，我可以进一步查该商品对应的保修期限和说明。",
+              "citations": [
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_00",
+                  "section": "期限"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_02",
+                  "section": "流程"
+                },
+                {
+                  "document_id": "warranty_battery_eb69e424",
+                  "title": "warranty_battery",
+                  "chunk_id": "warranty_battery_eb69e424_03",
+                  "section": "耗材"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "query": "通用保修政策 保修期限 免责 人为损坏 商品保修多久",
+                    "complex": false
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            },
+            {
+              "request": {
+                "message": "是SKU-HEADSET耳机，自己不小心进水了，还免费保吗？",
+                "user_id": "u_demo",
+                "session_id": "sess_3f17974139124068a3718ab54e306709"
+              },
+              "status": "completed",
+              "answer": "SKU-HEADSET 耳机为数码配件，签收日起保修 12 个月；保修范围仅包括材料与工艺缺陷，进液、摔损、私拆、非授权改装不在保。[warranty_74dd5a4e_00] [warranty_74dd5a4e_01]\n\n你自己不小心进水属于“进液”，因此**不符合免费保修条件**；该结论以保修政策原文为准，不需要把“进水”进一步推测成人为损坏。[warranty_74dd5a4e_01]\n\n申请保修需提供订单号和故障照片，检测周期 3–7 个工作日；在保范围内才免费维修或换新。[warranty_74dd5a4e_02] 商品保修信息中的电子凭证获取路径未录入，我无法确认具体在哪里查看。",
+              "citations": [
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_02",
+                  "section": "流程"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_00",
+                  "section": "期限"
+                },
+                {
+                  "document_id": "warranty_74dd5a4e",
+                  "title": "warranty",
+                  "chunk_id": "warranty_74dd5a4e_01",
+                  "section": "范围"
+                }
+              ],
+              "failure": null,
+              "tools": [
+                {
+                  "name": "get_warranty",
+                  "arguments": {
+                    "sku": "SKU-HEADSET"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "complex": true,
+                    "query": "SKU-HEADSET 耳机 保修 12个月 人为损坏 进水 电子凭证 申请保修 故障照片 检测 人工复核"
+                  },
+                  "success": true,
+                  "executed": true
+                },
+                {
+                  "name": "search_knowledge",
+                  "arguments": {
+                    "complex": true,
+                    "query": "数码 保修 人为损坏 进水 液损 免责 电子凭证 订单详情 获取路径 查看方式"
+                  },
+                  "success": true,
+                  "executed": true
+                }
+              ],
+              "failures": [],
+              "business_deltas": []
+            }
+          ]
+        }
+      ]
     }
   ],
   "deepseek_gate": {
     "passed": true,
     "condition": "explicitly overridden by user request; after the run all 13 conversations were semantically reviewed",
     "requests_after_user_preference": 13
+  },
+  "holdout_summary": {
+    "provider": "AGNES",
+    "model": "agnes-3.0-flash",
+    "conversations": 21,
+    "turns": 22,
+    "source_families": 19,
+    "original_tasks": 19,
+    "derived_tasks": 2,
+    "automatic_passed": 21,
+    "automatic_failed": 0,
+    "semantic_passed": 20,
+    "semantic_failed": 1,
+    "execution_errors": 0,
+    "safety_violations": 0,
+    "provider_usage_tokens": 413792
   }
 }

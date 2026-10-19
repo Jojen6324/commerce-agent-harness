@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "fixture_now": "2026-10-19T00:00:00+00:00",
+  "time_contract": "Fixed snapshot, not the host clock; no test claims a moving current timestamp.",
+  "profiles": {
+    "empty_business": {
+      "description": "全新空业务表；仍有隔离会话和执行记录。",
+      "depends_on": []
+    },
+    "catalog_v1": {
+      "description": "三个固定商品，SKU-TEE库存为0；没有耳机续航或照片定制参数。",
+      "depends_on": [],
+      "products": [
+        {
+          "sku": "SKU-HEADSET",
+          "name": "降噪耳机 Pro",
+          "category": "数码",
+          "price_cents": 29900,
+          "inventory": 42,
+          "tags": "耳机,降噪",
+          "description": "头戴式主动降噪耳机"
+        },
+        {
+          "sku": "SKU-MUG-CUSTOM",
+          "name": "定制马克杯",
+          "category": "家居",
+          "price_cents": 3900,
+          "inventory": 200,
+          "tags": "定制,杯子",
+          "description": "支持印字的定制杯，定制商品不适用7天无理由"
+        },
+        {
+          "sku": "SKU-TEE",
+          "name": "纯棉T恤",
+          "category": "服饰",
+          "price_cents": 7900,
+          "inventory": 0,
+          "tags": "衣服,基础款",
+          "description": "基础纯棉短袖"
+        }
+      ]
+    },
+    "orders_v1": {
+      "description": "三个u_demo订单及一个u_other隔离订单；时间固定。",
+      "depends_on": [
+        "catalog_v1"
+      ],
+      "orders": [
+        {
+          "order_id": "ORD10001",
+          "user_id": "u_demo",
+          "status": "shipped",
+          "total_cents": 29900,
+          "created_at": "2026-10-16T00:00:00+00:00",
+          "paid_at": "2026-10-16T00:00:00+00:00",
+          "shipped_at": "2026-10-17T00:00:00+00:00",
+          "delivered_at": null,
+          "tracking_no": "SF1234567890",
+          "receiver_city": "上海"
+        },
+        {
+          "order_id": "ORD10002",
+          "user_id": "u_demo",
+          "status": "delivered",
+          "total_cents": 3900,
+          "created_at": "2026-09-29T00:00:00+00:00",
+          "paid_at": "2026-09-29T00:00:00+00:00",
+          "shipped_at": "2026-09-30T00:00:00+00:00",
+          "delivered_at": "2026-10-07T00:00:00+00:00",
+          "tracking_no": "YT998877",
+          "receiver_city": "北京"
+        },
+        {
+          "order_id": "ORD10003",
+          "user_id": "u_demo",
+          "status": "paid",
+          "total_cents": 7900,
+          "created_at": "2026-10-18T19:00:00+00:00",
+          "paid_at": "2026-10-18T19:00:00+00:00",
+          "shipped_at": null,
+          "delivered_at": null,
+          "tracking_no": null,
+          "receiver_city": "杭州"
+        },
+        {
+          "order_id": "ORD20001",
+          "user_id": "u_other",
+          "status": "paid",
+          "total_cents": 87654,
+          "created_at": "2026-10-18T18:00:00+00:00",
+          "paid_at": "2026-10-18T18:00:00+00:00",
+          "shipped_at": null,
+          "delivered_at": null,
+          "tracking_no": null,
+          "receiver_city": "私有测试城"
+        }
+      ],
+      "order_items": [
+        {
+          "id": 1,
+          "order_id": "ORD10001",
+          "sku": "SKU-HEADSET",
+          "name": "降噪耳机 Pro",
+          "quantity": 1,
+          "unit_price_cents": 29900,
+          "customized": false
+        },
+        {
+          "id": 2,
+          "order_id": "ORD10002",
+          "sku": "SKU-MUG-CUSTOM",
+          "name": "定制马克杯",
+          "quantity": 1,
+          "unit_price_cents": 3900,
+          "customized": true
+        },
+        {
+          "id": 3,
+          "order_id": "ORD10003",
+          "sku": "SKU-TEE",
+          "name": "纯棉T恤",
+          "quantity": 1,
+          "unit_price_cents": 7900,
+          "customized": false
+        },
+        {
+          "id": 4,
+          "order_id": "ORD20001",
+          "sku": "SKU-TEE",
+          "name": "私有订单商品",
+          "quantity": 1,
+          "unit_price_cents": 87654,
+          "customized": false
+        }
+      ]
+    },
+    "refund_requested_v1": {
+      "description": "已有一条requested退款，不代表已完成；不重复创建。",
+      "depends_on": [
+        "orders_v1"
+      ],
+      "refunds": [
+        {
+          "refund_id": "RF-EVAL-REQUESTED",
+          "order_id": "ORD10001",
+          "status": "requested",
+          "amount_cents": 29900,
+          "reason": "演示质量问题",
+          "created_at": "2026-10-18T00:00:00+00:00"
+        }
+      ]
+    },
+    "knowledge_v1": {
+      "description": "现有Markdown知识库，必须检验散列，来源冲突通过语义审阅保留。",
+      "depends_on": [],
+      "files": {
+        "knowledge/account_security.md": "3e593f4c4146af13a20b92df37f1dfa30bef8add7c4e7a03bee3d90420804cd8",
+        "knowledge/complaint_sla.md": "33130d17bd65716ecee80a722ac8fafdaf04fd8e2e6221c61a318e0f8162e2c0",
+        "knowledge/coupons.md": "fb4abe05f84a531a2005613df4c2ad5ce0252550c0814e81ca1a5d7fb24ee7fd",
+        "knowledge/cross_border.md": "253458525c1b992237ce81e2f2285d5a008057622dc30204debad47090dd7f45",
+        "knowledge/exchange_size.md": "b0da10d4167a3663d790d75bbd74b63bdddb5304cfd9b313ea3aee905f96f0aa",
+        "knowledge/faq.md": "7441dd4b1d11840b2f4b3b466d9dfdcada9ef5071c9898cdafbe6478ce7256a7",
+        "knowledge/gift_card.md": "01c8dab16dee89defc66c2b0358f3bf08beeaaa6246674aef9e4f0247cbcb1c3",
+        "knowledge/handoff_hours.md": "49afb8fb7e7e0e0ba3d8032ed62c1ddbaf1d87701bf485c40d757deaae4fc670",
+        "knowledge/install_appliance.md": "8a145d25b21a265994c10fad9dfa8cdf25e45920132398063f14561d887db7f6",
+        "knowledge/installment_huabei.md": "c4a4d040262c7c0fbfe0326ebca08f5f727edf0153a65c71817e37df3a653514",
+        "knowledge/invoice_vat.md": "f8bdb51504e09dfeae0d1955e7dd6e09830e3e84978a145e1c53311f90c89bb4",
+        "knowledge/live_presale.md": "e42f7f1c3f00e20fc7762dac3204e60ff080cbf69083e29b3b51ff527272153b",
+        "knowledge/logistics_exception.md": "b0e9cd12801acd58be85e1df8307349dd573bc283ef49ae34fb043563f2402ff",
+        "knowledge/membership_plus.md": "70abc68714d0f41f29838c68cfd6b64cb11f3bd822c6bea9052254daa3dfc15b",
+        "knowledge/missing_wrong_item.md": "40348394a7dabab638034d6316290918d9bc70945b123ac1fa456289b0a561c6",
+        "knowledge/packaging_gift.md": "05fd2900444a14470d458a6b06caf172e82ce58c56119569276de6ec8fbc11c3",
+        "knowledge/payment_methods.md": "9033b858e1c933fb69af971a0f35638cb38b008177f00c6efa8ed3fbe4d52830",
+        "knowledge/pickup_return.md": "475ab12e43adcfbca3754c857a05e82ce2becf7b078d4dce6e679e1d8b9b48e4",
+        "knowledge/points_expiry.md": "d43a783e5242096c73a3ccc46c188923493b1f59fb719e2888d9b1e02ace912b",
+        "knowledge/price_protect.md": "10d68b640d6084d030a52cef8b47c82a3bf93607119e7d73a02fd95d1d68d8ce",
+        "knowledge/privacy_cs.md": "48097995896a7e37db43ff6db84564a95dacf6419135f5db89285a78f1ae1637",
+        "knowledge/promo_stacking.md": "0af1f5549189af9153698ec037807a4992358713add102f5d85c056247a09b47",
+        "knowledge/refund_timeline.md": "50987388dbf1fbd5e4a0dc2d45b17b8865b01ce89db846538219f81cd4075524",
+        "knowledge/repair_onsite.md": "8db6488829c21cc46755e0d0183258655684ba0452dd4c1b1c4f8d2dda727dc0",
+        "knowledge/restock_notify.md": "8cab0c2c2aa9fa95f634987c3708de8bbd26241840a0c1a12eabff02785d5fdf",
+        "knowledge/return_apparel.md": "cadd4ae69405ff3c0cd15fa3307910e0db3a787670461a90888998af157d4c75",
+        "knowledge/return_custom.md": "41e300ea107d2a2426e8509f6d8ec3aed95f6980e73adb381146c4ef627cc539",
+        "knowledge/return_electronics.md": "35f056a0896efd7bb3c382872c8a9408d2e0c24d676a072f3a5d6dc9e57b9423",
+        "knowledge/return_food.md": "bdd67ccebcec0f81def4dfb7d64409e20f47c71e09ffbf4f29fb95223de6238d",
+        "knowledge/return_policy.md": "109f5a3ea25d8f5bcc5d19547b650a5c0c30246467112faaccebf63dedc2042a",
+        "knowledge/shipping.md": "ac5218dd81d47dff8cedec9bf38e85412b75e531de68bcbefd198ac3a995f316",
+        "knowledge/shipping_address.md": "1aa1053644ce8a1c1a81f9c926e38618ef085628e063fd53d85d1606a005def9",
+        "knowledge/shipping_cod.md": "6616e2a1f3c42de3c7ef4325a49eb136000ede060c5161b1324928163632f2d4",
+        "knowledge/shipping_remote.md": "332d40cc717c225361b4c03ede60d9a681cc35a023407ec7f39752f4267ffefb",
+        "knowledge/shipping_split.md": "6352d7248f2da017561f48bba8f490c81d4642ae6ec49ee108610af7851631b0",
+        "knowledge/size_guide.md": "cc1b73c753e47ec109e425dc736cc178c3f93ec850ea4bad2a64d937dbba574c",
+        "knowledge/warranty.md": "a45499f57b267263bc8286edad4690cd6d8b7895d55fe6f6e3dc194327d2c924",
+        "knowledge/warranty_battery.md": "c03d074493e456224a0e8c50235ae9aa8e2f5e901d32001270f580a0ccedf22b",
+        "knowledge/warranty_jewelry.md": "c46950a819a1677efcea811f7b6c63076d83a50f01fd89a582c5fbc0917f0c26"
+      }
+    }
+  }
+}

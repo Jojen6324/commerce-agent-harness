@@ -162,6 +162,7 @@ async def evaluate(
         log_progress("turn_started", task_id=task_id, turn=turn)
         status_code = 0
         final_body = None
+        stream_error_type = None
         data_lines = []
         async with client.stream("POST", "/api/v1/chat/stream", json=payload) as response:
             status_code = response.status_code
@@ -180,6 +181,8 @@ async def evaluate(
                     if name == "answer" and isinstance(item.get("data"), dict):
                         final_body = item["data"]
                         continue
+                    if name == "error" and isinstance(item.get("error"), str):
+                        stream_error_type = item["error"]
                     if name not in ("started", "done"):
                         safe_fields = (
                             "agent", "parent_run_id", "run_id", "tool", "tool_call_id",
@@ -190,8 +193,11 @@ async def evaluate(
                             "reserved_tokens_without_usage", "max_total_tokens", "requested_tokens",
                             "projected_tokens", "model_calls", "model_call_limit", "tool_calls",
                             "tool_call_limit", "budget_scope", "error_code", "status",
+                            "error",
                         )
                         details = {key: item[key] for key in safe_fields if key in item}
+                        if name == "error" and "error" in details:
+                            details["stream_error_type"] = details.pop("error")
                         validation = item.get("validation")
                         if isinstance(validation, dict):
                             details["validation_status"] = validation.get("status")
@@ -202,6 +208,8 @@ async def evaluate(
                     item = json.loads("\n".join(data_lines))
                     if item.get("event") == "answer" and isinstance(item.get("data"), dict):
                         final_body = item["data"]
+                    elif item.get("event") == "error" and isinstance(item.get("error"), str):
+                        stream_error_type = item["error"]
                 except ValueError:
                     pass
             if final_body is None and status_code >= 400:
@@ -210,6 +218,8 @@ async def evaluate(
                 except (ValueError, UnicodeDecodeError):
                     final_body = {"error": "non_json_api_response"}
         final_body = final_body or {"error": "stream_ended_without_answer"}
+        if stream_error_type:
+            final_body.setdefault("stream_error_type", stream_error_type)
         diagnostics = final_body.get("diagnostics", {})
         usage = final_body.get("token_usage", {})
         log_progress(
@@ -219,6 +229,7 @@ async def evaluate(
             http_status=status_code,
             status=final_body.get("status"),
             error_code=final_body.get("error_code"),
+            stream_error_type=final_body.get("stream_error_type"),
             model_calls=diagnostics.get("model_calls"),
             tool_calls=diagnostics.get("tool_calls"),
             prompt_tokens=usage.get("prompt_tokens"),

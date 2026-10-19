@@ -13,8 +13,11 @@ from app.providers.base import LLMResponse
 from app.providers.fake import OfflineLLMProvider
 
 
-def test_default_agent_total_token_budget_is_80k():
+def test_default_agent_budgets_are_20k_context_and_80k_run():
+    assert Settings().agent_context_tokens == 20_000
     assert Settings().agent_total_tokens == 80_000
+    assert ContextBuilder().limit == 20_000
+    assert BudgetedProvider(OfflineLLMProvider()).context_tokens == 20_000
     assert RunBudget(time.monotonic() + 10).max_tokens == 80_000
 
 

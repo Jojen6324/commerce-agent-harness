@@ -69,7 +69,7 @@ current_budget: ContextVar[RunBudget | None] = ContextVar("agent_budget", defaul
 
 
 class BudgetedProvider:
-    def __init__(self, provider, context_tokens=16000):
+    def __init__(self, provider, context_tokens=20_000):
         self.provider = provider
         self.context_tokens = context_tokens
 

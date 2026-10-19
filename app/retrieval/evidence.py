@@ -1,6 +1,17 @@
 """Keep document scope and provenance attached throughout RAG."""
 
+import re
+
 from app.schemas.retrieval import RetrievedChunk
+
+
+def cited_refs(answer: str) -> set[str]:
+    refs = set()
+    for bracket in re.findall(r"\[([^\]\n]+)\]", answer):
+        for ref in re.split(r"[,，;；\s]+", bracket):
+            if re.fullmatch(r"[A-Za-z0-9_-]+", ref):
+                refs.add(ref)
+    return refs
 
 
 def evidence_text(chunk: RetrievedChunk) -> str:

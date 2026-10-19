@@ -22,6 +22,7 @@ from app.harness.validation import AnswerValidator
 from app.providers.fake import OfflineLLMProvider
 from app.repositories.runtime import RuntimeStore
 from app.repositories.session_repository import SessionRepository
+from app.retrieval.evidence import cited_refs
 from app.schemas.chat import ActionProposal, ChatRequest, ChatResponse
 from app.schemas.common import LatencyBreakdown
 from app.schemas.retrieval import Citation
@@ -195,6 +196,15 @@ class ChatService:
             )
             citations = {}
             degradations = []
+            used_refs = cited_refs(result["answer"])
+            for observation in result.get("observations", []):
+                data = observation["output"].get("output", observation["output"])
+                if (
+                    observation["output"].get("success")
+                    and data.get("validated")
+                    and data.get("answer") == result["answer"]
+                ):
+                    used_refs.update(c["chunk_id"] for c in data.get("citations", []))
             for observation in result.get("observations", []):
                 data = observation["output"].get("output", observation["output"])
                 if data.get("generation_failure") or data.get("degraded"):
@@ -208,6 +218,8 @@ class ChatService:
                         }
                     )
                 for c in data.get("chunks", []):
+                    if c["chunk_id"] not in used_refs:
+                        continue
                     citations[c["chunk_id"]] = Citation(
                         document_id=c["document_id"],
                         chunk_id=c["chunk_id"],

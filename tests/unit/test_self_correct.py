@@ -1,7 +1,11 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 
-from app.agents.nodes.faithfulness import self_correct_answer
-from app.guardrails.hallucination import FaithfulnessChecker
+from app.agents.nodes.faithfulness import faithfulness_node, self_correct_answer
+from app.core.enums import RetrievalStrategy
+from app.guardrails.hallucination import FaithfulnessChecker, FaithfulnessResult
 from app.providers.base import LLMResponse
 from app.schemas.common import TokenUsage
 from app.schemas.retrieval import RetrievedChunk
@@ -53,3 +57,44 @@ async def test_self_correct_rewrites_unsupported_answer() -> None:
     assert corrected is True
     assert judged.supported is True
     assert "定制" in answer
+
+
+@pytest.mark.asyncio
+async def test_rewrite_replaces_original_citations_with_its_actual_sources():
+    chunks = [
+        RetrievedChunk(
+            chunk_id=ref,
+            document_id="policy",
+            title="规则",
+            content="相关政策",
+            score=1,
+        )
+        for ref in ("old", "correct")
+    ]
+    checker = SimpleNamespace(
+        check=AsyncMock(
+            side_effect=[
+                FaithfulnessResult(supported=False, rationale="适用来源错误"),
+                FaithfulnessResult(supported=True),
+            ]
+        )
+    )
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                '{"answer":"按当前适用规则办理","citation_chunk_ids":["correct"]}'
+            )
+        )
+    )
+    result = await faithfulness_node(
+        {
+            "user_query": "如何办理",
+            "strategy": RetrievalStrategy.SINGLE,
+            "retrieved_chunks": chunks,
+            "final_answer": "旧答复 [old]",
+        },
+        checker,
+        llm,
+    )
+    assert "[correct]" in result["final_answer"]
+    assert [citation.chunk_id for citation in result["citations"]] == ["correct"]

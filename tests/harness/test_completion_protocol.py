@@ -13,6 +13,7 @@ from app.core.enums import RetrievalStrategy, ToolRisk
 from app.core.exceptions import LLMProviderError
 from app.guardrails.hallucination import FaithfulnessResult
 from app.harness.budget import RunBudget, current_budget
+from app.harness.completion import policy_evidence_issue
 from app.harness.executor import ToolExecutor
 from app.harness.runner import AgentRunner, AgentSpec
 from app.harness.validation import AnswerValidator
@@ -223,6 +224,113 @@ async def test_checker_fallback_reports_unavailability_without_claiming_missing_
     )
     assert result["status"] == "failed" and result["failure"]["code"] == "LLM_PROVIDER_UNAVAILABLE"
     assert result["failure"]["stage"] == "faithfulness"
+
+
+@pytest.mark.asyncio
+async def test_policy_answer_with_missing_fields_is_still_faithfulness_checked():
+    chunk = RetrievedChunk(
+        document_id="return_policy",
+        chunk_id="return_policy_15d",
+        title="退货政策",
+        content="质量问题需在签收后15日内提交凭证。",
+        score=1,
+    )
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                '{"supported":true,"hallucinated_spans":[],"rationale":"与政策一致"}'
+            )
+        )
+    )
+    result = {
+        "status": "needs_input",
+        "answer": "质量问题需在15日内提交凭证 [return_policy_15d]\n\n还需要补充：请提供订单号。",
+        "observations": [
+            {
+                "name": "search_knowledge",
+                "output": {"success": True, "output": {"chunks": [chunk.model_dump(mode="json")]}},
+            },
+            {
+                "name": "ask_user",
+                "output": {
+                    "success": True,
+                    "output": {"status": "needs_input", "missing_fields": ["order_id"]},
+                },
+            },
+        ],
+    }
+
+    validated = await AnswerValidator(llm).validate("破损怎么退", result)
+
+    assert validated["status"] == "needs_input"
+    assert llm.generate.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_correcting_partial_answer_preserves_need_for_user_input():
+    chunk = RetrievedChunk(
+        document_id="policy",
+        chunk_id="p1",
+        title="政策",
+        content="凭证窗口为12日",
+        score=1,
+    )
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse(
+                    '{"supported":false,"hallucinated_spans":["15日"],"rationale":"期限错误"}'
+                ),
+                LLMResponse(
+                    '{"answer":"应在12日内提交凭证。请提供订单号。","citation_chunk_ids":["p1"]}'
+                ),
+                LLMResponse('{"supported":true,"hallucinated_spans":[],"rationale":"符合原文"}'),
+            ]
+        )
+    )
+    result = await AnswerValidator(llm).validate(
+        "如何办理",
+        {
+            "status": "needs_input",
+            "answer": "15日内提交。请提供订单号。",
+            "observations": [
+                {
+                    "name": "search_knowledge",
+                    "output": {
+                        "success": True,
+                        "output": {"chunks": [chunk.model_dump(mode="json")]},
+                    },
+                }
+            ],
+        },
+    )
+    assert result["status"] == "needs_input"
+    assert "12日" in result["answer"] and "订单号" in result["answer"]
+
+
+def test_policy_evidence_gate_rejects_successful_empty_search():
+    observations = [
+        {"name": "search_knowledge", "output": {"success": True, "output": {"chunks": []}}}
+    ]
+    assert policy_evidence_issue("破损怎么退", observations) == "policy_without_evidence"
+    observations[0]["output"]["output"]["chunks"] = [
+        {"chunk_id": "return_01", "content": "签收后15日内提交凭证"}
+    ]
+    assert policy_evidence_issue("破损怎么退", observations) is None
+
+
+def test_policy_evidence_accepts_specialist_sources_without_fixed_tool_path():
+    observation = {
+        "name": "delegate_task",
+        "output": {
+            "status": "completed",
+            "evidence_refs": ["return_01"],
+            "chunks": [{"chunk_id": "return_01", "content": "提交凭证"}],
+        },
+    }
+    assert policy_evidence_issue("破损怎么退", [observation]) is None
+    observation["output"]["chunks"] = []
+    assert policy_evidence_issue("破损怎么退", [observation]) == "policy_without_evidence"
 
 
 @pytest.mark.asyncio

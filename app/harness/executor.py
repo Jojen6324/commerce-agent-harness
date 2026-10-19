@@ -20,6 +20,11 @@ from app.tools.permissions import WRITE_RISKS, assert_permitted
 
 class AskInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    answer: str = Field(
+        default="",
+        max_length=3000,
+        description="本轮已根据工具或证据核实的部分答案；与补问一并交付，无则留空。不得复制先前被拒绝的答复。",
+    )
     question: str = Field(min_length=1, max_length=1000)
     missing_fields: list[str] = Field(min_length=1, max_length=10)
 

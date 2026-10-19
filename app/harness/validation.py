@@ -7,16 +7,8 @@ from app.agents.nodes.faithfulness import self_correct_answer
 from app.guardrails.hallucination import FaithfulnessChecker
 from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
+from app.retrieval.evidence import cited_refs
 from app.schemas.retrieval import RetrievedChunk
-
-
-def cited_refs(answer):
-    refs = set()
-    for bracket in re.findall(r"\[([^\]\n]+)\]", answer):
-        for ref in re.split(r"[,，;；\s]+", bracket):
-            if re.fullmatch(r"[A-Za-z0-9_-]+", ref):
-                refs.add(ref)
-    return refs
 
 
 def asserted_phrase(answer, phrase):
@@ -39,10 +31,15 @@ class AnswerValidator:
         self.llm = llm
 
     async def validate(self, query, result):
-        if result["status"] != "completed":
+        if result["status"] not in ("completed", "needs_input"):
             return result
         answer = result["answer"]
         observations = result.get("observations", [])
+        grounded_observations = [
+            observation for observation in observations if observation.get("name") != "ask_user"
+        ]
+        if result["status"] == "needs_input" and not grounded_observations:
+            return result
         chunks = {}
         tool_facts = []
         verified = []
@@ -146,5 +143,5 @@ class AnswerValidator:
         return {
             **result,
             "answer": rewritten,
-            "status": "completed" if judge.supported else "validation_failed",
+            "status": result["status"] if judge.supported else "validation_failed",
         }

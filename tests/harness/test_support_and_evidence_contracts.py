@@ -11,9 +11,68 @@ from app.config.settings import Settings
 from app.harness.context import ContextBuilder
 from app.main import create_app
 from app.providers.base import LLMResponse
+from app.providers.fake import OfflineLLMProvider
 from app.repositories.db import create_engine, create_session_factory
 from app.repositories.models import AuditLogRow, OrderRow, SupportTicketRow
+from app.schemas.chat import ChatRequest
+from app.schemas.retrieval import RetrievedChunk
 from app.services.container import build_container
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["inline", "verified_payload", "uncited"])
+async def test_chat_only_reports_sources_used_by_the_final_answer(tmp_path, mode):
+    c = await build_container(
+        Settings(
+            app_env="testing",
+            database_url=f"sqlite+aiosqlite:///{tmp_path}/citations.db",
+        )
+    )
+    try:
+        chunks = [
+            RetrievedChunk(
+                document_id="policy",
+                chunk_id=ref,
+                title="政策",
+                content="需提交凭证",
+                score=1,
+            ).model_dump(mode="json")
+            for ref in ("used", "unused")
+        ]
+        answer = "需提交凭证" + (" [used]" if mode == "inline" else "")
+        data = {"chunks": chunks}
+        if mode == "verified_payload":
+            data.update(
+                answer=answer,
+                validated=True,
+                answered_question="如何办理",
+                citations=[
+                    {"chunk_id": "used"},
+                ],
+            )
+        c.chat_service.runner.run = AsyncMock(
+            return_value={
+                "status": "completed",
+                "run_id": "run_sources",
+                "events": [],
+                "answer": answer,
+                "observations": [
+                    {
+                        "name": "search_knowledge",
+                        "output": {"success": True, "output": data},
+                    }
+                ],
+            }
+        )
+        c.chat_service.validator.llm = OfflineLLMProvider()
+        response = await c.chat_service.chat(
+            ChatRequest(message="如何办理", user_id="u"), trace_id="t"
+        )
+        assert [citation.chunk_id for citation in response.citations] == (
+            [] if mode == "uncited" else ["used"]
+        )
+    finally:
+        await c.aclose()
 
 
 def native(name, args):

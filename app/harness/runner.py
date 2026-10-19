@@ -13,7 +13,12 @@ from pydantic import ValidationError
 from app.core.exceptions import AppError, InvalidRequestError, LLMProviderError, ToolPermissionError
 from app.core.ids import new_id
 from app.harness.budget import BudgetExceeded
-from app.harness.completion import REPAIR_GUIDANCE, completion_issue, policy_evidence_issue
+from app.harness.completion import (
+    REPAIR_GUIDANCE,
+    completion_issue,
+    missing_input_issue,
+    policy_evidence_issue,
+)
 from app.harness.context import ContextBuilder
 from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
@@ -118,7 +123,17 @@ class AgentRunner:
         seen: dict[str, int] = {}
         call_ids: set[str] = set()
         repairs = 0
+        repaired_issues: set[str] = set()
         skill_recovery_attempts = 0
+
+        def reserve_repair(issue: str, step: int) -> bool:
+            nonlocal repairs
+            if repairs >= 2 or step + 1 >= spec.max_steps or issue in repaired_issues:
+                return False
+            repairs += 1
+            repaired_issues.add(issue)
+            return True
+
         await event("agent_started")
         try:
             for _step in range(spec.max_steps):
@@ -136,16 +151,17 @@ class AgentRunner:
                         raise LLMProviderError("incomplete response", retryable=False)
                     calls, text = response.tool_calls, response.content
                 if not calls:
-                    issues = [completion_issue(
-                        text or "", main=spec.name == "main", observations=observations
-                    )]
+                    issues = [
+                        completion_issue(
+                            text or "", main=spec.name == "main", observations=observations
+                        )
+                    ]
                     if spec.name == "main":
                         issues.append(policy_evidence_issue(query, observations))
                     issue = "；".join(item for item in issues if item)
                     if issue:
                         await event("completion_repair", reason=issue)
-                        if repairs < 2 and _step + 1 < spec.max_steps:
-                            repairs += 1
+                        if reserve_repair(issue, _step):
                             messages.extend(
                                 [
                                     {"role": "assistant", "content": text or ""},
@@ -435,18 +451,12 @@ class AgentRunner:
                         "run_id": run_id,
                     }
                 if missing:
-                    issue = completion_issue(
-                        missing["question"],
-                        missing_fields=missing["missing_fields"],
-                        main=spec.name == "main",
-                        observations=observations,
-                    )
+                    issue = missing_input_issue(missing["missing_fields"])
                     if not issue and spec.name == "main":
                         issue = policy_evidence_issue(query, observations)
                     if issue:
                         await event("completion_repair", reason=issue)
-                        if repairs < 2 and _step + 1 < spec.max_steps:
-                            repairs += 1
+                        if reserve_repair(issue, _step):
                             messages.append(
                                 {"role": "system", "content": REPAIR_GUIDANCE.format(issue=issue)}
                             )
@@ -464,20 +474,13 @@ class AgentRunner:
                             },
                         }
                     await event("needs_input", missing_fields=missing["missing_fields"])
-                    prior_answer = next(
-                        (
-                            message["content"].strip()
-                            for message in reversed(messages)
-                            if message.get("role") == "assistant"
-                            and message.get("content", "").strip()
-                            and not message.get("tool_calls")
-                        ),
-                        "",
-                    )
+                    # Only this tool call may supply the partial answer. Earlier
+                    # assistant messages may belong to history or failed repairs.
+                    partial_answer = (missing.get("answer") or text or "").strip()
                     follow_up = missing["question"].strip()
-                    answer = prior_answer or follow_up
-                    if prior_answer and follow_up and follow_up not in prior_answer:
-                        answer = f"{prior_answer}\n\n还需要补充：{follow_up}"
+                    answer = partial_answer or follow_up
+                    if partial_answer and follow_up and follow_up not in partial_answer:
+                        answer = f"{partial_answer}\n\n还需要补充：{follow_up}"
                     return {
                         "answer": answer,
                         "observations": observations,

@@ -12,7 +12,7 @@ from app.prompts.faithfulness import SELF_CORRECT_SYSTEM, SELF_CORRECT_USER
 from app.providers.base import LLMProvider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.json_parser import parse_model
-from app.retrieval.evidence import evidence_text
+from app.retrieval.evidence import cited_refs, evidence_text
 from app.schemas.retrieval import Citation, RetrievedChunk
 
 
@@ -48,7 +48,14 @@ async def self_correct_answer(
             max_tokens=500,
             response_format={"type": "json_object"},
         )
-        rewritten = parse_model(response.content, AnswerPayload).answer
+        payload = parse_model(response.content, AnswerPayload)
+        known_refs = {chunk.chunk_id for chunk in chunks}
+        if set(payload.citation_chunk_ids) - known_refs:
+            raise LLMOutputError("rewrite referenced unavailable evidence")
+        rewritten = payload.answer
+        missing_refs = set(payload.citation_chunk_ids) - cited_refs(rewritten)
+        if missing_refs:
+            rewritten += " " + " ".join(f"[{ref}]" for ref in sorted(missing_refs))
         judged = await checker.check(
             query=query,
             answer=rewritten,
@@ -144,4 +151,18 @@ async def faithfulness_node(
             "refused": True,
             "extra": extra,
         }
-    return {"final_answer": patched, "extra": extra}
+    used_refs = cited_refs(patched)
+    return {
+        "final_answer": patched,
+        "citations": [
+            Citation(
+                document_id=chunk.document_id,
+                title=chunk.title,
+                chunk_id=chunk.chunk_id,
+                section=chunk.section,
+            )
+            for chunk in chunks
+            if chunk.chunk_id in used_refs
+        ],
+        "extra": extra,
+    }

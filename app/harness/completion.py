@@ -1,13 +1,13 @@
 """Detect promises that cannot represent a completed API task.
 
-This checks the assistant's claimed outcome, never classifies the user's intent
-or selects a business tool. The runner may repair once within its existing budget.
+Free-form final answers are checked separately from structured input requests.
+Repairs stay within the runner budget and cannot repeat an unchanged issue.
 """
 
 import re
 
 
-def completion_issue(answer: str, *, missing_fields=(), main=True, observations=()):
+def completion_issue(answer: str, *, main=True, observations=()):
     if not any(character.isalnum() for character in answer):
         return "empty_answer"
     handoff = any(
@@ -45,9 +45,6 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
                 answer,
             )
         )
-        or any(
-            re.search(r"确认提交|确认执行|confirmation|approval", f, re.I) for f in missing_fields
-        )
     ):
         return "missing_action_proposal"
     if (
@@ -60,6 +57,17 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
         )
     ):
         return "unfinished_progress"
+    return None
+
+
+def missing_input_issue(missing_fields):
+    """Reject an approval request encoded as missing input, not user data."""
+    approval_markers = ("确认提交", "确认执行", "confirmation", "approval")
+    if any(
+        any(marker.casefold() in str(field).casefold() for marker in approval_markers)
+        for field in missing_fields
+    ):
+        return "missing_action_proposal"
     return None
 
 
@@ -82,18 +90,31 @@ def policy_evidence_issue(query: str, observations=()):
     if not policy_topic or not policy_question:
         return None
 
-    grounded_tools = {
-        "answer_question",
-        "search_knowledge",
-        "get_coupon",
-        "mcp_store_hours",
-        "mcp_warehouse_cutoff",
-    }
-    if any(
-        observation.get("name") in grounded_tools
-        and observation.get("output", {}).get("success")
-        for observation in observations
-    ):
+    def has_grounding(observation):
+        output = observation.get("output", {})
+        name = observation.get("name")
+        if name == "delegate_task":
+            return output.get("status") == "completed" and any(
+                chunk.get("chunk_id") and chunk.get("content") for chunk in output.get("chunks", [])
+            )
+        if not output.get("success"):
+            return False
+        data = output.get("output", {})
+        if name in ("answer_question", "search_knowledge"):
+            return any(
+                chunk.get("chunk_id") and chunk.get("content") for chunk in data.get("chunks", [])
+            )
+        if name == "get_coupon":
+            return bool(data.get("coupons")) or any(
+                chunk.get("chunk_id") and chunk.get("content") for chunk in data.get("chunks", [])
+            )
+        if name == "mcp_store_hours":
+            return all(key in data for key in ("weekday", "weekend", "night_refund_review"))
+        if name == "mcp_warehouse_cutoff":
+            return all(key in data for key in ("cutoff", "same_day_if_paid_before"))
+        return False
+
+    if any(has_grounding(observation) for observation in observations):
         return None
 
     return "policy_without_evidence"

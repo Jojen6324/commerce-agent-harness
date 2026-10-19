@@ -3,8 +3,8 @@
   "scope": "Mixed historical revisions and AGNES/DeepSeek runs; development95 only; deterministic failures are not waived by semantic review; AI review is not independent human acceptance",
   "task_count": 95,
   "task_status": {
-    "passed": 95,
-    "failed": 0
+    "passed": 94,
+    "failed": 1
   },
   "deterministic_status": {
     "passed": 95,
@@ -614,13 +614,14 @@
       "scenario": "policy"
     },
     "agent_090": {
-      "status": "passed",
+      "status": "failed",
       "deterministic_status": "passed",
-      "semantic": "pass",
-      "source": "docs/agnes-failed-tasks-rerun-summary.json",
+      "semantic": "fail",
+      "source": "docs/architecture-contract-review-20261019.json",
       "source_revision": "6af953c3819b9e97207d5d5037df2c735ae98b25",
       "response_digest": "debf01a92943e65e2f68ebd46c40acf41d212eabc076bfdf751503f25e7a643b",
-      "scenario": "policy"
+      "scenario": "policy",
+      "review_rationale": "用户未说明商品品类，回答却把数码专用的“视频凭证”写成通用品质退货要求。通用政策只要求凭证；此外未明确其他品类仍需核实。原确定性通过保留，语义判定更正为失败。"
     },
     "agent_091": {
       "status": "passed",
@@ -703,5 +704,6 @@
     }
   },
   "latest_overlay": "docs/agnes-remaining-22-summary.json",
-  "semantic_review_update": "The 12 previously failing latest-per-task entries were rerun with AGNES and reviewed against their current response digests; AI supplemental review is not independent human acceptance. See docs/agnes-failed-tasks-rerun-20261019.md."
+  "semantic_review_update": "2026-10-19 architecture audit corrected agent_090 from semantic pass to fail against the same response digest; initial AGNES rerun review is retained with an explicit correction. Latest historical inventory: 94 passed / 1 failed. New architecture changes have not been live-model re-evaluated.",
+  "last_audit": "docs/architecture-contract-review-20261019.json"
 }

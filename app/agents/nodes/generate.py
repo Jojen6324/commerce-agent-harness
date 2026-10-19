@@ -86,6 +86,8 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
             response_format={"type": "json_object"},
         )
         payload = parse_model(response.content, AnswerPayload)
+        if set(payload.citation_chunk_ids) - {chunk.chunk_id for chunk in chunks}:
+            raise LLMOutputError("answer referenced unavailable evidence")
         usage = response.usage
     except (LLMProviderError, LLMOutputError) as exc:
         generation_failure = {

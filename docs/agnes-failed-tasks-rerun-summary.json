@@ -488,5 +488,27 @@
         }
       ]
     }
-  ]
+  ],
+  "review_corrections": [
+    {
+      "task_id": "agent_090",
+      "response_digest": "debf01a92943e65e2f68ebd46c40acf41d212eabc076bfdf751503f25e7a643b",
+      "original_decision": "pass",
+      "decision": "fail",
+      "reviewer": "Codex development assistant (AI audit; not independent human review)",
+      "rationale": "用户未说明商品品类，回答却把数码专用的“视频凭证”写成通用品质退货要求。通用政策只要求凭证；此外未明确其他品类仍需核实。原确定性通过保留，语义判定更正为失败。",
+      "response_quote": "质量问题须在签收后15日内提交视频凭证",
+      "evidence": [
+        "knowledge/return_policy.md#质量问题",
+        "knowledge/return_electronics.md#时效"
+      ],
+      "source_report": "docs/agnes-failed-tasks-rerun-summary.json",
+      "correction_report": "docs/architecture-contract-review-20261019.json"
+    }
+  ],
+  "latest_semantic_counts": {
+    "passed": 11,
+    "failed": 1,
+    "independent_human_review": false
+  }
 }

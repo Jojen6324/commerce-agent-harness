@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-19",
+  "report_type": "architecture contract audit and review correction; no new live-model evaluation",
+  "review_corrections": [
+    {
+      "task_id": "agent_090",
+      "response_digest": "debf01a92943e65e2f68ebd46c40acf41d212eabc076bfdf751503f25e7a643b",
+      "original_decision": "pass",
+      "decision": "fail",
+      "reviewer": "Codex development assistant (AI audit; not independent human review)",
+      "rationale": "用户未说明商品品类，回答却把数码专用的“视频凭证”写成通用品质退货要求。通用政策只要求凭证；此外未明确其他品类仍需核实。原确定性通过保留，语义判定更正为失败。",
+      "response_quote": "质量问题须在签收后15日内提交视频凭证",
+      "evidence": [
+        "knowledge/return_policy.md#质量问题",
+        "knowledge/return_electronics.md#时效"
+      ],
+      "source_report": "docs/agnes-failed-tasks-rerun-summary.json"
+    }
+  ],
+  "previous_failed_batch_latest_review": {
+    "deterministic_passed": 12,
+    "semantic_passed": 11,
+    "semantic_failed": 1
+  },
+  "current_code_validation": {
+    "tests_passed": 75,
+    "live_model_rerun": false,
+    "checks": [
+      "Ruff",
+      "targeted harness, RAG correction, approval and evaluation tests",
+      "git diff --check"
+    ]
+  },
+  "changes": [
+    "Separate structured missing-input outcomes from prose completion guards; preserve current explicit partial answers only.",
+    "Validate evidence-bearing needs_input answers; supported rewrites preserve the needs_input state.",
+    "Stop identical completion repair issues from consuming another repair; retain at most two distinct repairs.",
+    "Require real policy payloads and accept source-bearing specialist results without a fixed tool path.",
+    "Report only final-answer sources, preserving replacement citations through self-correction; reject unavailable declared sources.",
+    "Share evidence rules across generation, checking and correction; keep business thresholds in policy documents."
+  ],
+  "remaining_limits": [
+    "Free-form completion and policy-query recognition still use heuristics, separate from authoritative write authorization and structured input outcomes.",
+    "Semantic support and completeness still depend on model review; source selection proves provenance, not that every cited claim is correct.",
+    "Historical latest-per-task inventory is not a same-revision full development-set evaluation of the new code."
+  ]
+}

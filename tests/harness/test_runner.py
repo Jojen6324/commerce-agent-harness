@@ -151,6 +151,114 @@ async def test_explicit_clarification_stops_before_business_tool():
 
 
 @pytest.mark.asyncio
+async def test_structured_missing_input_keeps_answer_and_skips_prose_completion_guard():
+    question = "请提供订单号。有了订单号后我才能生成退货申请提案。"
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                "退货需先核对订单。",
+                tool_calls=[
+                    call(
+                        "ask_user",
+                        {"question": question, "missing_fields": ["order_id"]},
+                    )
+                ],
+                finish_reason="tool_calls",
+            )
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            return_value={
+                "status": "needs_input",
+                "question": question,
+                "missing_fields": ["order_id"],
+            }
+        ),
+    )
+
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "查询订单", context(), AgentSpec("main", frozenset(["ask_user"]))
+    )
+
+    assert result["status"] == "needs_input"
+    assert "退货需先核对订单。" in result["answer"]
+    assert question in result["answer"]
+    assert llm.generate.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_missing_input_never_revives_history_or_rejected_answer():
+    question = "请提供订单号"
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse("我查一下相关订单。"),
+                LLMResponse(
+                    "",
+                    tool_calls=[
+                        call(
+                            "ask_user",
+                            {
+                                "question": question,
+                                "missing_fields": ["order_id"],
+                            },
+                        )
+                    ],
+                    finish_reason="tool_calls",
+                ),
+            ]
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            return_value={
+                "status": "needs_input",
+                "question": question,
+                "missing_fields": ["order_id"],
+            }
+        ),
+    )
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "查询订单",
+        context(),
+        AgentSpec("main", frozenset(["ask_user"])),
+        history=[SimpleNamespace(role="assistant", content="旧答复：退款已完成")],
+    )
+    assert result["status"] == "needs_input"
+    assert result["answer"] == question
+
+
+@pytest.mark.asyncio
+async def test_clarification_delivers_only_explicit_current_partial_answer():
+    from app.harness.executor import ToolExecutor
+
+    partial = "当前已核实的信息。"
+    fields = {"answer": partial, "question": "请提供订单号", "missing_fields": ["order_id"]}
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                "",
+                tool_calls=[call("ask_user", fields)],
+                finish_reason="tool_calls",
+            )
+        )
+    )
+    result = await AgentRunner(
+        llm, ToolExecutor(SimpleNamespace(all=lambda: []), None), Settings()
+    ).run(
+        "查询订单",
+        context(),
+        AgentSpec("main", frozenset(["ask_user"])),
+    )
+    assert result["status"] == "needs_input"
+    assert partial in result["answer"]
+    assert fields["question"] in result["answer"]
+
+
+@pytest.mark.asyncio
 async def test_externalized_specialist_result_keeps_summary_facts_and_evidence():
     facts = [{"tool": "get_order", "result": {"order_id": "ORD1", "status": "delivered"}}]
     output = {

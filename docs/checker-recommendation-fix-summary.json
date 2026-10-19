@@ -1,7 +1,7 @@
 {
-  "source_revision": "f6570141e45f4181c039927c052a61e120d4d9e0",
+  "source_revision": "f657014",
   "raw_report": "eval/reports/deepseek_recovery_recommendation_20261019T081519Z.json",
-  "raw_sha256": "ccd6886b736b82e03cf2e2e59c3787745b258734df15755832543c6a38b1b668",
+  "raw_sha256": "5ded7c34886ef1e5cf32fc5431b2db9a6b38f291e980a5da4f4b26ac2b7474b9",
   "run_configuration": {
     "provider": "deepseek",
     "model": "deepseek-flash",
@@ -12,7 +12,12 @@
       "agent_092_alternative"
     ],
     "selection": "Two remaining incomplete tasks after checker-format recovery and SQL recommendation constraints; same original fixtures, checks and parent budgets",
-    "budgets_and_rubric": "unchanged"
+    "parent_run_budgets_and_task_rubric": "unchanged",
+    "checker_output_limits": {
+      "initial": 512,
+      "format_recovery": 768,
+      "max_attempts": 2
+    }
   },
   "selected": {
     "original_count": 1,

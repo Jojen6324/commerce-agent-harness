@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import re
 import tempfile
+from pathlib import Path
 from collections import Counter, defaultdict
 from contextvars import ContextVar
 
@@ -18,7 +20,7 @@ from app.services.container import build_container
 from eval.task_fixtures import install_fixture, matches, snapshot
 from eval.task_grading import grade_turn
 from eval.task_review import corpus_digest, response_digest
-from eval.task_schema import DATA_DIR, load_tasks
+from eval.task_schema import AgentTask, DATA_DIR, load_tasks
 
 
 def cases():
@@ -92,9 +94,29 @@ def summarize(results, corpus=None):
 
 
 async def evaluate(
-    *, live=False, limit=None, split="development", task_ids=None, container_factory=build_container
+    *,
+    live=False,
+    limit=None,
+    split="development",
+    task_ids=None,
+    container_factory=build_container,
+    dataset_path=None,
+    delegation_enabled=None,
 ):
-    all_tasks = load_tasks()
+    # Keep the locked 116-task historical corpus unchanged; opt in to new benchmarks.
+    if dataset_path is None:
+        all_tasks = load_tasks()
+    else:
+        all_tasks = [
+            AgentTask.model_validate_json(line)
+            for line in Path(dataset_path).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        valid_fixtures = set(json.loads((DATA_DIR / "agent_fixtures.json").read_text())["profiles"])
+        if not all_tasks or len({t.id for t in all_tasks}) != len(all_tasks):
+            raise ValueError("empty or duplicate benchmark task ids")
+        if any(not set(t.fixtures) <= valid_fixtures for t in all_tasks):
+            raise ValueError("benchmark refers to unknown fixture")
     if split not in ("development", "holdout", "all"):
         raise ValueError("invalid split")
     selected = [
@@ -122,6 +144,8 @@ async def evaluate(
             settings = settings.model_copy(update={"agnes": SecretStr("")})
         if live and not settings.agnes.get_secret_value():
             raise RuntimeError("AGNES binding required for live evaluation")
+        if delegation_enabled is not None:
+            settings = settings.model_copy(update={"agent_delegation_enabled": delegation_enabled})
         c = await container_factory(settings)
         app = create_app(settings)
         app.state.container = c
@@ -295,10 +319,17 @@ async def evaluate(
     for case in results:
         case["response_digest"] = response_digest(case)
     executed = {r["id"] for r in results}
-    manifest = json.loads((DATA_DIR / "agent_task_splits.json").read_text())
+    manifest = json.loads((DATA_DIR / "agent_task_splits.json").read_text()) if dataset_path is None else {
+        "method": "Independent synthetic benchmark: deterministic, case-isolated 80/20 development/holdout split."
+    }
+    digest = (
+        corpus_digest()
+        if dataset_path is None
+        else hashlib.sha256(Path(dataset_path).read_bytes()).hexdigest()
+    )
     return {
         "schema_version": 1,
-        "corpus_digest": corpus_digest(),
+        "corpus_digest": digest,
         "mode": "real_model" if live else "deterministic_offline",
         "selected_split": split,
         "corpus": corpus_summary(all_tasks),

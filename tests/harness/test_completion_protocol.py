@@ -297,3 +297,44 @@ async def test_missing_or_invented_refund_reason_returns_to_clarification_withou
             assert (await db.get(OrderRow, "ORD10002")).status == "delivered"
     finally:
         await c.aclose()
+
+
+@pytest.mark.asyncio
+async def test_empty_final_answer_gets_one_repair_without_forcing_tools():
+    model = SimpleNamespace(
+        generate=AsyncMock(side_effect=[LLMResponse("..."), LLMResponse("你好")])
+    )
+    executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
+    result = await AgentRunner(model, executor, Settings()).run(
+        "你好",
+        ToolContext(user_id="u", session_id="s", trace_id="t"),
+        AgentSpec("main", frozenset()),
+    )
+    assert result["status"] == "completed" and result["answer"] == "你好"
+    executor.execute.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_handoff_promise_requires_receipt_and_accepts_successful_queue_result():
+    model = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse("我会为您转接人工审核。请提供订单号。"),
+                native("escalate_to_human", {"reason": "用户要求人工审核退款"}),
+                LLMResponse("已为您转接人工队列，工单T-1。"),
+            ]
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            return_value={"success": True, "output": {"queue": "human", "ticket_id": "T-1"}}
+        ),
+    )
+    result = await AgentRunner(model, executor, Settings()).run(
+        "人工审核退款",
+        ToolContext(user_id="u", session_id="s", trace_id="t"),
+        AgentSpec("main", frozenset(["escalate_to_human"])),
+    )
+    assert result["status"] == "completed" and model.generate.await_count == 3
+    executor.execute.assert_awaited_once()

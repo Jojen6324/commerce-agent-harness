@@ -131,7 +131,9 @@ class AgentRunner:
                         raise LLMProviderError("incomplete response", retryable=False)
                     calls, text = response.tool_calls, response.content
                 if not calls:
-                    issue = completion_issue(text or "", main=spec.name == "main")
+                    issue = completion_issue(
+                        text or "", main=spec.name == "main", observations=observations
+                    )
                     if issue:
                         await event("completion_repair", reason=issue)
                         if repairs < 1 and _step + 1 < spec.max_steps:
@@ -147,7 +149,7 @@ class AgentRunner:
                             )
                             continue
                         return {
-                            "answer": "本轮未形成可确认的操作提案或完整查询结果，尚未执行业务操作。请补充信息或转人工。",
+                            "answer": "本轮任务尚未完成，请稍后重试或补充信息。",
                             "status": "validation_failed",
                             "observations": observations,
                             "events": events,
@@ -366,6 +368,7 @@ class AgentRunner:
                         missing["question"],
                         missing_fields=missing["missing_fields"],
                         main=spec.name == "main",
+                        observations=observations,
                     )
                     if issue:
                         await event("completion_repair", reason=issue)
@@ -376,7 +379,7 @@ class AgentRunner:
                             )
                             continue
                         return {
-                            "answer": "本轮未能生成可确认的操作提案，尚未执行业务操作。请稍后重试或转人工。",
+                            "answer": "本轮任务尚未完成，请稍后重试或补充信息。",
                             "status": "validation_failed",
                             "observations": observations,
                             "events": events,

@@ -31,6 +31,7 @@
 
 - [启动、源码导读、三个演示与能力边界](docs/harness.md)
 - [本次基线、模拟测试与真实模型对照](docs/harness-evaluation.md)
+- [新任务语料、来源家族划分与验收协议](docs/agent-task-evaluation.md)
 - 生成模型：云端 `AGNES` 绑定，`https://apihub.agnes-ai.com/v1`，`agnes-3.0-flash`；不自动切换其他付费服务。
 - 启动：`uv sync --frozen --extra dev --extra rerank`，再运行 `.venv/bin/python -m uvicorn app.asgi:app --port 8000`。
 - 以下旧版实测数字和简历指标保留为历史材料，不是本次重构结果；以新对照报告为准。

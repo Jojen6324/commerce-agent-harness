@@ -457,6 +457,8 @@ def main() -> None:
     )
     parser.add_argument("--llm", action="store_true")
     parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--full", action="store_true", help="Run the full selected task split")
+    parser.add_argument("--split", choices=["development", "holdout", "all"], default="development")
     args = parser.parse_args()
 
     async def _go() -> dict:
@@ -465,7 +467,11 @@ def main() -> None:
         if args.task == "behavior":
             from eval.behavior import evaluate
 
-            return {"behavior": await evaluate(live=args.llm, limit=args.limit)}
+            return {
+                "behavior": await evaluate(
+                    live=args.llm, limit=None if args.full else args.limit, split=args.split
+                )
+            }
         if args.task == "retrieval":
             return {"retrieval": await eval_retrieval()}
         if args.task == "generation":

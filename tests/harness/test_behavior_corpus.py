@@ -7,8 +7,10 @@ from eval.behavior import cases
 
 def test_original_intent_corpus_becomes_behavior_cases():
     rows = cases()
-    assert len(rows) == 100
-    assert all("query" in r and "acceptable_tools" in r for r in rows)
+    assert len(rows) == 116
+    assert sum(r["variant"] == "original" for r in rows) == 100
+    assert all("source_id" in r and "expected_outcome" in r for r in rows)
+    assert all("acceptable_tools" not in r for r in rows)
     assert "app.agents.graph" not in sys.modules
     assert "app.agents.nodes.intent" not in sys.modules
 

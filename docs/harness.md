@@ -91,7 +91,7 @@ PY
 .venv/bin/python -m mypy
 (cd frontend && npm test && npm run build)
 .venv/bin/python -m eval.runner --task retrieval
-.venv/bin/python -m eval.runner --task behavior --limit 100
+.venv/bin/python -m eval.runner --task behavior --split development --full
 # 主动真实调用小样本，不默认跑满集
 .venv/bin/python -m eval.runner --task behavior --llm --limit 5
 ```
@@ -115,3 +115,6 @@ PY
 
 - OpenCode `802f2d8e75098ae0b45ad839ce98a31589ea8102`（MIT）：阅读 [`packages/core/src/agent.ts`](https://github.com/anomalyco/opencode/blob/802f2d8e75098ae0b45ad839ce98a31589ea8102/packages/core/src/agent.ts) 与 [`tool/plugin/subagent.ts`](https://github.com/anomalyco/opencode/blob/802f2d8e75098ae0b45ad839ce98a31589ea8102/packages/core/src/tool/plugin/subagent.ts)，参考主/子角色隔离、工具许可边界和子会话结果汇总。
 - Hermes Agent `22063fc099ec9ad8357d7f8f6e6248a0400680d3`（MIT）：阅读 [`agent/context_compressor.py`](https://github.com/NousResearch/hermes-agent/blob/22063fc099ec9ad8357d7f8f6e6248a0400680d3/agent/context_compressor.py) 与 `context_compressor_prellm.py`，参考调用前压缩、保护首尾及确定性降级。本实现不调用辅助付费模型，也不复制其多供应商 fallback 系统。
+
+
+新的任务语料、逐题人工审阅目录、fixture与分组协议见 [任务行为评测](agent-task-evaluation.md)。原intent工具命中指标已移除；语义待审阅与实际通过分开计数，保留集必须显式选择。

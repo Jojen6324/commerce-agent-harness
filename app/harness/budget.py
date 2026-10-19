@@ -22,7 +22,7 @@ class RunBudget:
     deadline: float
     max_models: int = 24
     max_tools: int = 16
-    max_tokens: int = 60000
+    max_tokens: int = 80_000
     models: int = 0
     tools: int = 0
     reserved_tokens: int = 0

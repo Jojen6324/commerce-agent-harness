@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     agnes_base_url: str = "https://apihub.agnes-ai.com/v1"
     agnes_model: str = "agnes-3.0-flash"
     agent_context_tokens: int = 16000
-    agent_total_tokens: int = 60000
+    agent_total_tokens: int = 80_000
     agent_model_calls: int = 24
     agent_deadline_seconds: float = 300
     agent_tool_timeout: float = 30

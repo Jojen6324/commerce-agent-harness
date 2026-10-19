@@ -5,11 +5,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from app.config.settings import Settings
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
 from app.harness.context import ContextBuilder
 from app.harness.validation import AnswerValidator
 from app.providers.base import LLMResponse
 from app.providers.fake import OfflineLLMProvider
+
+
+def test_default_agent_total_token_budget_is_80k():
+    assert Settings().agent_total_tokens == 80_000
+    assert RunBudget(time.monotonic() + 10).max_tokens == 80_000
 
 
 def test_compression_preserves_call_pair_current_goal_and_facts():

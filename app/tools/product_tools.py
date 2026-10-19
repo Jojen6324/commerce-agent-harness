@@ -58,14 +58,18 @@ class SearchProductsTool(RepositoryBackedTool, Tool):
         return ToolResult(
             name=self.name,
             success=True,
-            output={"products": [p.model_dump() for p in products]},
+            output={
+                "products": [p.model_dump() for p in products],
+                "match_status": "matched" if products else "no_match",
+                "notice": "无匹配仅代表本次搜索未命中，不表示商品不存在或无库存；可缩短核心词再查。",
+            },
         )
 
 
 class GetProductDetailTool(RepositoryBackedTool, Tool):
     name = "get_product_detail"
     description = (
-        "按 SKU 查询单品详情：名称、品类、价格、库存、标签、描述。"
+        "按 SKU 查询已录入的目录详情：名称、品类、价格、库存、标签、描述。未录入完整技术规格。"
         "何时用：已知 sku，问规格、价格、介绍、这件是什么。"
         "何时不用：还不知道 sku 时先 search_products；只要库存数量用 check_inventory；保修条款用 get_warranty。"
         "优先：仅问有没有货 → check_inventory；还要价格/规格/介绍 → 本工具（已含 inventory）。"
@@ -79,7 +83,15 @@ class GetProductDetailTool(RepositoryBackedTool, Tool):
         product = await self.repository.get_product(parsed.sku)
         if product is None:
             raise InvalidRequestError(f"product not found: {parsed.sku}")
-        return ToolResult(name=self.name, success=True, output=product.model_dump())
+        return ToolResult(
+            name=self.name,
+            success=True,
+            output={
+                **product.model_dump(),
+                "technical_specifications": "not_recorded",
+                "notice": "只能确认目录已录入的属性；续航、蓝牙版本、照片定制能力等未录入，必须说明未知，不能凭常识补造。",
+            },
+        )
 
 
 class RecommendProductsTool(RepositoryBackedTool, Tool):

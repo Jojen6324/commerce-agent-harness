@@ -16,6 +16,7 @@ from app.repositories.models import (
     ProductRow,
     RefundRow,
     ReturnRow,
+    SupportTicketRow,
 )
 from eval.task_schema import DATA_DIR
 
@@ -80,7 +81,11 @@ async def install_fixture(factory, names):
 async def snapshot(factory):
     tables = {}
     async with factory() as db:
-        for name, model in {**BUSINESS_MODELS, "harness_actions": ActionRow}.items():
+        for name, model in {
+            **BUSINESS_MODELS,
+            "harness_actions": ActionRow,
+            "support_tickets": SupportTicketRow,
+        }.items():
             rows = []
             for row in (await db.scalars(select(model))).all():
                 rows.append(

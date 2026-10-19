@@ -16,14 +16,14 @@ def completion_issue(answer: str, *, missing_fields=(), main=True, observations=
         and o["output"]["output"].get("ticket_id")
         for o in observations
     )
-    if (
-        main
-        and not handoff
-        and re.search(
-            r"(?:我(?:会|将|来)|现在|正在|已为|马上).{0,16}(?:转接人工|转交人工|转人工|人工审核|反馈给.{0,4}经理)",
-            answer,
-        )
-    ):
+    claimed_handoff = re.search(
+        r"(?:我(?:会|将|来)|现在|正在|已为|马上).{0,24}(?:转接人工|转交人工|转人工|接通人工|创建.{0,6}工单|人工审核|反馈给.{0,4}经理)",
+        answer,
+    )
+    unfinished_offer = not re.search(r"如果|如需|需要我|若", answer) and re.search(
+        r"我可以.{0,24}(?:创建.{0,6}工单|转人工|接通人工)", answer
+    )
+    if main and not handoff and (claimed_handoff or unfinished_offer):
         return "missing_handoff_receipt"
     if main and (
         re.search(r"确认后(?:我|将为|会为|将执行|将提交).{0,20}(提交|执行|取消|退款|退货)", answer)

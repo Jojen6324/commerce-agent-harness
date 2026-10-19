@@ -36,12 +36,14 @@ class KnowledgeService:
             "rewritten_queries": result["rewritten_queries"],
         }
 
-    async def answer_question(self, query: str, *, complex: bool = False) -> dict:
+    async def answer_question(
+        self, query: str, *, complex: bool = False, user_question: str | None = None
+    ) -> dict:
         from app.schemas.retrieval import RetrievedChunk
 
         evidence = await self.retrieve_evidence(query, complex=complex)
         state: AgentState = {
-            "user_query": query,
+            "user_query": user_question or query,
             "strategy": RetrievalStrategy(evidence["strategy"]),
             "retrieved_chunks": [RetrievedChunk.model_validate(c) for c in evidence["chunks"]],
         }
@@ -54,6 +56,7 @@ class KnowledgeService:
         extra = state.get("extra") or {}
         return {
             **evidence,
+            "answered_question": user_question or query,
             "answer": state["final_answer"],
             "citations": [c.model_dump() for c in state.get("citations", [])],
             "validated": not state.get("refused", False) and not extra.get("degraded", False),

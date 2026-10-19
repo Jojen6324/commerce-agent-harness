@@ -27,7 +27,9 @@ class TrackShipmentTool(RepositoryBackedTool, Tool):
         "何时不用：问支付/金额/订单状态用 get_order；问配送政策时效用 search_knowledge；仓库截单用 mcp_warehouse_cutoff。"
         "优先使用 track_shipment 当强调物流轨迹；强调订单状态/金额则用 get_order。"
         "参数 order_id：例 ORD1001；不要把运单号（如 SF123456）填进 order_id。"
-        "返回 tracking_no、city、events[{status, at, tracking_no?}]，status 为 warehouse/in_transit/delivered；events 为空表示尚未出库，不能据此说已签收。"
+        "返回 tracking_no、city、shipped_at、events[{status,label,at,time_source}]。"
+        "warehouse=支付后仓库待处理，日期来自paid_at，不是出库或发货；in_transit日期才是shipped_at。"
+        "events为空仅表示无事件，不能推断已签收。"
     )
     risk = ToolRisk.READ
     input_model = TrackInput
@@ -36,17 +38,33 @@ class TrackShipmentTool(RepositoryBackedTool, Tool):
         order = await self.repository.get_visible_order(parsed.order_id, context.user_id)
         events: list[dict[str, Any]] = []
         if order.paid_at:
-            events.append({"status": "warehouse", "at": order.paid_at.isoformat()})
+            events.append(
+                {
+                    "status": "warehouse",
+                    "label": "支付后仓库待处理（非出库/发货）",
+                    "time_source": "paid_at",
+                    "at": order.paid_at.isoformat(),
+                }
+            )
         if order.shipped_at:
             events.append(
                 {
                     "status": "in_transit",
+                    "label": "已发货，运输中",
+                    "time_source": "shipped_at",
                     "tracking_no": order.tracking_no,
                     "at": order.shipped_at.isoformat(),
                 }
             )
         if order.delivered_at:
-            events.append({"status": "delivered", "at": order.delivered_at.isoformat()})
+            events.append(
+                {
+                    "status": "delivered",
+                    "label": "已签收",
+                    "time_source": "delivered_at",
+                    "at": order.delivered_at.isoformat(),
+                }
+            )
         return ToolResult(
             name=self.name,
             success=True,
@@ -54,6 +72,8 @@ class TrackShipmentTool(RepositoryBackedTool, Tool):
                 "order_id": order.order_id,
                 "tracking_no": order.tracking_no,
                 "city": order.receiver_city,
+                "city_meaning": "订单收货城市；不是实时包裹定位",
+                "shipped_at": order.shipped_at.isoformat() if order.shipped_at else None,
                 "events": events,
             },
         )

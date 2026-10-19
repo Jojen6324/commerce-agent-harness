@@ -53,6 +53,8 @@
 新路径不再返回意图分类结果，兼容字段 `intent`、`complexity`、`strategy` 可为 null。
 详细边界与当前验证结果见 [Harness 文档](docs/harness.md) 和 [本次对照报告](docs/harness-evaluation.md)。
 
+人工服务请求现在保存为数据库工单，支持受保护的人工受理、解决和同会话状态查询。配置与能力边界见 [最小人工工单服务](docs/support-service.md)；保存工单不代表已经接通真人。
+
 <a id="quickstart"></a>
 
 ## 🚀 快速开始

@@ -19,7 +19,10 @@ class DocumentReranker:
     ) -> list[RetrievedChunk]:
         if not chunks:
             return []
-        documents = [chunk.content for chunk in chunks]
+        documents = [
+            f"{c.metadata.get('document_title', c.title)} {c.section or ''}\n{c.content}"
+            for c in chunks
+        ]
         ranked = await self._provider.rerank(query, documents, top_n=min(top_n, len(chunks)))
         results: list[RetrievedChunk] = []
         for new_rank, (original_index, score) in enumerate(ranked, start=1):

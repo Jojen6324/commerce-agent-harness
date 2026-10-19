@@ -21,9 +21,15 @@ class BM25Retriever:
 
     def build(self, corpus: list[RetrievedChunk]) -> None:
         self._chunks = list(corpus)
-        tokenized = [tokenize(chunk.content) for chunk in self._chunks]
+        tokenized = [
+            tokenize(f"{c.metadata.get('document_title', c.title)} {c.section or ''} {c.content}")
+            for c in self._chunks
+        ]
         # BM25Okapi requires a non-empty corpus; keep None if ingest has not run.
         self._bm25 = BM25Okapi(tokenized) if tokenized else None
+
+    def document_chunks(self, stems: set[str]) -> list[RetrievedChunk]:
+        return [c.model_copy(deep=True) for c in self._chunks if c.title in stems]
 
     def search(self, query: str, *, top_k: int) -> list[RetrievedChunk]:
         if self._bm25 is None or not self._chunks:

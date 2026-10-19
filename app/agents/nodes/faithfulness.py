@@ -12,6 +12,7 @@ from app.prompts.faithfulness import SELF_CORRECT_SYSTEM, SELF_CORRECT_USER
 from app.providers.base import LLMProvider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.json_parser import parse_model
+from app.retrieval.evidence import evidence_text
 from app.schemas.retrieval import Citation, RetrievedChunk
 
 
@@ -26,9 +27,7 @@ async def self_correct_answer(
     first_result: FaithfulnessResult,
 ) -> tuple[str, FaithfulnessResult, bool]:
     """LLM rewrite once, then extractive fallback. Returns (answer, judge, corrected)."""
-    evidence = (
-        "\n\n".join(f"[{c.chunk_id}] {c.title}\n{c.content}" for c in chunks[:6]) or "(无检索结果)"
-    )
+    evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(无检索结果)"
     try:
         response = await llm.generate(
             [
@@ -106,7 +105,7 @@ async def faithfulness_node(
         return {"extra": extra}
     HALLUCINATION_FLAGS.inc()
     if result.rationale == "checker_unavailable":
-        evidence = "\n\n".join(f"[{c.chunk_id}] {c.title}\n{c.content}" for c in chunks[:6])
+        evidence = "\n\n".join(evidence_text(c) for c in chunks[:6])
         fallback_answer = _extractive_fallback(state["user_query"], evidence, tool_text)
         extra["degraded"] = True
         extra["degradation_reason"] = "checker_unavailable"

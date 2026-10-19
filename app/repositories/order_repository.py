@@ -10,6 +10,7 @@ from app.core.enums import OrderStatus
 from app.core.exceptions import DatabaseError, InvalidRequestError
 from app.core.ids import new_id
 from app.repositories.models import AuditLogRow, OrderRow, ProductRow, RefundRow, ReturnRow
+from app.retrieval.tokenizer import tokenize
 from app.schemas.order import Order, OrderItem, Product
 
 
@@ -172,6 +173,8 @@ class OrderRepository:
         # Prefer an exact phrase; models and users also supply separated terms.
         # Each term must match, with literal LIKE escaping retained throughout.
         terms = [t for t in re.split(r"[\s/、,，]+", query.strip()) if t]
+        if not rows and len(terms) == 1 and re.fullmatch(r"[\u4e00-\u9fff]+", terms[0]):
+            terms = list(dict.fromkeys(tokenize(terms[0])))
         if not rows and 1 < len(terms) <= 8:
             filters = []
             for term in terms:

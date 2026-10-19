@@ -15,6 +15,7 @@ from app.prompts.answer import ANSWER_SYSTEM, ANSWER_USER
 from app.providers.base import LLMProvider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.json_parser import parse_model
+from app.retrieval.evidence import evidence_text
 from app.schemas.common import LatencyBreakdown, TokenUsage
 from app.schemas.retrieval import Citation
 
@@ -47,9 +48,7 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
             "refused": False,
             "latency": latency,
         }
-    evidence = (
-        "\n\n".join(f"[{c.chunk_id}] {c.title}\n{c.content}" for c in chunks[:6]) or "(无检索结果)"
-    )
+    evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(无检索结果)"
     tool_text = json.dumps([t.model_dump() for t in tools], ensure_ascii=False) if tools else "(无)"
     strategy = state.get("strategy") or RetrievalStrategy.DIRECT
     if isinstance(llm, OfflineLLMProvider):

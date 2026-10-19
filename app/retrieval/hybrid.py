@@ -34,6 +34,10 @@ class HybridRetriever:
         self._rrf_k = rrf_k
         self._cache = cache
 
+    def document_chunks(self, stems: set[str]) -> list[RetrievedChunk]:
+        """Read complete, already-indexed policy documents by explicit identity."""
+        return self._bm25.document_chunks(stems)
+
     async def retrieve(self, query: str, *, top_k: int) -> list[RetrievedChunk]:
         if self._cache is not None:
             cached = await self._cache.get(query, top_k)

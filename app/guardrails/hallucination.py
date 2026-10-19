@@ -10,6 +10,7 @@ from app.core.exceptions import LLMOutputError, LLMProviderError
 from app.prompts.faithfulness import FAITHFULNESS_SYSTEM, FAITHFULNESS_USER
 from app.providers.base import LLMProvider
 from app.providers.json_parser import parse_model
+from app.retrieval.evidence import evidence_text
 from app.schemas.retrieval import RetrievedChunk
 
 
@@ -32,7 +33,7 @@ class FaithfulnessChecker:
         chunks: list[RetrievedChunk],
         tool_results_text: str,
     ) -> FaithfulnessResult:
-        evidence = "\n".join(f"[{c.chunk_id}] {c.content}" for c in chunks[:8]) or "(none)"
+        evidence = "\n\n".join(evidence_text(c) for c in chunks[:8]) or "(none)"
         try:
             response = await self._llm.generate(
                 [

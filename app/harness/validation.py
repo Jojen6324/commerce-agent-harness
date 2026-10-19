@@ -5,6 +5,7 @@ import re
 
 from app.agents.nodes.faithfulness import self_correct_answer
 from app.guardrails.hallucination import FaithfulnessChecker
+from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
 from app.schemas.retrieval import RetrievedChunk
 
@@ -34,7 +35,7 @@ class AnswerValidator:
             data = observation["output"].get("output", observation["output"])
             for c in data.get("chunks", []):
                 chunks[c["chunk_id"]] = RetrievedChunk.model_validate(c)
-            if data.get("validated"):
+            if data.get("validated") and data.get("answered_question") == query:
                 verified.append(data.get("answer"))
             tool_facts.append({"name": observation["name"], "result": data})
         known_refs = (
@@ -75,6 +76,13 @@ class AnswerValidator:
                 "status": "validation_failed",
             }
         provider = getattr(self.llm, "provider", self.llm)
+        if any(
+            o["output"].get("success") and support_receipt(o["output"].get("output", {})) == answer
+            for o in observations
+        ):
+            # Exact server-rendered database receipt, no free-form claims. The
+            # dispatch has already committed it; another LLM cannot add assurance.
+            return result
         if not observations:
             if completion_claim:
                 return {

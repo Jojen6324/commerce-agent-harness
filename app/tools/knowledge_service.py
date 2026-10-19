@@ -35,5 +35,9 @@ class PolicyAnswerTool(EvidenceTool):
         return ToolResult(
             name=self.name,
             success=True,
-            output=await self.service.answer_question(parsed.query, complex=parsed.complex),
+            output=await self.service.answer_question(
+                parsed.query,
+                complex=parsed.complex,
+                user_question=context.user_messages[-1] if context.user_messages else parsed.query,
+            ),
         )

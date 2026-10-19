@@ -41,6 +41,8 @@ _LOCAL_HANDLERS: dict[str, dict[str, Any]] = {
         "weekend": "10:00-18:00",
         "night_refund_review": False,
         "source": "mcp_local",
+        "source_label": "本地配置时段，非实时坐席状态",
+        "notice": "本地时段配置与知识库可能不同，须标明来源；夜间不审核退款不代表不能查询进度。不能据此保证真实人工在线。",
     },
     "mcp_warehouse_cutoff": {
         "cutoff": "16:00",

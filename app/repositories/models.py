@@ -152,3 +152,17 @@ class ActionRow(Base):
     expires_epoch: Mapped[int] = mapped_column(Integer)
     idempotency_key: Mapped[str] = mapped_column(String(128), unique=True)
     result_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class SupportTicketRow(Base):
+    __tablename__ = "support_tickets"
+    ticket_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    reason: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    assigned_to: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    resolution: Mapped[str] = mapped_column(Text, default="")
+    request_key: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

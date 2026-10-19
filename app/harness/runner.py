@@ -15,6 +15,7 @@ from app.core.ids import new_id
 from app.harness.budget import BudgetExceeded
 from app.harness.completion import REPAIR_GUIDANCE, completion_issue
 from app.harness.context import ContextBuilder
+from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
 from app.tools.base import ToolContext
 
@@ -31,6 +32,9 @@ SYSTEM = """你是电商客服。依据当前目标、历史和工具描述自�
 用户已提供商品名称或品类时先尝试目录查找，不能未经查询就要求SKU。售后原因引用用户原话，未提供则补问，不把申请意愿当原因。
 需要转人工时须取得真实队列/工单结果才能说已排队，不得承诺已经接通。
 人工队列工具不要求订单号；用户明确要求人工审核时可先入队，再收集订单背景，不要因缺订单号阻止转交。
+人工服务工具是持久待办服务，不是实时接线。以真实回执的状态和限制为准，不承诺经理已接单或将来一定联系。
+空搜索仅表示未匹配，不能说商品不存在；技术参数和领取入口未录入则明确未知。仓库待处理不等于已发货，收货城市不等于包裹实时位置。
+政策须保留文档标题、品类、前提和例外；未确定商品品类时不得泛化专用规则。用户已明确SKU和查询目标时直接查证，不重复询问目标。
 政策结论必须来自完整知识工具，仅引用本轮已读取证据的原有chunk_id。业务事实可引用本轮工具名称，不引用未知来源。简单查询直接调用工具，复杂独立查证才委派。
 缺必要条件时调用ask_user补问，不得猜测。不要输出内部推理。普通文本结束；可使用 [chunk_id] 标明引用。"""
 
@@ -268,8 +272,10 @@ class AgentRunner:
                                     "retryable": False,
                                 },
                             }
-                        if isinstance(exc, InvalidRequestError) and not exc.message.startswith(
-                            "invalid arguments for"
+                        if (
+                            name != "read_artifact"
+                            and isinstance(exc, InvalidRequestError)
+                            and not exc.message.startswith("invalid arguments for")
                         ):
                             observations.append(
                                 {
@@ -319,8 +325,25 @@ class AgentRunner:
                     if "pending_action" in output:
                         pending = output["pending_action"]
                     message_output = output
+                    # Give every inline result its real store reference, even
+                    # below the externalization threshold. ContextBuilder may
+                    # need to compress it on a later iteration.
+                    if result_ref and isinstance(output, dict):
+                        data = output.get("output", output)
+                        message_output = {
+                            **output,
+                            "artifact_ref": result_ref,
+                            "summary": str(
+                                data.get("answer")
+                                or data.get("notice")
+                                or "工具结果已保存；需要原文时读取artifact_ref。"
+                            )[:1500],
+                            "facts": data.get("facts", {}),
+                            "evidence_refs": [c["chunk_id"] for c in data.get("chunks", [])],
+                        }
                     if (
                         getattr(self.executor, "artifacts", None)
+                        and name != "read_artifact"
                         and len(json.dumps(output, ensure_ascii=False)) > 3000
                     ):
                         ref = result_ref or await self.executor.artifacts.put(output, context)
@@ -350,6 +373,7 @@ class AgentRunner:
                         {
                             "role": "tool",
                             "tool_call_id": call["id"],
+                            "protected": name == "read_artifact",
                             "content": json.dumps(message_output, ensure_ascii=False),
                         }
                     )
@@ -362,6 +386,24 @@ class AgentRunner:
                         "events": events,
                         "run_id": run_id,
                         "status": "awaiting_confirmation",
+                    }
+                receipts = [
+                    o["output"].get("output", {})
+                    for o in observations
+                    if o["output"].get("success")
+                    and o["output"].get("output", {}).get("delivery") == "database"
+                    and o["output"].get("output", {}).get("ticket_id")
+                    and support_receipt(o["output"].get("output", {})) is not None
+                ]
+                if receipts and spec.name == "main":
+                    receipt = receipts[-1]
+                    await event("support_ticket_saved", ticket_id=receipt["ticket_id"])
+                    return {
+                        "answer": support_receipt(receipt),
+                        "status": "completed",
+                        "observations": observations,
+                        "events": events,
+                        "run_id": run_id,
                     }
                 if missing:
                     issue = completion_issue(
@@ -419,7 +461,11 @@ class AgentRunner:
                                 "retryable": True,
                             },
                         }
-                    if data.get("answer") and data.get("validated"):
+                    if (
+                        data.get("answer")
+                        and data.get("validated")
+                        and data.get("answered_question") == query
+                    ):
                         await event("validation", reused=True)
                         return {
                             "answer": data["answer"],

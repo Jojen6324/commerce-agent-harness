@@ -1,8 +1,10 @@
 """Knowledge tools: policy search, coupons, warranty and escalation."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import ToolRisk
+from app.core.request_scope import get_db_session
+from app.repositories.support import SupportRepository
 from app.retrieval.hybrid import HybridRetriever
 from app.schemas.agent import ToolResult
 from app.tools.base import Tool, ToolContext
@@ -65,25 +67,41 @@ class SearchKnowledgeTool(Tool):
 class GetCouponTool(Tool):
     name = "get_coupon"
     description = (
-        "查询当前可领/可叠优惠券的结构化规则（券码与叠加说明）。只读，不会自动领券。"
+        "查询通用券目录及已索引的完整优惠券/叠加政策原文。只读，不会自动领券。"
         "何时用：有什么券、能不能叠、满减、包邮券。"
         "何时不用：查订单实付金额用 get_order；一般促销文案可用 search_knowledge，但券码与叠用规则优先本工具。"
         "优先使用 get_coupon 当问券/叠用；search_knowledge 仅作补充政策。"
         "参数 user_id 可选：当前登录用户 ID，例 u_demo；不要填邮箱（user@example.com）或手机号。不填则返回通用规则。"
-        "返回 coupons[{code, desc}]，如 NEW10/SHIP0；不要承诺用户账户里已经领到这些券。"
+        "返回 coupons、chunks和limitations；desc只是摘要，限制与叠加以chunks为准。"
+        "不提供实际领取入口或账户可用资格，不能编造领取路径或推断未提及的券可叠加。"
     )
     risk = ToolRisk.READ
     input_model = CouponInput
+
+    def __init__(self, retriever: HybridRetriever | None = None):
+        self.retriever = retriever
 
     async def execute(self, parsed: CouponInput, context: ToolContext) -> ToolResult:
         return ToolResult(
             name=self.name,
             success=True,
             output={
+                "chunks": [
+                    c.model_dump(mode="json")
+                    for c in self.retriever.document_chunks({"coupons", "promo_stacking"})
+                ]
+                if self.retriever
+                else [],
+                "limitations": {
+                    "account_eligibility": "unknown",
+                    "claim_entry": "not_recorded",
+                    "claimed": False,
+                    "summary_is_complete_policy": False,
+                },
                 "coupons": [
                     {"code": "NEW10", "desc": "新客满 99 减 10，不与品类券叠用"},
                     {"code": "SHIP0", "desc": "满 59 包邮，偏远地区除外"},
-                ]
+                ],
             },
         )
 
@@ -114,6 +132,7 @@ class GetWarrantyTool(Tool):
 
 
 class EscalateInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     reason: str = Field(
         min_length=1,
         max_length=200,
@@ -124,24 +143,34 @@ class EscalateInput(BaseModel):
 class EscalateToHumanTool(Tool):
     name = "escalate_to_human"
     description = (
-        "创建转人工工单并进入人工队列；不查询订单、不解答政策。"
+        "将人工服务请求保存到数据库待办，供授权工作人员受理；不是实时聊天或外部呼叫中心。"
         "何时用：用户明确要人工/值班经理；查询与政策工具无法完成；投诉升级或敏感纠纷。"
         "何时不用：先能用 get_order、search_knowledge 等解决时不要转；不要用它查订单、物流或政策。"
         "优先：业务可工具化 → 先调对应读工具；明确要人工或工具穷尽 → 本工具。"
         "参数 reason：1–200 字概括为何转人工，如「用户要求值班经理审核退款」。"
         "用户明确要求人工时无需先提供订单号，可以先入队再补充订单背景，不要代替用户申请退款。"
-        "返回 {ticket_id, queue:human, reason} 表示已排队，不是已经接通人工。"
+        "返回 {ticket_id, queue:human, status, delivery:database, connected:false}。"
+        "pending表示已保存待受理，in_progress表示有工作人员受理，resolved表示已解决。"
+        "不能承诺已接通、经理已接单、稍后一定联系、响应时间或退款获批。"
     )
     risk = ToolRisk.EXTERNAL
     input_model = EscalateInput
 
     async def execute(self, parsed: EscalateInput, context: ToolContext) -> ToolResult:
+        ticket = await SupportRepository(get_db_session()).submit(
+            user_id=context.user_id,
+            session_id=context.session_id,
+            reason=parsed.reason,
+        )
         return ToolResult(
             name=self.name,
             success=True,
+            risk=self.risk,
             output={
-                "ticket_id": f"t_{context.session_id[:10]}",
+                **ticket,
                 "queue": "human",
-                "reason": parsed.reason,
+                "delivery": "database",
+                "connected": False,
+                "notice": "工单已持久保存，等待工作人员受理；未接通实时人工，不保证处理时间，不自动批准退款。",
             },
         )

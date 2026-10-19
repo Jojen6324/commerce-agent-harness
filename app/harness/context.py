@@ -27,9 +27,13 @@ class ContextBuilder:
         for m in messages:
             if used() < self.limit * 0.65:
                 break
-            if m["role"] == "tool" and len(m.get("content", "")) > 2500:
+            if m["role"] == "tool" and not m.get("protected") and len(m.get("content", "")) > 2500:
                 try:
                     data = json.loads(m["content"])
+                    # Only the executor/store can mint a usable reference. An
+                    # inline result (including read_artifact) must stay intact.
+                    if not isinstance(data, dict) or not data.get("artifact_ref"):
+                        continue
                     m["content"] = json.dumps(
                         {
                             "artifact_ref": data.get("artifact_ref"),

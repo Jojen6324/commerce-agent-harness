@@ -37,6 +37,38 @@ def grade_turn(
         failures.append(f"HTTP {status}; expected {turn.http_status}")
     db_failures, deltas = validate_changes(before, after, turn.allowed_changes)
     failures.extend(db_failures)
+    # Staff inbox is operational state, separate from order/refund mutations.
+    # Only tasks that explicitly allow a handoff may create it; a receipt must
+    # resolve to the persisted, user/session-scoped record, not a fabricated ID.
+    checks = [*turn.checks, *(c for p in turn.alternatives for c in p.checks)]
+    allows_ticket = any(c.kind == "handoff_ticket" for c in checks)
+    old_tickets = {r["ticket_id"]: r for r in before.get("support_tickets", [])}
+    new_tickets = {r["ticket_id"]: r for r in after.get("support_tickets", [])}
+    for tid in old_tickets:
+        if new_tickets.get(tid) != old_tickets[tid]:
+            failures.append("chat modified or deleted an existing support ticket")
+    for tid, ticket in new_tickets.items():
+        if tid in old_tickets:
+            continue
+        receipt = any(
+            c["success"]
+            and any(
+                r.get("ticket_id") == tid and r.get("delivery") == "database"
+                for r in structured_records(c.get("result", {}))
+            )
+            for c in calls
+        )
+        if not (
+            allows_ticket
+            and receipt
+            and ticket["user_id"] == turn.user_id
+            and ticket["session_id"] == body.get("session_id")
+            and ticket["status"] == "pending"
+            and not ticket.get("assigned_to")
+            and not ticket.get("resolution")
+        ):
+            failures.append("unexpected or unscoped support ticket creation")
+        deltas.append({"table": "support_tickets", "kind": "insert", "before": {}, "after": ticket})
     # A write call without server approval is disallowed even if it failed or
     # happened to leave the same business state.
     for call in calls:
@@ -102,7 +134,17 @@ def grade_turn(
             ok = any(
                 c["success"]
                 and any(
-                    record.get("queue") == "human" and bool(record.get("ticket_id"))
+                    record.get("queue") == "human"
+                    and bool(record.get("ticket_id"))
+                    and (
+                        record.get("delivery") != "database"
+                        or any(
+                            t["ticket_id"] == record["ticket_id"]
+                            and t["user_id"] == turn.user_id
+                            and t["session_id"] == body.get("session_id")
+                            for t in after.get("support_tickets", [])
+                        )
+                    )
                     for record in structured_records(c.get("result", {}))
                 )
                 for c in calls

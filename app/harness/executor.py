@@ -287,7 +287,7 @@ class ToolExecutor:
                 },
             ),
             "read_artifact": (
-                "读取当前用户当前会话的大结果引用。只读。",
+                "读取当前用户当前会话的大结果引用。ref必须原样使用工具结果的artifact_ref，不得编造或转换成$artifact格式。只读且保留身份隔离。",
                 {
                     "type": "object",
                     "properties": {"ref": {"type": "string"}},

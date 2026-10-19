@@ -13,6 +13,7 @@ from app.core.exceptions import LLMOutputError, LLMProviderError
 from app.prompts.self_rag import GRADE_SYSTEM, GRADE_USER
 from app.providers.base import LLMProvider
 from app.providers.json_parser import parse_model
+from app.retrieval.evidence import evidence_text
 from app.retrieval.hybrid import HybridRetriever
 from app.retrieval.query_rewrite import QueryRewriter
 from app.retrieval.reranker import DocumentReranker
@@ -70,7 +71,7 @@ class SelfRAGLoop:
         return list(accumulated.values())[: self._settings.rerank_top_n * 2]
 
     async def _grade(self, query: str, chunks: list[RetrievedChunk]) -> GradeResult:
-        evidence = "\n\n".join(f"[{c.chunk_id}] {c.content}" for c in chunks[:6]) or "(empty)"
+        evidence = "\n\n".join(evidence_text(c) for c in chunks[:6]) or "(empty)"
         try:
             response = await self._llm.generate(
                 [
@@ -83,4 +84,9 @@ class SelfRAGLoop:
             )
             return parse_model(response.content, GradeResult)
         except (LLMProviderError, LLMOutputError):
-            return GradeResult(relevant=bool(chunks), sufficient=bool(chunks), rationale="fallback")
+            return GradeResult(
+                relevant=bool(chunks),
+                sufficient=False,
+                missing_aspect="证据充分性校验不可用，保留品类及例外约束",
+                rationale="checker_unavailable",
+            )

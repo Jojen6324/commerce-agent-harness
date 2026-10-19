@@ -1,0 +1,117 @@
+# 轻量电商客服 Agent Harness
+
+## 启动与配置
+
+在 `/workspace/commerce-agent-harness` 使用已有 checkout，不创建额外 worktree。
+
+```bash
+export HF_HOME=/workspace/.cache/huggingface
+export HF_ENDPOINT=https://huggingface.co
+export OMP_NUM_THREADS=2
+export OPENBLAS_NUM_THREADS=2
+uv sync --frozen --extra dev --extra rerank --python 3.12
+.venv/bin/python -m scripts.warm_models
+cd frontend
+npm ci
+npm run build
+cd ..
+.venv/bin/python -m uvicorn app.asgi:app --host 127.0.0.1 --port 8000
+```
+
+前端开发另开终端，在 `frontend` 执行 `npm run dev`。Vite 代理 `/api`。
+模型 API 使用已有云环境 `AGNES` 密钥绑定；不要将其复制到文件、日志、Git 或聊天。
+`AGNES_BASE_URL=https://apihub.agnes-ai.com/v1`，正式模型 ID 为 `agnes-3.0-flash`，Bearer 认证。
+已真实验证文本、JSON object 和原生 function tool calling。无 AGNES 时进入确定性离线演示，不切换其他付费服务。
+没有通用的自然语言动作解析器，也没有自动 JSON 兼容模式：截断、非法 JSON、缺参数均不能执行。
+
+核心默认值见 `.env.example`：16K 上下文（含 Schema 和输出预留）、60K 总 Token、24 次模型尝试、120 秒 deadline、30 秒工具超时、8 个 Agent 步骤、6 次工具调用。多步骤演示可显式提高 `MAX_TOOL_CALLS=16`。
+Token 估计是 CJK 字符启发式，不能替代供应商精确 tokenizer；不能安全放下关键上下文时停止。
+`token_usage` 仅累计已返回的 usage，失败请求保守预留单独列在 `diagnostics.reserved_tokens_without_usage`，不能当作已计费 Token。
+
+原 BGE 模型（512 维）、Reranker、知识库、切块、RRF 和 top-k 保持不变。CPU PyTorch 通过官方索引安装，避免下载无用 CUDA 依赖。
+模型缓存固定在 `/workspace/.cache/huggingface`。`scripts/warm_models.py` 记录已验证的模型修订；运行时默认仍用原模型 ID。
+PDF/Office 的 Unstructured extras、Postgres、Redis、Qdrant 是可选能力，本次未将它们作为闭环前置条件。
+
+## 执行与源码导读
+
+1. `services/chat_service.py`：校验会话归属、加载历史与摘要、结构化事实和待确认 Action；同会话并发明确返回冲突。模型调用期间没有业务长事务。
+2. `harness/runner.py`：唯一的模型—工具循环。`AgentSpec` 控制角色与白名单。普通文本结束；`ask_user` 补问；工具观察回填；`delegate_task` 委派；写工具生成确认提案。没有全局 intent classifier、固定 Planner→Executor 或 LangGraph。
+3. `harness/executor.py`：所有业务、专家、Skill、HTTP 代理和确认执行统一经过 Schema、角色、身份、资源归属、风险、超时检查。身份来自服务端 Context，不接受模型选择用户。参数错误可有限修正；权限拒绝终止；模型无法调用隐藏写入入口。
+4. `services/knowledge.py`：`retrieve_evidence` 复用查询改写、BM25+BGE、RRF、去重和精排；complex=true 使用有限 SelfRAG 补检索。`answer_question` 追加原生成与忠实度自纠错。两个接口共用检索实现，证据含原文、来源、版本、document_id 和 chunk_id。
+5. `harness/validation.py`：先检查未知引用和不实业务完成声明，再按需复用忠实度判断与有限修正。业务工具实际结果进入校验。问候不强制调用知识裁判。原样返回已验证知识答复时复用校验，改写或合并业务事实后重新判断。
+6. `harness/context.py`、`harness/budget.py`：每次主/子模型调用前准备上下文；大结果外置、保留受控引用和结构化事实、压缩早期历史。保留 tool_call_id 配对、当前目标和受保护事实。历史/摘要在后续轮次真实加载。RAG、校验和专家共享 ContextVar 预算；失败保守保留额度。
+7. `harness/delegation.py`：同一个 Runner 配置主 Agent、知识专家、订单专家。只允许主 Agent 委派，深度 1。两个明确 independent 的只读任务可并行，其他串行；共享预算、独立 DB session、取消时清理子任务。父级只接收事实、证据、缺失条件和短摘要，不接收全部子会话。
+8. `repositories/runtime.py`、`repositories/models.py`：持久化会话事实、大结果引用、run 事件与 Action。外置数据按用户和会话双重隔离。事件不保存隐藏推理或认证头。
+9. `ToolExecutor.confirm`：通过 Action 的归属、TTL、条件更新 claim、服务器保存参数再次校验；本地写入与 Action 成功结果同事务提交。相同 Action 并发/重试返回持久化结果。模型不会重新规划确认参数。
+
+Skills 保留现有 JSON 定义，只注入短目录，由 `load_skill` 按需加载；不能扩大工具权限，本次未生成或修改业务 Skill。
+MCP 名称保留兼容，但现有实现是本地 handler 和自定义 HTTP `{name, arguments}` POST，**不是标准 MCP JSON-RPC、发现或官方 SDK 客户端**。未声明只读能力的远程工具默认拒绝自动执行。没有额外付费服务。
+
+## API 与进度
+
+保留 `/api/v1/chat`、`/api/v1/chat/stream`、`/api/v1/health`、`/api/v1/ready`。
+主要 JSON 字段保留；`intent`、`complexity`、全局 `strategy` 可为 null，不再代表路由。
+新增 `run_id`、`status`、`diagnostics`。SSE 依次传执行进度（tool/delegation/compression/validation/needs_input/needs_confirmation），最终答案校验后才发送 answer，最后 done。它不是模型原生 token 流。
+前端保留原 UI、引用与确认卡片，只增加进度提示和错误处理。
+
+## 三个演示
+
+首次演示前显式初始化本地样例（只在需要时，种子支持重复执行；不要重建用户数据库）：
+
+```bash
+.venv/bin/python - <<'PY'
+import asyncio
+from app.config.settings import get_settings
+from app.services.container import build_container
+async def main():
+    c=await build_container(get_settings(),seed=True)
+    await c.aclose()
+asyncio.run(main())
+PY
+```
+
+1. **政策问答与引用**：发送“定制马克杯超过七天但有质量问题还能退吗？”。预期核对定制及质量例外，返回政策引用，不编造订单事实。
+2. **多轮订单查询**：先“查询订单 ORD10002 的商品和状态”，随后携带返回的 session_id 发送“这笔订单的物流呢？”。从历史和结构化事实解析指代，并再次查询当前业务数据。
+3. **政策与业务合并到确认**：先问“帮我处理退货”，缺订单号应补问；提供 ORD10002，按需说明质量问题或无理由；核对定制商品与时效政策。明确请求“收到的马克杯有裂纹，原因是质量问题，请提交退货申请”。返回 pending_action 后，同一 user_id/session_id 以 `confirm_action_id` 明确确认。返回 `requested` 的本地退货申请结果，不能宣称退款已完成。改变参数须重新生成 Action；同一 action_id 始终执行已确认的参数。
+
+真实模型演示（主动发起请求、串行，可能遇到供应商限流）：
+
+```bash
+.venv/bin/python -m scripts.harness_live_smoke --live --specialists
+```
+
+离线模式是有限确定性演示，不声称具备模型的完整理解能力。行为与审批闭环由受控模型模拟测试完整覆盖。
+
+## 验证、评测与回退
+
+```bash
+.venv/bin/python -m pytest -q --cov=app --cov=eval --cov-fail-under=70
+.venv/bin/python -m ruff check .
+.venv/bin/python -m ruff format --check .
+.venv/bin/python -m mypy
+(cd frontend && npm test && npm run build)
+.venv/bin/python -m eval.runner --task retrieval
+.venv/bin/python -m eval.runner --task behavior --limit 100
+# 主动真实调用小样本，不默认跑满集
+.venv/bin/python -m eval.runner --task behavior --llm --limit 5
+```
+
+保留原 intent_100、rag_eval、e2e_eval 数据集；原 intent 标签仅用于离线定义允许能力，不参与运行时推理，不再计算分类准确率。行为能力命中不是语义任务完成率。
+
+基线：`baseline/pre-harness-a1317f2`。回退可在确认工作区干净后 `git switch baseline/pre-harness-a1317f2` 并按旧锁文件重新同步；不要 reset 用户改动。旧代码没有持久化 Action 能力，无法消费新 Action。业务旧表兼容，新 harness 表可保留。恢复新分支后再同步新锁文件。
+新增 Alembic 0003 为增量表；本地仍沿用原 create_all 启动约定。需要迁移的部署应先在备份数据库演练升级/回滚，不能自动 downgrade 删除用户 Action。
+
+## 明确边界
+
+- 当前 `user_id` 是本地演示身份输入，尚无可信公网认证；对外部署须绑定真实认证身份。模型无法更改 Context 中的身份，但 API 调用方仍必须可信。
+- 同会话冲突锁为单进程策略；按一个 Uvicorn worker 运行。未提供跨机器 session lease 或分布式任务恢复。
+- 支持历史、摘要、事实、待确认 Action 和已完成写入结果恢复；只读可重试。运行中进程意外退出时事件可能停留 running，需要依据持久化结果重新发起；不承诺任意指令位置恢复或 exactly-once。
+- 本地订单/物流与申请是演示仓储，不连接 Java、支付网关或真实承运商。本次未实现或修改 Java。
+- 模型 Token 估计、模型裁判和小样本人工抽查有局限。没有独立人工双盲评审或完整生产恢复证明。真实验证范围见对照报告。
+
+## 参考来源与许可
+
+仅参考机制，未复制两项目代码，未整套引入其框架：
+
+- OpenCode `802f2d8e75098ae0b45ad839ce98a31589ea8102`（MIT）：阅读 [`packages/core/src/agent.ts`](https://github.com/anomalyco/opencode/blob/802f2d8e75098ae0b45ad839ce98a31589ea8102/packages/core/src/agent.ts) 与 [`tool/plugin/subagent.ts`](https://github.com/anomalyco/opencode/blob/802f2d8e75098ae0b45ad839ce98a31589ea8102/packages/core/src/tool/plugin/subagent.ts)，参考主/子角色隔离、工具许可边界和子会话结果汇总。
+- Hermes Agent `22063fc099ec9ad8357d7f8f6e6248a0400680d3`（MIT）：阅读 [`agent/context_compressor.py`](https://github.com/NousResearch/hermes-agent/blob/22063fc099ec9ad8357d7f8f6e6248a0400680d3/agent/context_compressor.py) 与 `context_compressor_prellm.py`，参考调用前压缩、保护首尾及确定性降级。本实现不调用辅助付费模型，也不复制其多供应商 fallback 系统。

@@ -84,3 +84,67 @@ async def test_repeated_calls_stop_without_progress():
     )
     assert result["status"] == "budget_exhausted"
     assert executor.execute.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_parameter_error_can_be_corrected_with_matched_result():
+    from app.core.exceptions import InvalidRequestError
+
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse(
+                    "",
+                    tool_calls=[call(args={"wrong": "x"}, call_id="bad")],
+                    finish_reason="tool_calls",
+                ),
+                LLMResponse("", tool_calls=[call(call_id="fixed")], finish_reason="tool_calls"),
+                LLMResponse("查询完成"),
+            ]
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            side_effect=[
+                InvalidRequestError("invalid arguments for get_order"),
+                {"success": True, "output": {"status": "paid"}},
+            ]
+        ),
+    )
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "查询", context(), AgentSpec("main", frozenset(["get_order"]))
+    )
+    assert result["status"] == "completed" and executor.execute.await_count == 2
+    repaired = llm.generate.call_args_list[1].args[0][-1]
+    assert repaired["tool_call_id"] == "bad" and "invalid arguments" in repaired["content"]
+
+
+@pytest.mark.asyncio
+async def test_explicit_clarification_stops_before_business_tool():
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                "",
+                tool_calls=[
+                    call("ask_user", {"question": "请提供订单号", "missing_fields": ["order_id"]})
+                ],
+                finish_reason="tool_calls",
+            )
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(
+            return_value={
+                "status": "needs_input",
+                "question": "请提供订单号",
+                "missing_fields": ["order_id"],
+            }
+        ),
+    )
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "帮我退货", context(), AgentSpec("main", frozenset(["ask_user"]))
+    )
+    assert result["status"] == "needs_input" and result["answer"] == "请提供订单号"
+    assert any(e["event"] == "needs_input" for e in result["events"])

@@ -57,3 +57,103 @@ async def test_specialist_failure_returns_bounded_structured_result():
     assert result["status"] == "failed" and result["missing_fields"]
     assert "messages" not in result
     store.record.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_independent_delegations_run_together_and_cancel_cleanly():
+    import asyncio
+    import json
+
+    from app.config.settings import Settings
+    from app.harness.runner import AgentRunner
+    from app.providers.base import LLMResponse
+
+    active = 0
+    peak = 0
+
+    async def execute(name, args, context, spec):
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            await asyncio.sleep(0.01)
+            return {"status": "completed", "facts": [], "evidence_refs": [], "summary": "已核对"}
+        finally:
+            active -= 1
+
+    calls = [
+        {
+            "id": f"d{i}",
+            "type": "function",
+            "function": {
+                "name": "delegate_task",
+                "arguments": json.dumps({"agent": agent, "goal": "核查", "independent": True}),
+            },
+        }
+        for i, agent in enumerate(["knowledge", "orders"])
+    ]
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse("", tool_calls=calls, finish_reason="tool_calls"),
+                LLMResponse("完成"),
+            ]
+        )
+    )
+    executor = SimpleNamespace(schemas=lambda _: [], execute=execute)
+    result = await AgentRunner(llm, executor, Settings()).run(
+        "并行核查", context(), AgentSpec("main", frozenset(["delegate_task"]))
+    )
+    assert result["status"] == "completed" and peak == 2 and active == 0
+
+
+@pytest.mark.asyncio
+async def test_parent_cancellation_awaits_readonly_children():
+    import asyncio
+    import json
+
+    from app.config.settings import Settings
+    from app.harness.runner import AgentRunner
+    from app.providers.base import LLMResponse
+
+    active = 0
+    both = asyncio.Event()
+    never = asyncio.Event()
+
+    async def execute(name, args, context, spec):
+        nonlocal active
+        active += 1
+        if active == 2:
+            both.set()
+        try:
+            await never.wait()
+        finally:
+            active -= 1
+
+    calls = [
+        {
+            "id": f"d{i}",
+            "type": "function",
+            "function": {
+                "name": "delegate_task",
+                "arguments": json.dumps({"agent": agent, "goal": "核查", "independent": True}),
+            },
+        }
+        for i, agent in enumerate(["knowledge", "orders"])
+    ]
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse("", tool_calls=calls, finish_reason="tool_calls")
+        )
+    )
+    executor = SimpleNamespace(schemas=lambda _: [], execute=execute)
+    task = asyncio.create_task(
+        AgentRunner(llm, executor, Settings()).run(
+            "核查", context(), AgentSpec("main", frozenset(["delegate_task"]))
+        )
+    )
+    await asyncio.wait_for(both.wait(), timeout=1)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert active == 0

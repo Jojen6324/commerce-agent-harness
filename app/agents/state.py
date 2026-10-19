@@ -1,20 +1,16 @@
-"""Shared agent state passed between graph nodes."""
+"""Shared RAG generation and evidence state; no graph runtime."""
 
 from typing import Any, TypedDict
 
 from app.core.enums import QueryComplexity, RetrievalStrategy
-from app.schemas.agent import AgentPlan, ComplexityResult, IntentResult, ToolResult
+from app.schemas.agent import ToolResult
 from app.schemas.chat import ActionProposal, ChatMessage
 from app.schemas.common import LatencyBreakdown, TokenUsage
 from app.schemas.retrieval import Citation, RetrievedChunk
 
 
 class AgentState(TypedDict, total=False):
-    """LangGraph state. Partial updates replace listed keys; no infinite append reducer.
-
-    Messages are compressed explicitly in the memory node instead of Annotated[add]
-    so the graph cannot silently blow the 128k budget.
-    """
+    """Partial updates shared by reusable RAG and validation steps."""
 
     trace_id: str
     session_id: str
@@ -22,13 +18,10 @@ class AgentState(TypedDict, total=False):
     user_query: str
     messages: list[ChatMessage]
     summary: str
-    intent: IntentResult | None
-    complexity: ComplexityResult | None
     strategy: RetrievalStrategy | None
     query_complexity: QueryComplexity | None
     rewritten_queries: list[str]
     retrieved_chunks: list[RetrievedChunk]
-    plan: AgentPlan | None
     tool_results: list[ToolResult]
     pending_action: ActionProposal | None
     confirmed_action: ActionProposal | None

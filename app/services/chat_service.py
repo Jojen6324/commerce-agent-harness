@@ -56,7 +56,7 @@ class ChatService:
         self.validator = AnswerValidator(self.provider)
         self.spec = AgentSpec(
             "main",
-            frozenset([*self.registry.names(), "load_skill", "read_artifact"]),
+            frozenset([*self.registry.names(), "load_skill", "read_artifact", "ask_user"]),
             max_steps=settings.max_agent_steps,
         )
         if settings.agent_delegation_enabled:
@@ -78,7 +78,12 @@ class ChatService:
 
     async def _chat(self, request, session_id, trace_id, emit):
         started = time.perf_counter()
-        context = ToolContext(user_id=request.user_id, session_id=session_id, trace_id=trace_id)
+        context = ToolContext(
+            user_id=request.user_id,
+            session_id=session_id,
+            trace_id=trace_id,
+            idempotency_key=request.idempotency_key,
+        )
         async with self._session_factory() as db:
             repo = SessionRepository(db)
             row = await repo.get_or_create(session_id, request.user_id)
@@ -96,7 +101,30 @@ class ChatService:
         try:
             detect_prompt_injection(request.message)
             if request.confirm_action_id:
+                run_id = new_id("run_")
+                if emit:
+                    await emit(
+                        {
+                            "event": "tool_started",
+                            "run_id": run_id,
+                            "action_id": request.confirm_action_id,
+                        }
+                    )
                 result = await self._confirm(request, context)
+                result.update(
+                    run_id=run_id,
+                    events=[
+                        {
+                            "event": "confirmation",
+                            "action_id": request.confirm_action_id,
+                            "status": result["status"],
+                        }
+                    ],
+                )
+                if emit:
+                    await emit(
+                        {"event": "tool_completed", "run_id": run_id, "status": result["status"]}
+                    )
             else:
                 async with asyncio.timeout(self._settings.agent_deadline_seconds):
                     result = await self.runner.run(
@@ -110,13 +138,26 @@ class ChatService:
                     )
             if not request.confirm_action_id:
                 result = await self.validator.validate(request.message, result)
-                await self.store.record(result, context)
+            await self.store.record(result, context)
             for observation in result.get("observations", []):
                 args = observation.get("arguments", {})
                 if "order_id" in args:
                     facts["last_order"] = {
                         "order_id": args["order_id"],
                         "source": observation["name"],
+                    }
+                output = observation["output"].get("output", observation["output"])
+                if observation["name"] in (
+                    "get_order",
+                    "get_order_items",
+                    "track_shipment",
+                    "get_refund_status",
+                ) and observation["output"].get("success"):
+                    facts.setdefault("business", {})[
+                        args.get("order_id", "") + ":" + observation["name"]
+                    ] = {
+                        "tool": observation["name"],
+                        "result": output,
                     }
             await self.store.save_facts(context, facts)
             pending = (
@@ -136,6 +177,14 @@ class ChatService:
                     )
             response = ChatResponse(
                 answer=result["answer"],
+                run_id=result.get("run_id"),
+                status=result.get("status", "completed"),
+                diagnostics={
+                    "model_calls": budget.models,
+                    "reserved_tokens_without_usage": budget.reserved_tokens,
+                    "tool_calls": budget.tools,
+                    "tools": [o["name"] for o in result.get("observations", [])],
+                },
                 session_id=session_id,
                 trace_id=trace_id,
                 citations=list(citations.values()),

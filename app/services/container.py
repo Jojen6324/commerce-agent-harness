@@ -11,7 +11,6 @@ from app.mcp.adapter import merge_mcp_tools
 from app.mcp.runtime import LOCAL_CATALOG
 from app.providers.agnes import AgnesProvider
 from app.providers.base import LLMProvider
-from app.providers.deepseek import DeepSeekProvider
 from app.providers.embeddings import build_embedding_provider
 from app.providers.fake import OfflineLLMProvider
 from app.providers.reranker import CrossEncoderRerankProvider
@@ -97,8 +96,6 @@ async def build_container(settings: Settings, seed: bool = False) -> AppContaine
     llm: LLMProvider = (
         AgnesProvider(settings)
         if settings.agnes.get_secret_value() and settings.app_env != "testing"
-        else DeepSeekProvider(settings)
-        if settings.llm_configured
         else OfflineLLMProvider()
     )
     engine, session_factory, redis = await build_infrastructure(settings)

@@ -1,10 +1,13 @@
 """AGNES OpenAI-compatible provider; one concurrent request, no provider failover."""
 
 import asyncio
+import json
 
 import httpx
 
 from app.core.exceptions import LLMProviderError
+from app.harness.budget import current_budget
+from app.memory.budget import estimate_tokens
 from app.providers.base import LLMResponse
 from app.providers.deepseek import DeepSeekProvider
 from app.schemas.common import TokenUsage
@@ -37,7 +40,12 @@ class AgnesProvider(DeepSeekProvider):
         if tools:
             payload["tools"] = tools
         async with self._gate:
-            for attempt in range(min(3, max(1, self._settings.llm_max_retries))):
+            attempts = min(3, max(1, self._settings.llm_max_retries))
+            for attempt in range(attempts):
+                if attempt and current_budget.get() is not None:
+                    current_budget.get().reserve_model(
+                        estimate_tokens(json.dumps(payload, ensure_ascii=False)) + max_tokens
+                    )
                 try:
                     response = await self._client.post(
                         "/chat/completions",
@@ -48,16 +56,27 @@ class AgnesProvider(DeepSeekProvider):
                         },
                     )
                 except httpx.HTTPError as exc:
-                    if attempt == 2:
+                    if attempt == attempts - 1:
                         raise LLMProviderError("AGNES transport failed") from exc
                     await asyncio.sleep(0.25 * 2**attempt)
                     continue
                 if response.status_code >= 400:
                     retry = response.status_code == 429 or response.status_code >= 500
-                    if retry and attempt < 2:
-                        await asyncio.sleep(0.25 * 2**attempt)
+                    if retry and attempt < attempts - 1:
+                        delay = 2.0 * 2**attempt
+                        try:
+                            delay = max(
+                                delay, min(30.0, float(response.headers.get("Retry-After", 0)))
+                            )
+                        except ValueError:
+                            pass
+                        await asyncio.sleep(delay)
                         continue
-                    raise LLMProviderError(f"AGNES HTTP {response.status_code}", retryable=retry)
+                    raise LLMProviderError(
+                        f"AGNES HTTP {response.status_code}",
+                        rate_limited=response.status_code == 429,
+                        retryable=retry,
+                    )
                 try:
                     body = response.json()
                     choice = body["choices"][0]

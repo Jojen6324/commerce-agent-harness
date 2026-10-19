@@ -29,7 +29,7 @@ async def readiness(
     except Exception as exc:
         deps.append(DependencyStatus(name="database", ready=False, detail=type(exc).__name__))
 
-    llm_ok = await container.llm.ping()
+    llm_ok = bool(container.settings.agnes.get_secret_value()) and await container.llm.ping()
     deps.append(
         DependencyStatus(
             name="llm",

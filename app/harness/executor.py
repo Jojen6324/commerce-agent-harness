@@ -1,11 +1,12 @@
 """Only dispatch entry: schema, role, owner, approval, deadline and recording."""
 
 import asyncio
+import hashlib
 import json
 import time
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from app.core.enums import ToolRisk
 from app.core.exceptions import AppError, InvalidRequestError, ToolPermissionError
@@ -15,6 +16,12 @@ from app.harness.budget import current_budget
 from app.repositories.models import ActionRow
 from app.schemas.chat import ActionProposal
 from app.tools.permissions import WRITE_RISKS, assert_permitted
+
+
+class AskInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    question: str = Field(min_length=1, max_length=1000)
+    missing_fields: list[str] = Field(min_length=1, max_length=10)
 
 
 class DelegateInput(BaseModel):
@@ -37,6 +44,9 @@ class ToolExecutor:
             budget.reserve_tool()
         if name not in spec.tools:
             raise ToolPermissionError("role_tool_denied")
+        if name == "ask_user":
+            args = AskInput.model_validate(arguments)
+            return {"status": "needs_input", **args.model_dump()}
         if name == "delegate_task":
             args = DelegateInput.model_validate(arguments)
             if spec.name != "main" or self.delegate is None:
@@ -95,6 +105,33 @@ class ToolExecutor:
                     risk=tool.risk,
                     summary=f"请确认{labels.get(name,name)}：{json.dumps(args,ensure_ascii=False)}",
                 )
+                key = action.action_id
+                if context.idempotency_key:
+                    key = (
+                        "req_"
+                        + hashlib.sha256(
+                            json.dumps(
+                                [context.user_id, context.session_id, context.idempotency_key]
+                            ).encode()
+                        ).hexdigest()
+                    )
+                    existing = await db.scalar(
+                        select(ActionRow).where(ActionRow.idempotency_key == key)
+                    )
+                    if existing:
+                        if (
+                            existing.tool_name != name
+                            or json.loads(existing.arguments_json) != args
+                        ):
+                            raise InvalidRequestError(
+                                "idempotency key reused with different payload"
+                            )
+                        if existing.status in ("succeeded", "failed"):
+                            return json.loads(existing.result_json)
+                        return {
+                            "pending_action": json.loads(existing.proposal_json),
+                            "status": "awaiting_confirmation",
+                        }
                 db.add(
                     ActionRow(
                         action_id=action.action_id,
@@ -105,7 +142,7 @@ class ToolExecutor:
                         proposal_json=action.model_dump_json(),
                         status="pending",
                         expires_epoch=int(time.time()) + 900,
-                        idempotency_key=action.action_id,
+                        idempotency_key=key,
                     )
                 )
                 await db.commit()
@@ -188,6 +225,10 @@ class ToolExecutor:
     def schemas(self, spec):
         schemas = [t.openai_schema() for t in self.registry.all() if t.name in spec.tools]
         extras = {
+            "ask_user": (
+                "缺少必要订单号、原因或政策例外条件时补问用户，不猜测参数。",
+                AskInput.model_json_schema(),
+            ),
             "delegate_task": (
                 "委派独立只读调查给knowledge或orders专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。",
                 DelegateInput.model_json_schema(),

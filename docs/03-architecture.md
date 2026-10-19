@@ -1,3 +1,5 @@
+> 本文中的 Graph / intent 流程属于旧基线。当前主路径请读 [Agent Harness](harness.md)；旧实现由 Git 基线分支保留。
+
 # 03 · 系统架构
 
 > 一句话：Graph 进程内编译一次；DB session 每个请求新建，用 contextvars 交给工具，禁止把连接编进图。

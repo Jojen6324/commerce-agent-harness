@@ -50,7 +50,6 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
         "\n\n".join(f"[{c.chunk_id}] {c.title}\n{c.content}" for c in chunks[:6]) or "(无检索结果)"
     )
     tool_text = json.dumps([t.model_dump() for t in tools], ensure_ascii=False) if tools else "(无)"
-    intent = state.get("intent")
     strategy = state.get("strategy") or RetrievalStrategy.DIRECT
     if isinstance(llm, OfflineLLMProvider):
         answer, citation_ids = _offline_answer(state)
@@ -71,7 +70,7 @@ async def generate_node(state: AgentState, llm: LLMProvider) -> dict:
             "role": "user",
             "content": ANSWER_USER.format(
                 query=state["user_query"],
-                intent=intent.label.value if intent else "unknown",
+                intent="unknown",
                 strategy=strategy.value,
                 evidence=evidence,
                 tool_results=tool_text,

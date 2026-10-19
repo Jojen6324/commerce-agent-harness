@@ -21,6 +21,7 @@ class RunBudget:
     max_tokens: int = 60000
     models: int = 0
     tools: int = 0
+    reserved_tokens: int = 0
     usage: TokenUsage = field(default_factory=TokenUsage)
 
     def check(self):
@@ -29,11 +30,14 @@ class RunBudget:
 
     def reserve_model(self, estimate):
         self.check()
-        if self.models >= self.max_models or self.usage.total_tokens + estimate > self.max_tokens:
+        if (
+            self.models >= self.max_models
+            or self.usage.total_tokens + self.reserved_tokens + estimate > self.max_tokens
+        ):
             raise BudgetExceeded("model_or_token_budget")
         self.models += 1
         # Conservative reservation stays charged even on transport failure.
-        self.usage.total_tokens += estimate
+        self.reserved_tokens += estimate
 
     def reserve_tool(self):
         self.check()
@@ -66,7 +70,8 @@ class BudgetedProvider:
             response = await self.provider.generate(messages, **kwargs)
         used = response.usage
         if used.total_tokens:
-            budget.usage.total_tokens += used.total_tokens - estimate - output
+            budget.reserved_tokens -= estimate + output
+            budget.usage.total_tokens += used.total_tokens
         budget.usage.prompt_tokens += used.prompt_tokens
         budget.usage.completion_tokens += used.completion_tokens
         return response

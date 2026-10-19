@@ -72,7 +72,11 @@ class FaithfulnessChecker:
                 response = await self._llm.generate(
                     messages,
                     temperature=0.0,
-                    max_tokens=512 if attempt == 0 else 768,
+                    # The structured verdict covers four independent checks and
+                    # can include several missing conditions. A 512-token cap
+                    # repeatedly truncated live DeepSeek responses, turning
+                    # otherwise answerable tasks into provider failures.
+                    max_tokens=1024 if attempt == 0 else 1536,
                     response_format={"type": "json_object"},
                 )
                 if response.finish_reason != "stop":

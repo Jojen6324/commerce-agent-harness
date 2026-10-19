@@ -22,6 +22,7 @@ class FakeLLMProvider:
         temperature: float = 0.0,
         max_tokens: int = 1024,
         response_format: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
     ) -> LLMResponse:
         self.calls.append(messages)
         user_text = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")

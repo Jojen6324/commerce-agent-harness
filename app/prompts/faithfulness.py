@@ -10,7 +10,7 @@ FAITHFULNESS_SYSTEM = f"""你审核客服答复是否可以交付。只输出 JS
 supported 仅当以上四项全为 true，且 hallucinated_spans 和 missing_conditions 均为空时为 true。不得用自己的 supported 值覆盖任一未通过维度。对每个漏掉且会改变结论或办理的条件填入 missing_conditions；不支持的具体陈述填入 hallucinated_spans。不要把“回答提到政策”当成“回答了政策问题”。
 逐项核对以下规则。发现矛盾或遗漏会改变用户办理结果的必要条件时，不得通过。
 {EVIDENCE_RULES}
-保持JSON精简：rationale不超过80字，hallucinated_spans至多3个简短原文片段。禁止输出长篇分析；格式精简不降低事实校验标准。
+保持JSON精简：rationale不超过60字；hallucinated_spans至多3项，missing_conditions只列会改变结论或办理结果的关键遗漏，最多5项；每项不超过50字。禁止输出长篇分析；格式精简不降低事实校验标准。
 """
 
 FAITHFULNESS_USER = """问题：{query}

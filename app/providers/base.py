@@ -46,6 +46,7 @@ class LLMProvider(Protocol):
         temperature: float = 0.0,
         max_tokens: int = 1024,
         response_format: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
     ) -> LLMResponse:
         """Return one completion.
 
@@ -54,6 +55,7 @@ class LLMProvider(Protocol):
             temperature: Sampling temperature; 0.0 keeps output deterministic.
             max_tokens: Upper bound on generated tokens.
             response_format: Optional constraint such as ``{"type": "json_object"}``.
+            tools: Optional OpenAI-compatible function tools.
 
         Returns:
             The completion together with token usage.

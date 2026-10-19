@@ -36,7 +36,7 @@ async def test_length_recovery_requires_a_complete_verdict_and_preserves_rejecti
     assert verdict.supported is False and verdict.rationale == "专用规则被泛化"
     assert verdict.missing_conditions == ["仅适用于数码"]
     assert model.generate.await_count == 2
-    assert model.generate.await_args_list[1].kwargs["max_tokens"] == 768
+    assert model.generate.await_args_list[1].kwargs["max_tokens"] == 1536
     # Repeated bad JSON cannot be silently accepted or retried without bound.
     model.generate = AsyncMock(return_value=LLMResponse('{"supported":'))
     verdict = await FaithfulnessChecker(model).check(
@@ -158,7 +158,7 @@ async def test_real_provider_finish_reason_reaches_bounded_checker_recovery():
         verdict = await FaithfulnessChecker(provider).check(
             query="q", answer="a", chunks=[], tool_results_text=""
         )
-    assert verdict.supported and limits == [512, 768]
+    assert verdict.supported and limits == [1024, 1536]
 
 
 @pytest.mark.asyncio

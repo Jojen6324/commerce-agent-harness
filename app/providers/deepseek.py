@@ -52,6 +52,7 @@ class DeepSeekProvider:
         temperature: float = 0.0,
         max_tokens: int = 1024,
         response_format: dict[str, str] | None = None,
+        tools: list[dict] | None = None,
     ) -> LLMResponse:
         api_key = self._settings.deepseek_api_key.get_secret_value()
         if not api_key:
@@ -65,6 +66,8 @@ class DeepSeekProvider:
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if tools:
+            payload["tools"] = tools
 
         async def _call() -> LLMResponse:
             try:
@@ -92,9 +95,17 @@ class DeepSeekProvider:
 
             body = response.json()
             try:
-                content = body["choices"][0]["message"]["content"]
+                choice = body["choices"][0]
+                message = choice["message"]
             except (KeyError, IndexError, TypeError) as exc:
                 raise LLMProviderError("DeepSeek response missing choices") from exc
+            finish_reason = choice.get("finish_reason", "stop")
+            if finish_reason not in ("stop", "tool_calls"):
+                raise LLMProviderError(
+                    "DeepSeek response incomplete",
+                    retryable=False,
+                    finish_reason=finish_reason,
+                )
             usage_raw = body.get("usage") or {}
             usage = TokenUsage(
                 prompt_tokens=int(usage_raw.get("prompt_tokens") or 0),
@@ -102,7 +113,11 @@ class DeepSeekProvider:
                 total_tokens=int(usage_raw.get("total_tokens") or 0),
             )
             return LLMResponse(
-                content=content or "", usage=usage, model=self._settings.deepseek_model
+                content=message.get("content") or "",
+                usage=usage,
+                model=self._settings.deepseek_model,
+                tool_calls=message.get("tool_calls"),
+                finish_reason=finish_reason,
             )
 
         return await with_exponential_backoff(

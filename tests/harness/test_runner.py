@@ -335,6 +335,45 @@ async def test_externalized_specialist_result_keeps_summary_facts_and_evidence()
 
 
 @pytest.mark.asyncio
+async def test_large_artifact_read_is_compacted_with_original_reference_and_no_copy():
+    from app.config.settings import Settings
+    from app.harness.runner import AgentRunner, AgentSpec
+
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                LLMResponse(
+                    "",
+                    tool_calls=[call("read_artifact", {"ref": "art_original"})],
+                    finish_reason="tool_calls",
+                ),
+                LLMResponse("已核对原始材料。"),
+            ]
+        )
+    )
+    artifacts = SimpleNamespace(put=AsyncMock(return_value="unused_copy"), record=AsyncMock())
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(return_value={"payload": "x" * 18_000}),
+        artifacts=artifacts,
+    )
+    result = await AgentRunner(llm, executor, Settings(agent_context_tokens=6000)).run(
+        "检查原始证据",
+        context(),
+        AgentSpec("faithfulness", frozenset({"read_artifact"}), max_steps=2),
+    )
+
+    assert result["status"] == "completed"
+    tool_message = next(
+        message for message in llm.generate.call_args_list[1].args[0] if message["role"] == "tool"
+    )
+    compacted = json.loads(tool_message["content"])
+    assert compacted["artifact_ref"] == "art_original"
+    assert "payload" not in compacted
+    assert artifacts.put.await_count == 0
+
+
+@pytest.mark.asyncio
 async def test_preloaded_expert_observations_reach_main_prompt_and_result():
     observation = {
         "name": "get_order",

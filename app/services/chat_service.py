@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from contextvars import ContextVar
 
@@ -141,9 +142,10 @@ class ChatService:
         )
         facts = await self.store.facts(context)
         token = current_budget.set(budget)
-        validation_state = {"context": context, "facts": facts, "root_run_id": None}
+        run_id = new_id("run_")
+        active_root_token = active_run_id.set(run_id)
+        validation_state = {"context": context, "facts": facts, "root_run_id": run_id}
         validation_token = validation_runtime_context.set(validation_state)
-        run_id = None
         run_events = []
         result = {}
         preflight_observations = confirmed_item_observations(
@@ -154,6 +156,11 @@ class ChatService:
 
         async def record_event(event):
             nonlocal run_id
+            event.setdefault("trace_id", trace_id)
+            event.setdefault("session_id", session_id)
+            event.setdefault("run_id", run_id)
+            event.setdefault("parent_run_id", None)
+            event.setdefault("agent", "main")
             if event.get("parent_run_id") is None:
                 run_id = event.get("run_id", run_id)
                 if run_id:
@@ -164,14 +171,18 @@ class ChatService:
 
         event_token = delegation_event_sink.set(record_event)
         try:
+            await self.store.record({"run_id": run_id, "status": "running", "events": []}, context)
             detect_prompt_injection(request.message)
             if request.confirm_action_id:
-                run_id = new_id("run_")
                 if emit:
                     await emit(
                         {
                             "event": "tool_started",
                             "run_id": run_id,
+                            "parent_run_id": None,
+                            "agent": "main",
+                            "trace_id": trace_id,
+                            "session_id": session_id,
                             "action_id": request.confirm_action_id,
                         }
                     )
@@ -181,6 +192,11 @@ class ChatService:
                     events=[
                         {
                             "event": "confirmation",
+                            "run_id": run_id,
+                            "parent_run_id": None,
+                            "agent": "main",
+                            "trace_id": trace_id,
+                            "session_id": session_id,
                             "action_id": request.confirm_action_id,
                             "status": result["status"],
                         }
@@ -188,7 +204,15 @@ class ChatService:
                 )
                 if emit:
                     await emit(
-                        {"event": "tool_completed", "run_id": run_id, "status": result["status"]}
+                        {
+                            "event": "tool_completed",
+                            "run_id": run_id,
+                            "parent_run_id": None,
+                            "agent": "main",
+                            "trace_id": trace_id,
+                            "session_id": session_id,
+                            "status": result["status"],
+                        }
                     )
             else:
                 if self.delegation_mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE:
@@ -366,6 +390,7 @@ class ChatService:
                         initial_observations=preflight_observations,
                         initial_context=delegation_context,
                         emit=record_event,
+                        run_id=run_id,
                     )
             if not request.confirm_action_id and not result.get("_output_validated"):
                 result = await self.validator.validate(
@@ -384,8 +409,41 @@ class ChatService:
                     facts["last_order"] = {
                         "order_id": args["order_id"],
                         "source": observation["name"],
+                        "source_run_id": observation.get("child_run_id")
+                        or observation["output"].get("child_run_id")
+                        or result.get("run_id"),
+                        "source_trace_id": trace_id,
                     }
                 output = observation["output"].get("output", observation["output"])
+                if observation["output"].get("success", True):
+                    evidence_refs = facts.get("evidence_refs")
+                    if not isinstance(evidence_refs, list):
+                        evidence_refs = []
+                        facts["evidence_refs"] = evidence_refs
+                    for chunk in output.get("chunks", []):
+                        ref = chunk.get("chunk_id")
+                        if not ref:
+                            continue
+                        evidence_refs[:] = [
+                            item for item in evidence_refs if item.get("chunk_id") != ref
+                        ]
+                        evidence_refs.append(
+                            {
+                                "chunk_id": ref,
+                                "document_id": chunk.get("document_id"),
+                                "title": chunk.get("title"),
+                                "section": chunk.get("section"),
+                                "policy_version": chunk.get("policy_version"),
+                                "artifact_ref": observation.get("artifact_ref"),
+                                "source_tool": observation["name"],
+                                "source_run_id": observation.get("child_run_id")
+                                or observation["output"].get("child_run_id")
+                                or output.get("child_run_id")
+                                or result.get("run_id"),
+                                "source_trace_id": trace_id,
+                            }
+                        )
+                    facts["evidence_refs"] = evidence_refs[-20:]
                 if observation["name"] in (
                     "get_order",
                     "get_order_items",
@@ -397,6 +455,11 @@ class ChatService:
                     ] = {
                         "tool": observation["name"],
                         "result": output,
+                        "source_run_id": observation.get("child_run_id")
+                        or observation["output"].get("child_run_id")
+                        or output.get("child_run_id")
+                        or result.get("run_id"),
+                        "source_trace_id": trace_id,
                     }
             await self.store.save_facts(context, facts)
             pending = (
@@ -534,7 +597,17 @@ class ChatService:
                 "reason": str(exc) or "deadline",
                 "retryable": True,
             }
-            run_events.append({"event": "stopped", "run_id": run_id, **failure})
+            run_events.append(
+                {
+                    "event": "stopped",
+                    "run_id": run_id,
+                    "parent_run_id": None,
+                    "agent": "main",
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    **failure,
+                }
+            )
             response = ChatResponse(
                 answer="本轮执行达到预算或时间限制，请稍后重试。",
                 status="budget_exhausted",
@@ -556,7 +629,17 @@ class ChatService:
                 "reason": exc.message,
                 "retryable": exc.retryable,
             }
-            run_events.append({"event": "error", "run_id": run_id, **failure})
+            run_events.append(
+                {
+                    "event": "error",
+                    "run_id": run_id,
+                    "parent_run_id": None,
+                    "agent": "main",
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    **failure,
+                }
+            )
             response = ChatResponse(
                 answer="模型暂不可用，本轮未能完成结果校验，请稍后重试。",
                 status="failed",
@@ -573,16 +656,34 @@ class ChatService:
                     {"run_id": run_id, "status": response.status, "events": run_events}, context
                 )
         except GuardrailError as exc:
+            run_events.append(
+                {
+                    "event": "guardrail_refusal",
+                    "run_id": run_id,
+                    "parent_run_id": None,
+                    "agent": "main",
+                    "trace_id": trace_id,
+                    "session_id": session_id,
+                    "error_code": exc.error_code.value,
+                }
+            )
             response = ChatResponse(
+                run_id=run_id,
                 answer=exc.message,
                 session_id=session_id,
                 trace_id=trace_id,
+                status="refused",
                 refused=True,
                 error_code=exc.error_code.value,
+                events=run_events,
+            )
+            await self.store.record(
+                {"run_id": run_id, "status": response.status, "events": run_events}, context
             )
         finally:
             delegation_event_sink.reset(event_token)
             validation_runtime_context.reset(validation_token)
+            active_run_id.reset(active_root_token)
             current_budget.reset(token)
         response.latency.total_ms = (time.perf_counter() - started) * 1000
         response.diagnostics.setdefault("model_calls", budget.models)
@@ -650,6 +751,42 @@ class ChatService:
             "available_tools": tool_contracts,
             "allowed_evidence_refs": sorted(ref for ref in known_refs if ref),
         }
+        if len(json.dumps(evidence_input, ensure_ascii=False, default=str)) > 12_000:
+            full_input_ref = await self.store.put(
+                {"kind": "faithfulness_input", **evidence_input}, context
+            )
+
+            def compact(value):
+                if isinstance(value, str):
+                    return value if len(value) <= 800 else value[:800] + "…"
+                if isinstance(value, list):
+                    return [compact(item) for item in value[:20]]
+                if isinstance(value, dict):
+                    return {key: compact(item) for key, item in list(value.items())[:40]}
+                return value
+
+            evidence_input = {
+                "original_user_question": query,
+                "candidate_answer": answer,
+                "raw_observations": [
+                    {key: value for key, value in observation.items() if key != "result"}
+                    for observation in observed_results
+                ],
+                "business_tool_results": compact(tool_facts),
+                "policy_evidence": [
+                    {
+                        **chunk.model_dump(mode="json", exclude={"content"}),
+                        "content_excerpt": chunk.content[:1000],
+                    }
+                    for chunk in chunks[:6]
+                ],
+                "omitted_policy_evidence_refs": [chunk.chunk_id for chunk in chunks[6:]],
+                "trusted_session_facts": compact(runtime.get("facts", {})),
+                "available_tools": compact(tool_contracts),
+                "allowed_evidence_refs": sorted(ref for ref in known_refs if ref),
+                "full_evidence_artifact_ref": full_input_ref,
+                "full_evidence_required_for_complete_review": True,
+            }
         spec = AgentSpec(
             "faithfulness",
             frozenset({"read_artifact"}),
@@ -675,16 +812,20 @@ class ChatService:
                     retryable=failure.get("retryable", True),
                 )
             verdict = parse_model(child.get("answer", ""), FaithfulnessVerdict)
-            child.setdefault("events", []).append(
-                {
-                    "event": "faithfulness_verdict",
-                    "run_id": child.get("run_id"),
-                    "parent_run_id": root_run_id,
-                    "verdict": verdict.verdict,
-                    "issues": verdict.issues,
-                    "evidence_refs": verdict.evidence_refs,
-                }
-            )
+            verdict_event = {
+                "event": "faithfulness_verdict",
+                "run_id": child.get("run_id"),
+                "parent_run_id": root_run_id,
+                "trace_id": context.trace_id,
+                "session_id": context.session_id,
+                "agent": "faithfulness",
+                "verdict": verdict.verdict,
+                "issues": verdict.issues,
+                "evidence_refs": verdict.evidence_refs,
+            }
+            child.setdefault("events", []).append(verdict_event)
+            if emit:
+                await emit(verdict_event)
             if self.store and child.get("run_id"):
                 await self.store.record(child, context, parent_run_id=root_run_id)
             return verdict
@@ -699,14 +840,18 @@ class ChatService:
                         "reason": type(exc).__name__,
                         "retryable": False,
                     }
-                child.setdefault("events", []).append(
-                    {
-                        "event": "faithfulness_error",
-                        "run_id": child.get("run_id"),
-                        "parent_run_id": root_run_id,
-                        "reason": type(exc).__name__,
-                    }
-                )
+                error_event = {
+                    "event": "faithfulness_error",
+                    "run_id": child.get("run_id"),
+                    "parent_run_id": root_run_id,
+                    "trace_id": context.trace_id,
+                    "session_id": context.session_id,
+                    "agent": "faithfulness",
+                    "reason": type(exc).__name__,
+                }
+                child.setdefault("events", []).append(error_event)
+                if emit:
+                    await emit(error_event)
                 await self.store.record(child, context, parent_run_id=root_run_id)
             raise
         finally:

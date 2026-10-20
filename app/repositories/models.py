@@ -134,6 +134,7 @@ class RunRow(Base):
     __tablename__ = "harness_runs"
     run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     parent_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     user_id: Mapped[str] = mapped_column(String(64), index=True)
     session_id: Mapped[str] = mapped_column(String(64), index=True)
     status: Mapped[str] = mapped_column(String(32))

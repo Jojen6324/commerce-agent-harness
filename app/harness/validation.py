@@ -117,15 +117,6 @@ class AnswerValidator:
             set(chunks)
             | {o["name"] for o in observations}
             | {o.get("call_id", "") for o in observations}
-            | {
-                ref
-                for observation in observations
-                for ref in (
-                    observation.get("artifact_ref"),
-                    observation.get("output", {}).get("artifact_ref"),
-                )
-                if ref
-            }
         )
         cited = cited_refs(answer)
         unknown = cited - known_refs

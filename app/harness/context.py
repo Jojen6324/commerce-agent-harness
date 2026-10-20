@@ -60,8 +60,11 @@ def artifact_digest(output, ref, *, max_chars=6000):
                 "document_id",
                 "title",
                 "section",
+                "category",
                 "content",
                 "policy_version",
+                "chunk_index",
+                "source",
                 "metadata",
             )
         }

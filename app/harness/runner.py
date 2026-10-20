@@ -78,6 +78,7 @@ class AgentRunner:
         context: ToolContext,
         spec: AgentSpec,
         *,
+        run_id=None,
         history=None,
         summary="",
         facts=None,
@@ -85,8 +86,10 @@ class AgentRunner:
         initial_context=None,
         emit=None,
     ):
-        run_id = new_id("run_")
+        run_id = run_id or new_id("run_")
         parent_run_id = active_run_id.get()
+        if parent_run_id == run_id:
+            parent_run_id = None
         active_token = active_run_id.set(run_id)
         events = []
 
@@ -96,6 +99,8 @@ class AgentRunner:
                 "run_id": run_id,
                 "agent": spec.name,
                 "parent_run_id": parent_run_id,
+                "trace_id": context.trace_id,
+                "session_id": context.session_id,
                 **data,
             }
             events.append(item)
@@ -105,7 +110,9 @@ class AgentRunner:
                 await emit(item)
             if getattr(self.executor, "artifacts", None):
                 await self.executor.artifacts.record(
-                    {"run_id": run_id, "events": events, "status": "running"}, context
+                    {"run_id": run_id, "events": events, "status": "running"},
+                    context,
+                    parent_run_id=parent_run_id,
                 )
 
         from app.skills.loader import load_skills
@@ -562,8 +569,13 @@ class AgentRunner:
                     )
                     result_ref = None
                     if getattr(self.executor, "artifacts", None):
-                        result_ref = await self.executor.artifacts.put(output, context)
-                        observations[-1]["artifact_ref"] = result_ref
+                        result_ref = (
+                            args.get("ref")
+                            if name == "read_artifact"
+                            else await self.executor.artifacts.put(output, context)
+                        )
+                        if result_ref:
+                            observations[-1]["artifact_ref"] = result_ref
                     await event(
                         "tool_failed"
                         if recover_unknown_skill
@@ -575,6 +587,9 @@ class AgentRunner:
                         result_ref=result_ref,
                         elapsed_ms=round((time.perf_counter() - began) * 1000, 2),
                         error_code=output.get("error_code"),
+                        status=output.get("status")
+                        or ("completed" if output.get("success", True) else "failed"),
+                        success=output.get("success", True),
                     )
                     if output.get("status") == "needs_input":
                         missing = output
@@ -585,17 +600,17 @@ class AgentRunner:
                         # Small inline results keep all data. Large results carry
                         # a usable evidence projection, not just source IDs.
                         message_output = {**output, "artifact_ref": result_ref}
-                        if (
-                            name != "read_artifact"
-                            and len(json.dumps(output, ensure_ascii=False)) > 3000
-                        ):
+                        if len(json.dumps(output, ensure_ascii=False)) > 3000:
                             message_output = artifact_digest(output, result_ref)
                             await event("artifact_saved", ref=result_ref)
                     messages.append(
                         {
                             "role": "tool",
                             "tool_call_id": call["id"],
-                            "protected": name == "read_artifact",
+                            # Preserve the call/result pair; large artifact reads
+                            # can still be externalized through their original
+                            # owner-scoped reference.
+                            "protected": False,
                             "content": json.dumps(message_output, ensure_ascii=False),
                         }
                     )
@@ -715,6 +730,10 @@ class AgentRunner:
             await event(
                 "error",
                 reason=exc.message if isinstance(exc, LLMProviderError) else type(exc).__name__,
+                error_code=exc.error_code.value
+                if isinstance(exc, LLMProviderError)
+                else "LLM_OUTPUT_INVALID",
+                retryable=exc.retryable if isinstance(exc, LLMProviderError) else False,
             )
             return {
                 "answer": "模型暂不可用或输出不完整，本轮未继续执行。请稍后重试。",
@@ -735,7 +754,9 @@ class AgentRunner:
         except asyncio.CancelledError:
             if getattr(self.executor, "artifacts", None):
                 await self.executor.artifacts.record(
-                    {"run_id": run_id, "events": events, "status": "cancelled"}, context
+                    {"run_id": run_id, "events": events, "status": "cancelled"},
+                    context,
+                    parent_run_id=parent_run_id,
                 )
             raise
         finally:

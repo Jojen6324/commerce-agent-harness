@@ -64,16 +64,33 @@ class RuntimeStore:
     async def record(self, result, context, parent_run_id=None):
         async with self.factory() as db:
             row = await db.get(RunRow, result["run_id"])
+            if parent_run_id:
+                parent = await db.get(RunRow, parent_run_id)
+                if (
+                    not parent
+                    or parent.user_id != context.user_id
+                    or parent.session_id != context.session_id
+                    or (parent.trace_id is not None and parent.trace_id != context.trace_id)
+                ):
+                    raise InvalidRequestError("run parent not found")
             if row is None:
                 row = RunRow(
                     run_id=result["run_id"],
                     parent_run_id=parent_run_id,
+                    trace_id=context.trace_id,
                     user_id=context.user_id,
                     session_id=context.session_id,
                 )
                 db.add(row)
+            elif (
+                row.user_id != context.user_id
+                or row.session_id != context.session_id
+                or (row.trace_id is not None and row.trace_id != context.trace_id)
+            ):
+                raise InvalidRequestError("run not found")
             if parent_run_id is not None:
                 row.parent_run_id = parent_run_id
+            row.trace_id = row.trace_id or context.trace_id
             row.status = result["status"]
             row.events_json = json.dumps(result["events"], ensure_ascii=False)
             await db.commit()

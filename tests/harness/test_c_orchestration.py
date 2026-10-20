@@ -8,9 +8,11 @@ import pytest
 from app.config.settings import Settings
 from app.harness.budget import BudgetedProvider
 from app.providers.base import LLMResponse
+from app.repositories.models import RunRow
 from app.schemas.chat import ChatRequest
 from app.schemas.common import TokenUsage
 from app.services.container import build_container
+from app.tools.base import ToolContext
 
 
 def native(name, arguments, identifier):
@@ -135,6 +137,26 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
         assert delegation["budget_blocked"] == []
         assert response.status == "needs_input"
         assert response.diagnostics["tool_calls"] == 4
+        async with c.session_factory() as db:
+            root_run = await db.get(RunRow, response.run_id)
+            assert root_run.trace_id == response.trace_id and root_run.parent_run_id is None
+            for attempt in delegation["attempts"]:
+                child_run = await db.get(RunRow, attempt["child_run_id"])
+                assert child_run.parent_run_id == response.run_id
+                assert child_run.trace_id == response.trace_id
+        persisted_facts = await c.chat_service.store.facts(
+            ToolContext(
+                user_id="u_demo",
+                session_id=response.session_id,
+                trace_id=response.trace_id,
+            )
+        )
+        policy_refs = [
+            item
+            for item in persisted_facts.get("evidence_refs", [])
+            if item.get("source_tool") == "search_knowledge"
+        ]
+        assert policy_refs and policy_refs[-1]["source_trace_id"] == response.trace_id
         assert dispatches == [
             ("main", "delegate_task"),
             ("orders", "get_order"),

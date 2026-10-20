@@ -320,6 +320,8 @@ def test_externalization_retains_policy_body_scope_limits_and_order_dates():
     )
     assert result["evidence"][0]["content"] == source["content"]
     assert result["evidence"][0]["title"] == "数码退货细则"
+    assert result["evidence"][0]["category"] == source["category"]
+    assert result["evidence"][0]["policy_version"] == source["policy_version"]
     assert result["facts"]["delivered_at"] == "2026-10-07"
     assert result["facts"]["limitations"]["claim_entry"] == "not_recorded"
     assert result["facts_complete"] and result["evidence_complete"]

@@ -83,6 +83,30 @@ def test_run_token_budget_is_distinct_from_model_call_limit():
     assert raised.value.max_total_tokens == 10
 
 
+def test_delegation_budget_protects_main_agent_capacity():
+    budget = RunBudget(
+        time.monotonic() + 10,
+        max_models=4,
+        max_tools=5,
+        max_tokens=100,
+        protected_models=1,
+        protected_tools=2,
+        protected_tokens=20,
+    )
+    budget.reserve_model(80)
+    with pytest.raises(BudgetExceeded) as token_limit:
+        budget.reserve_model(1)
+    assert token_limit.value.budget_scope == "delegation_reserved_main_budget"
+
+    budget.models = 3
+    with pytest.raises(BudgetExceeded):
+        budget.reserve_model(1)
+    budget.tools = 3
+    with pytest.raises(BudgetExceeded) as tool_limit:
+        budget.reserve_tool()
+    assert tool_limit.value.budget_scope == "delegation_reserved_main_budget"
+
+
 @pytest.mark.asyncio
 async def test_budget_shared_across_provider_calls():
     provider = SimpleNamespace(generate=AsyncMock(return_value=LLMResponse("ok")))
@@ -105,3 +129,57 @@ async def test_invalid_citation_and_unexecuted_write_claim_rejected():
             "退货", {"answer": answer, "status": "completed", "observations": []}
         )
         assert result["status"] == "validation_failed"
+
+
+def test_child_allocations_protect_sibling_and_main_without_increasing_task_cap():
+    budget = RunBudget(
+        time.monotonic() + 60,
+        max_tools=6,
+        protected_tools=2,
+        max_models=24,
+        protected_models=2,
+        protected_tokens=16000,
+    )
+    with budget.delegation_share(2) as first:
+        assert first["tool_calls"] == 2
+        budget.reserve_delegation()
+        budget.reserve_tool()
+        budget.reserve_tool()
+        with pytest.raises(BudgetExceeded):
+            budget.reserve_tool()
+    with budget.delegation_share(1) as second:
+        assert second["tool_calls"] == 2
+        budget.reserve_delegation()
+        budget.reserve_tool()
+        budget.reserve_tool()
+        with pytest.raises(BudgetExceeded):
+            budget.reserve_tool()
+    assert budget.tools == 4 and budget.delegations == 2
+    assert budget.protected_tools == 2 and budget.max_tools == 6
+    with pytest.raises(BudgetExceeded, match="delegation_call_budget"):
+        budget.reserve_delegation()
+    budget.protected_tools = 0
+    budget.reserve_tool()
+    budget.reserve_tool()
+    with pytest.raises(BudgetExceeded, match="tool_budget"):
+        budget.reserve_tool()
+
+
+def test_child_allocation_restores_protection_after_failure_and_keeps_unused_capacity():
+    budget = RunBudget(
+        time.monotonic() + 60,
+        max_models=6,
+        protected_models=2,
+        max_tokens=80000,
+        protected_tokens=16000,
+    )
+    with pytest.raises(RuntimeError):
+        with budget.delegation_share(2):
+            budget.reserve_model(1000)
+            budget.reserve_model(1000)
+            with pytest.raises(BudgetExceeded):
+                budget.reserve_model(1)
+            raise RuntimeError("child failed")
+    assert budget.protected_models == 2 and budget.protected_tokens == 16000
+    with budget.delegation_share(1) as share:
+        assert share["model_calls"] == 2

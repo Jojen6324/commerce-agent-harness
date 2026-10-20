@@ -9,10 +9,10 @@ import re
 import sys
 import tempfile
 import time
-from datetime import UTC, datetime
-from pathlib import Path
 from collections import Counter, defaultdict
 from contextvars import ContextVar
+from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 from pydantic import SecretStr
@@ -23,7 +23,7 @@ from app.services.container import build_container
 from eval.task_fixtures import install_fixture, matches, snapshot
 from eval.task_grading import grade_turn
 from eval.task_review import corpus_digest, response_digest
-from eval.task_schema import AgentTask, DATA_DIR, load_tasks
+from eval.task_schema import DATA_DIR, AgentTask, load_tasks
 
 
 def cases():
@@ -105,6 +105,8 @@ async def evaluate(
     container_factory=build_container,
     dataset_path=None,
     delegation_enabled=None,
+    delegation_policy=None,
+    arm_name=None,
     monitor=False,
     provider="agnes",
 ):
@@ -139,7 +141,7 @@ async def evaluate(
         raise ValueError("provider must be agnes or deepseek")
     results = []
     monitor_events = []
-    arm = "multi" if delegation_enabled else "single" if delegation_enabled is not None else "default"
+    arm = arm_name or ("multi" if delegation_enabled else "single" if delegation_enabled is not None else "default")
     task_monitor_state = {}
 
     def log_progress(event, *, task_id=None, turn=None, **details):
@@ -149,6 +151,7 @@ async def evaluate(
             "at": datetime.now(UTC).isoformat(),
             "arm": arm,
             "delegation_enabled": delegation_enabled,
+            "delegation_policy": delegation_policy,
             "task_id": task_id,
             "turn": turn,
             "event": event,
@@ -162,6 +165,18 @@ async def evaluate(
                     state["delegation_call_ids"].add(call_id)
             if event == "agent_started" and details.get("agent") not in (None, "main"):
                 state["specialist_agents"].add(details["agent"])
+            if event == "delegation_plan":
+                state["required_experts"].update(details.get("required_experts", []))
+            if event == "delegation_dispatched":
+                state["delegate_dispatch_count"] += 1
+            if event == "delegation_result":
+                expert = details.get("expert")
+                if expert and details.get("status") == "completed":
+                    state["completed_experts"].add(expert)
+                if expert and details.get("status") == "budget_blocked":
+                    state["budget_blocked_experts"].add(expert)
+                if details.get("child_run_id"):
+                    state["child_run_ids"].add(details["child_run_id"])
         monitor_events.append(record)
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr, flush=True)
 
@@ -209,7 +224,12 @@ async def evaluate(
                             "reserved_tokens_without_usage", "max_total_tokens", "requested_tokens",
                             "projected_tokens", "model_calls", "model_call_limit", "tool_calls",
                             "tool_call_limit", "budget_scope", "error_code", "status",
-                            "error",
+                            "error", "required_experts", "completed_experts", "expert",
+                            "source", "child_run_id", "missing_fields", "delegate_calls",
+                            "required_experts_complete", "budget_blocked", "reasons", "allocation",
+                            "tool_calls_remaining", "delegation_calls_remaining",
+                            "model_calls_remaining_including_current", "tokens_remaining",
+                            "steps_remaining_including_current",
                         )
                         details = {key: item[key] for key in safe_fields if key in item}
                         if name == "error" and "error" in details:
@@ -280,7 +300,13 @@ async def evaluate(
                 update={"agnes": SecretStr(""), "deepseek_thinking": "disabled"}
             )
         if delegation_enabled is not None:
-            settings = settings.model_copy(update={"agent_delegation_enabled": delegation_enabled})
+            settings = settings.model_copy(
+                update={
+                    "agent_delegation_enabled": delegation_enabled,
+                    "agent_delegation_policy": delegation_policy
+                    or ("auto" if delegation_enabled else "off"),
+                }
+            )
         c = await container_factory(settings)
         app = create_app(settings)
         app.state.container = c
@@ -339,10 +365,16 @@ async def evaluate(
                 for task in selected:
                     delegation_expected = bool(
                         delegation_enabled and task.scenario == "multi_agent"
-                    )
+                    ) if arm != "C" else False
                     task_monitor_state[task.id] = {
                         "delegation_call_ids": set(),
                         "specialist_agents": set(),
+                        "required_experts": set(),
+                        "completed_experts": set(),
+                        "budget_blocked_experts": set(),
+                        "child_run_ids": set(),
+                        "delegate_calls": 0,
+                        "delegate_dispatch_count": 0,
                     }
                     log_progress(
                         "task_started",
@@ -396,6 +428,23 @@ async def evaluate(
                         if status_code == 200:
                             session_id = body.get("session_id", session_id)
                         after = await snapshot(c.session_factory)
+                        delegation_info = (body.get("diagnostics") or {}).get("delegation") or {}
+                        state = task_monitor_state[task.id]
+                        state["required_experts"].update(delegation_info.get("required_experts", []))
+                        state["completed_experts"].update(delegation_info.get("completed_experts", []))
+                        state["budget_blocked_experts"].update(delegation_info.get("budget_blocked", []))
+                        state["delegate_calls"] += delegation_info.get("delegate_calls", 0) or 0
+                        if monitor and delegation_info:
+                            log_progress(
+                                "delegation_evaluation",
+                                task_id=task.id,
+                                turn=n,
+                                required_experts=delegation_info.get("required_experts", []),
+                                completed_experts=delegation_info.get("completed_experts", []),
+                                delegate_calls=delegation_info.get("delegate_calls", 0),
+                                required_experts_complete=delegation_info.get("required_experts_complete", False),
+                                budget_blocked=delegation_info.get("budget_blocked", []),
+                            )
                         audit = copy.deepcopy(calls[start:])
                         grade = grade_turn(
                             turn,
@@ -464,21 +513,47 @@ async def evaluate(
                     )
                     state = task_monitor_state[task.id]
                     specialist_agents = sorted(state["specialist_agents"])
-                    delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
+                    if arm == "C":
+                        delegation_expected = bool(state["required_experts"])
+                        actual_calls = max(state["delegate_calls"], state["delegate_dispatch_count"])
+                        delegation_used = actual_calls > 0 or bool(specialist_agents)
+                        delegation_status = (
+                            "required_complete"
+                            if delegation_expected
+                            and state["required_experts"] <= state["completed_experts"]
+                            else "required_incomplete"
+                            if delegation_expected
+                            else "not_required"
+                        )
+                    else:
+                        delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
+                        delegation_status = (
+                            "used"
+                            if delegation_used
+                            else "missing"
+                            if delegation_expected
+                            else "not_expected"
+                        )
                     log_progress(
                         "task_finished",
                         task_id=task.id,
                         status=results[-1]["task_status"],
                         delegation_expected=delegation_expected,
                         delegation_used=delegation_used,
-                        delegation_calls=len(state["delegation_call_ids"]),
+                        delegation_calls=(
+                            max(state["delegate_calls"], state["delegate_dispatch_count"])
+                            if arm == "C"
+                            else state["delegate_calls"] or len(state["delegation_call_ids"])
+                        ),
                         specialist_agents=specialist_agents,
-                        delegation_status=(
-                            "used"
-                            if delegation_used
-                            else "missing"
-                            if delegation_expected
-                            else "not_expected"
+                        delegation_status=delegation_status,
+                        required_experts=sorted(state["required_experts"]),
+                        completed_experts=sorted(state["completed_experts"]),
+                        budget_blocked=sorted(state["budget_blocked_experts"]),
+                        real_delegate_calls=(
+                            max(state["delegate_calls"], state["delegate_dispatch_count"])
+                            if arm == "C"
+                            else state["delegate_calls"]
                         ),
                     )
         finally:
@@ -500,6 +575,10 @@ async def evaluate(
         "mode": "real_model" if live else "deterministic_offline",
         "provider": provider if live else "offline",
         "delegation_enabled": delegation_enabled,
+        "delegation_policy": delegation_policy,
+        "arm": arm,
+        "agent_context_limit_tokens": min(settings.agent_context_tokens, 32_000),
+        "agent_total_budget_tokens": settings.agent_total_tokens,
         "model": (
             settings.agnes_model if live and provider == "agnes" else settings.deepseek_model
         ) if live else "offline",

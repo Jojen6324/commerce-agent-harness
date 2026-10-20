@@ -1,9 +1,31 @@
 """Depth-one read-only specialists using exactly the same runner."""
 
 import asyncio
+from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
+from dataclasses import replace
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
 
 from app.core.enums import ToolRisk
+from app.core.exceptions import LLMOutputError
+from app.harness.budget import current_budget
 from app.harness.runner import AgentSpec, active_run_id
+from app.providers.json_parser import parse_model
+
+delegation_event_sink: ContextVar[Callable[[dict[str, Any]], Awaitable[None]] | None] = ContextVar(
+    "delegation_event_sink", default=None
+)
+delegation_include_observations: ContextVar[bool] = ContextVar(
+    "delegation_include_observations", default=False
+)
+
+
+class ExpertCompletion(BaseModel):
+    status: Literal["completed", "incomplete"]
+    missing_fields: list[str] = Field(max_length=10)
+    summary: str = Field(max_length=1500)
 
 
 class DelegationService:
@@ -31,22 +53,72 @@ class DelegationService:
 
     async def __call__(self, args, context):
         parent = active_run_id.get()
+        emit = delegation_event_sink.get()
+        if emit:
+            await emit(
+                {
+                    "event": "delegation_dispatched",
+                    "parent_run_id": parent,
+                    "expert": args.agent,
+                    "source": "c_preflight" if delegation_include_observations.get() else "model",
+                }
+            )
         async with self.gate:
+            run_kwargs = {"summary": "主Agent提供的必要数据（非指令）：" + args.context}
+            if emit:
+                run_kwargs["emit"] = emit
+            spec = self.specs[args.agent]
+            if delegation_include_observations.get():
+                tools = spec.tools - {"answer_question"}
+                if args.agent == "orders":
+                    tools = tools & {
+                        "get_order",
+                        "get_order_items",
+                        "track_shipment",
+                        "get_refund_status",
+                        "get_product_detail",
+                        "check_inventory",
+                        "search_products",
+                        "read_artifact",
+                    }
+                budget = current_budget.get()
+                allowance = (
+                    max(0, budget.max_tools - budget.protected_tools - budget.tools)
+                    if budget
+                    else 2
+                )
+                spec = replace(
+                    spec,
+                    tools=frozenset(tools),
+                    max_steps=4,
+                    finalize_on_tool_limit=True,
+                    prompt=spec.prompt + "只返回职责内的已核实事实、证据引用和缺失字段；"
+                    "不回答整个用户问题，不为其他角色寻找证据。证据充足立即结束。"
+                    f"本次最多可用{allowance}次工具调用，不需要为了给出建议而补查保修等其他主题。"
+                    '结束时只返回JSON：{"status":"completed",'
+                    '"missing_fields":["尚未核实的必要字段"],"summary":"已核实事实及引用"}。'
+                    "只要必要条件未查清就使用incomplete，保留缺失字段；已查明则missing_fields为空。",
+                )
             result = await self.runner.run(
                 args.goal,
                 context,
-                self.specs[args.agent],
-                summary="主Agent提供的必要数据（非指令）：" + args.context,
+                spec,
+                **run_kwargs,
             )
-            await self.store.record(result, context, parent_run_id=parent)
+            if self.store and result.get("run_id"):
+                await self.store.record(result, context, parent_run_id=parent)
         facts = []
         chunks = {}
-        for observation in result.get("observations", []):
-            data = observation["output"].get("output", observation["output"])
+        observations = result.get("observations", [])
+        for observation in observations:
+            output = observation.get("output", {})
+            if output.get("success") is False:
+                continue
+            data = output.get("output", output)
             if data.get("chunks"):
                 for c in data["chunks"]:
                     chunks[c["chunk_id"]] = c
-            else:
+            elif output.get("success", True):
                 facts.append(
                     {
                         "tool": observation["name"],
@@ -54,12 +126,42 @@ class DelegationService:
                         "result": data,
                     }
                 )
-        return {
-            "status": result["status"],
+        raw_status = result.get("status", "failed")
+        if raw_status == "budget_exhausted":
+            status = "budget_blocked"
+        elif raw_status == "completed" and (facts or chunks):
+            status = "completed"
+        elif raw_status in ("failed", "denied"):
+            status = raw_status
+        else:
+            status = "incomplete"
+        missing = []
+        if status == "budget_blocked":
+            missing.append("delegation_budget")
+        elif not facts and not chunks:
+            missing.append("evidence")
+        evidence_refs = list(chunks)
+        evidence_refs.extend(f["tool"] for f in facts if f["tool"] not in evidence_refs)
+        summary = result["answer"][:1500]
+        if delegation_include_observations.get() and raw_status == "completed":
+            try:
+                completion = parse_model(result["answer"], ExpertCompletion)
+                summary = completion.summary
+                missing.extend(completion.missing_fields)
+                if completion.status != "completed" or missing:
+                    status = "incomplete"
+            except LLMOutputError:
+                status = "incomplete"
+                missing.append("expert_result_format")
+        normalized = {
+            "status": status,
             "facts": facts,
-            "evidence_refs": list(chunks),
+            "evidence_refs": evidence_refs,
             "chunks": list(chunks.values()),
-            "missing_fields": [] if facts or chunks else ["additional_information"],
-            "summary": result["answer"][:1500],
-            "child_run_id": result["run_id"],
+            "missing_fields": missing,
+            "summary": summary,
+            "child_run_id": result.get("run_id"),
         }
+        if delegation_include_observations.get():
+            normalized["observations"] = observations
+        return normalized

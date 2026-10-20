@@ -47,7 +47,10 @@ class ToolExecutor:
     async def execute(self, name, arguments, context, spec, *, confirmed=False, transaction=None):
         budget = current_budget.get()
         if budget:
-            budget.reserve_tool()
+            if name == "delegate_task":
+                budget.reserve_delegation()
+            else:
+                budget.reserve_tool()
         if name not in spec.tools:
             raise ToolPermissionError("role_tool_denied")
         if name == "ask_user":

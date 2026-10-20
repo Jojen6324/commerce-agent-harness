@@ -1,9 +1,10 @@
 """Schema and pairing regression for the separate agent comparison corpus."""
 import json
+
 import pytest
 
-from eval.task_schema import AgentTask, DATA_DIR
 from eval.behavior import evaluate
+from eval.task_schema import DATA_DIR, AgentTask
 from scripts.compare_agent_benchmark import pair_results
 
 DATASET = DATA_DIR / "agent_comparison_50.jsonl"
@@ -38,6 +39,27 @@ def test_comparison_requires_same_ids_and_digest():
         pair_results(report(["a"]), report(["b"]))
 
 
+def test_comparison_can_pair_c_mode_on_the_same_task_manifest():
+    def report(status):
+        return {
+            "corpus_digest": "same",
+            "cases": [
+                {
+                    "id": "task",
+                    "scenario": "multi_agent",
+                    "task_status": status,
+                    "deterministic_status": status,
+                    "turns": [],
+                }
+            ],
+        }
+
+    paired = pair_results(report("passed"), report("failed"), report("review_required"))
+    assert paired[0]["single"] == "passed"
+    assert paired[0]["multi"] == "failed"
+    assert paired[0]["c"] == "review_required"
+
+
 @pytest.mark.asyncio
 async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation():
     report = await evaluate(
@@ -54,6 +76,8 @@ async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation(
         if event["event"] == "task_finished" and event["task_id"] == case["id"]
     ]
     assert report["delegation_enabled"] is True
+    assert report["agent_context_limit_tokens"] == 32_000
+    assert report["agent_total_budget_tokens"] == 80_000
     assert case["turns"][0]["wall_elapsed_ms"] >= 0
     assert len(task_events) == 1
     assert task_events[0]["delegation_expected"] is True

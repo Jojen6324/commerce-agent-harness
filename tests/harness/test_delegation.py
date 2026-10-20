@@ -55,6 +55,14 @@ async def test_specialist_failure_returns_bounded_structured_result():
     delegate = DelegationService(runner, executor, store)
     result = await delegate(DelegateInput(agent="orders", goal="查物流"), context())
     assert result["status"] == "failed" and result["missing_fields"]
+    assert {
+        "status",
+        "facts",
+        "evidence_refs",
+        "missing_fields",
+        "summary",
+        "child_run_id",
+    } <= result.keys()
     assert "messages" not in result
     store.record.assert_awaited_once()
 
@@ -157,3 +165,76 @@ async def test_parent_cancellation_awaits_readonly_children():
     with pytest.raises(asyncio.CancelledError):
         await task
     assert active == 0
+
+
+@pytest.mark.asyncio
+async def test_delegation_coordination_is_bounded_separately_from_real_tools():
+    import time
+
+    from app.harness.budget import BudgetExceeded, RunBudget, current_budget
+
+    executor = ToolExecutor(ToolRegistry(), None)
+    executor.delegate = AsyncMock(return_value={"status": "completed", "facts": []})
+    budget = RunBudget(time.monotonic() + 60, max_tools=6)
+    token = current_budget.set(budget)
+    try:
+        for _ in range(2):
+            await executor.execute(
+                "delegate_task",
+                {"agent": "orders", "goal": "核实订单"},
+                context(),
+                AgentSpec("main", frozenset({"delegate_task"})),
+            )
+        assert budget.tools == 0 and budget.delegations == 2
+        with pytest.raises(BudgetExceeded, match="delegation_call_budget"):
+            await executor.execute(
+                "delegate_task",
+                {"agent": "orders", "goal": "核实订单"},
+                context(),
+                AgentSpec("main", frozenset({"delegate_task"})),
+            )
+        assert executor.delegate.await_count == 2
+    finally:
+        current_budget.reset(token)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "answer,missing",
+    [
+        (
+            '{"status":"incomplete","missing_fields":["delivered_at"],"summary":"签收日期未查明"}',
+            "delivered_at",
+        ),
+        ("已经查完，但没有结构化交接", "expert_result_format"),
+    ],
+)
+async def test_c_preserves_partial_evidence_without_claiming_expert_completion(answer, missing):
+    from app.harness.delegation import delegation_include_observations
+
+    observation = {
+        "name": "get_order",
+        "arguments": {"order_id": "ORD1"},
+        "output": {"success": True, "output": {"status": "shipped"}},
+    }
+    runner = SimpleNamespace(
+        run=AsyncMock(
+            return_value={
+                "status": "completed",
+                "answer": answer,
+                "observations": [observation],
+                "run_id": "child",
+            }
+        )
+    )
+    executor = SimpleNamespace(registry=ToolRegistry())
+    delegate = DelegationService(runner, executor, None)
+    token = delegation_include_observations.set(True)
+    try:
+        result = await delegate(DelegateInput(agent="orders", goal="核实签收"), context())
+    finally:
+        delegation_include_observations.reset(token)
+    assert result["status"] == "incomplete"
+    assert missing in result["missing_fields"]
+    assert result["observations"] == [observation] and result["facts"]
+    assert "get_warranty" not in runner.run.call_args.args[2].tools

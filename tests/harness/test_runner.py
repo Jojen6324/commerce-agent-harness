@@ -1,10 +1,12 @@
 import json
+import time
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
 
 from app.config.settings import Settings
+from app.harness.budget import RunBudget, current_budget
 from app.harness.runner import SYSTEM, AgentRunner, AgentSpec
 from app.prompts.evidence_rules import EVIDENCE_RULES
 from app.providers.base import LLMResponse
@@ -89,6 +91,36 @@ async def test_repeated_calls_stop_without_progress():
     )
     assert result["status"] == "budget_exhausted"
     assert executor.execute.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_tool_budget_stop_keeps_budget_details_without_duplicate_event_fields():
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse("", tool_calls=[call()], finish_reason="tool_calls")
+        )
+    )
+
+    async def reserve_tool(*_args, **_kwargs):
+        current_budget.get().reserve_tool()
+
+    executor = SimpleNamespace(
+        schemas=lambda _: [],
+        execute=AsyncMock(side_effect=reserve_tool),
+    )
+    token = current_budget.set(RunBudget(deadline=time.monotonic() + 60, max_tools=0))
+    try:
+        result = await AgentRunner(llm, executor, Settings()).run(
+            "查询", context(), AgentSpec("main", frozenset(["get_order"]))
+        )
+    finally:
+        current_budget.reset(token)
+
+    assert result["status"] == "budget_exhausted"
+    stopped = next(event for event in result["events"] if event["event"] == "stopped")
+    assert stopped["reason"] == "tool_budget"
+    assert stopped["tool_calls"] == 0
+    assert stopped["tool_call_limit"] == 0
 
 
 @pytest.mark.asyncio
@@ -300,3 +332,110 @@ async def test_externalized_specialist_result_keeps_summary_facts_and_evidence()
     assert message["missing_fields"] == ["quality_proof"]
     assert message["artifact_ref"] == "art_large" and "chunks" not in message
     executor.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_preloaded_expert_observations_reach_main_prompt_and_result():
+    observation = {
+        "name": "get_order",
+        "arguments": {"order_id": "ORD10001"},
+        "call_id": "child_call",
+        "delegated_by": "orders",
+        "output": {"success": True, "output": {"order_id": "ORD10001", "status": "delivered"}},
+    }
+    seen = {}
+
+    async def generate(messages, **kwargs):
+        seen["messages"] = messages
+        return LLMResponse("订单已签收。")
+
+    executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
+    result = await AgentRunner(SimpleNamespace(generate=generate), executor, Settings()).run(
+        "查询 ORD10001 当前状态",
+        context(),
+        AgentSpec("main", frozenset()),
+        initial_context={
+            "required_experts": ["orders"],
+            "experts": {"orders": {"status": "completed"}},
+        },
+        initial_observations=[observation],
+    )
+
+    assert result["status"] == "completed"
+    assert result["observations"] == [observation]
+    assert "ORD10001" in "\n".join(message["content"] for message in seen["messages"])
+
+
+@pytest.mark.asyncio
+async def test_bounded_expert_finalizes_existing_observations_without_another_tool_attempt():
+    llm = SimpleNamespace(
+        generate=AsyncMock(
+            return_value=LLMResponse(
+                '{"status":"incomplete","missing_fields":["delivered_at"],"summary":"缺少签收时间"}'
+            )
+        )
+    )
+    executor = SimpleNamespace(
+        schemas=lambda _: [{"type": "function", "function": {"name": "get_order"}}],
+        execute=AsyncMock(),
+    )
+    budget = RunBudget(time.monotonic() + 60, max_tools=2, protected_tools=1, tools=1)
+    token = current_budget.set(budget)
+    try:
+        result = await AgentRunner(llm, executor, Settings()).run(
+            "核实签收",
+            context(),
+            AgentSpec("orders", frozenset({"get_order"}), finalize_on_tool_limit=True),
+        )
+    finally:
+        current_budget.reset(token)
+    assert result["status"] == "completed"
+    assert llm.generate.call_args.kwargs["tools"] == []
+    assert any(e["event"] == "expert_finalizing" for e in result["events"])
+    executor.execute.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_every_model_call_receives_current_remaining_shared_budget():
+    from app.harness.budget import BudgetedProvider
+    from app.schemas.common import TokenUsage
+
+    response1 = LLMResponse(
+        "", usage=TokenUsage(total_tokens=100), tool_calls=[call()], finish_reason="tool_calls"
+    )
+    response2 = LLMResponse("查询完成", usage=TokenUsage(total_tokens=100))
+    model = SimpleNamespace(generate=AsyncMock(side_effect=[response1, response2]))
+    budget = RunBudget(
+        time.monotonic() + 60,
+        max_models=6,
+        max_tools=6,
+        protected_models=1,
+        protected_tools=2,
+        protected_tokens=16000,
+    )
+
+    async def execute(*_args, **_kwargs):
+        budget.reserve_tool()
+        return {"success": True, "output": {"status": "paid"}}
+
+    executor = SimpleNamespace(schemas=lambda _: [], execute=execute)
+    token = current_budget.set(budget)
+    try:
+        result = await AgentRunner(BudgetedProvider(model), executor, Settings()).run(
+            "查询订单", context(), AgentSpec("main", frozenset({"get_order"}))
+        )
+    finally:
+        current_budget.reset(token)
+    assert result["status"] == "completed"
+    snapshots = [e for e in result["events"] if e["event"] == "budget_snapshot"]
+    assert [e["tool_calls_remaining"] for e in snapshots] == [4, 3]
+    assert [e["model_calls_remaining_including_current"] for e in snapshots] == [5, 4]
+    assert [e["tokens_remaining"] for e in snapshots] == [64000, 63900]
+    for invocation, snapshot in zip(model.generate.call_args_list, snapshots, strict=True):
+        hints = [
+            m["content"]
+            for m in invocation.args[0]
+            if "服务器计算的本次调用前剩余额度" in m.get("content", "")
+        ]
+        assert len(hints) == 1
+        assert f'"tool_calls_remaining": {snapshot["tool_calls_remaining"]}' in hints[0]

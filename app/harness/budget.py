@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 
@@ -23,9 +24,14 @@ class RunBudget:
     max_models: int = 24
     max_tools: int = 16
     max_tokens: int = 80_000
+    delegations: int = 0
+    max_delegations: int = 2
     models: int = 0
     tools: int = 0
     reserved_tokens: int = 0
+    protected_tokens: int = 0
+    protected_models: int = 0
+    protected_tools: int = 0
     usage: TokenUsage = field(default_factory=TokenUsage)
 
     def check(self):
@@ -34,34 +40,82 @@ class RunBudget:
 
     def reserve_model(self, estimate):
         self.check()
-        if self.models >= self.max_models:
+        model_limit = max(0, self.max_models - self.protected_models)
+        if self.models >= model_limit:
             raise BudgetExceeded(
-                "model_call_budget",
-                budget_scope="model_calls",
+                "delegation_main_reserve" if self.protected_models else "model_call_budget",
+                budget_scope="delegation_reserved_main_budget"
+                if self.protected_models
+                else "model_calls",
                 model_calls=self.models,
-                model_call_limit=self.max_models,
+                model_call_limit=model_limit,
             )
         projected_tokens = self.usage.total_tokens + self.reserved_tokens + estimate
-        if projected_tokens > self.max_tokens:
+        if projected_tokens + self.protected_tokens > self.max_tokens:
             raise BudgetExceeded(
-                "run_token_budget",
-                budget_scope="run_tokens",
+                "delegation_main_reserve" if self.protected_tokens else "run_token_budget",
+                budget_scope="delegation_reserved_main_budget"
+                if self.protected_tokens
+                else "run_tokens",
                 requested_tokens=estimate,
-                projected_tokens=projected_tokens,
+                projected_tokens=projected_tokens + self.protected_tokens,
                 max_total_tokens=self.max_tokens,
                 total_tokens=self.usage.total_tokens,
                 reserved_tokens_without_usage=self.reserved_tokens,
+                protected_tokens=self.protected_tokens,
                 model_calls=self.models,
-                model_call_limit=self.max_models,
+                model_call_limit=max(0, self.max_models - self.protected_models),
             )
         self.models += 1
         # Conservative reservation stays charged even on transport failure.
         self.reserved_tokens += estimate
 
+    def reserve_delegation(self):
+        self.check()
+        if self.delegations >= self.max_delegations:
+            raise BudgetExceeded("delegation_call_budget", budget_scope="delegation_calls")
+        self.delegations += 1
+
+    @contextmanager
+    def delegation_share(self, remaining_experts):
+        """Sequential child allowance; keep both sibling and main capacity protected.
+
+        All calls still charge this task's original budget. Unspent child quota
+        remains available to later children and to the main agent.
+        """
+        saved = self.protected_tokens, self.protected_models, self.protected_tools
+        tokens = (
+            max(0, self.max_tokens - self.usage.total_tokens - self.reserved_tokens - saved[0])
+            // remaining_experts
+        )
+        models = max(0, self.max_models - self.models - saved[1]) // remaining_experts
+        tools = max(0, self.max_tools - self.tools - saved[2]) // remaining_experts
+        if tokens < 4000 or models < 2 or tools < 1:
+            raise BudgetExceeded(
+                "delegation_share_unavailable", budget_scope="delegation_allocation"
+            )
+        self.protected_tokens = (
+            self.max_tokens - self.usage.total_tokens - self.reserved_tokens - tokens
+        )
+        self.protected_models = self.max_models - self.models - models
+        self.protected_tools = self.max_tools - self.tools - tools
+        try:
+            yield {"tokens": tokens, "model_calls": models, "tool_calls": tools}
+        finally:
+            self.protected_tokens, self.protected_models, self.protected_tools = saved
+
     def reserve_tool(self):
         self.check()
-        if self.tools >= self.max_tools:
-            raise BudgetExceeded("tool_budget")
+        tool_limit = max(0, self.max_tools - self.protected_tools)
+        if self.tools >= tool_limit:
+            raise BudgetExceeded(
+                "delegation_main_reserve" if self.protected_tools else "tool_budget",
+                budget_scope="delegation_reserved_main_budget"
+                if self.protected_tools
+                else "tool_calls",
+                tool_calls=self.tools,
+                tool_call_limit=tool_limit,
+            )
         self.tools += 1
 
 

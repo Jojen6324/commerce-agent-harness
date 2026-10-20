@@ -14,6 +14,7 @@ from app.providers.base import LLMProvider
 from app.providers.deepseek import DeepSeekProvider
 from app.providers.embeddings import build_embedding_provider
 from app.providers.fake import OfflineLLMProvider
+from app.providers.qwen import QwenProvider
 from app.providers.reranker import CrossEncoderRerankProvider
 from app.repositories.db import create_engine, create_session_factory, init_schema
 from app.retrieval.cache import MemoryRetrievalCache, RedisRetrievalCache
@@ -34,6 +35,8 @@ def build_llm_provider(settings: Settings) -> LLMProvider:
         return OfflineLLMProvider()
     if settings.agnes.get_secret_value():
         return AgnesProvider(settings)
+    if settings.qwen1_api_key.get_secret_value():
+        return QwenProvider(settings)
     if settings.deepseek_api_key.get_secret_value():
         return DeepSeekProvider(settings)
     return OfflineLLMProvider()

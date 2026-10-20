@@ -45,6 +45,80 @@ def corpus_summary(tasks):
     }
 
 
+def quality_summary(results):
+    """Summarize turn-level quality without counting skipped judgments as passes."""
+    turns = [turn for result in results for turn in result.get("turns", [])]
+    policy_statuses = Counter(
+        turn.get("policy_quality", {}).get("status", "not_run") for turn in turns
+    )
+    faithfulness_statuses = Counter(
+        turn.get("faithfulness_quality", {}).get("status", "not_run") for turn in turns
+    )
+    evidence_checks = [
+        check
+        for turn in turns
+        for check in turn.get("policy_quality", {}).get("evidence_checks", [])
+    ]
+    judged_faithfulness = sum(
+        faithfulness_statuses[status] for status in ("passed", "failed", "insufficient_evidence")
+    )
+    return {
+        "policy": {
+            "turn_status_counts": dict(sorted(policy_statuses.items())),
+            "evidence_check_count": len(evidence_checks),
+            "evidence_checks_passed": sum(check["passed"] for check in evidence_checks),
+            "evidence_check_coverage": (
+                round(sum(check["passed"] for check in evidence_checks) / len(evidence_checks), 4)
+                if evidence_checks
+                else None
+            ),
+            "turns_with_explicit_evidence_checks": policy_statuses["passed"]
+            + policy_statuses["failed"],
+            "policy_required_without_explicit_evidence_assertion": policy_statuses["not_scored"],
+            "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself.",
+        },
+        "faithfulness": {
+            "turn_status_counts": dict(sorted(faithfulness_statuses.items())),
+            "judged_turns": judged_faithfulness,
+            "passed": faithfulness_statuses["passed"],
+            "pass_rate_among_judged": (
+                round(faithfulness_statuses["passed"] / judged_faithfulness, 4)
+                if judged_faithfulness
+                else None
+            ),
+            "unavailable": faithfulness_statuses["unavailable"],
+            "not_run": faithfulness_statuses["not_run"],
+            "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator.",
+        },
+    }
+
+
+def resource_summary(results):
+    """Aggregate recorded API usage; never estimate money without model pricing."""
+    totals = Counter()
+    roles = defaultdict(Counter)
+    for result in results:
+        for turn in result.get("turns", []):
+            response = turn.get("response") or {}
+            usage = response.get("token_usage") or {}
+            diagnostics = response.get("diagnostics") or {}
+            for field in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                totals[field] += usage.get(field, 0) or 0
+            totals["model_calls"] += diagnostics.get("model_calls", 0) or 0
+            totals["tool_calls"] += diagnostics.get("tool_calls", 0) or 0
+            totals["wall_elapsed_ms"] += turn.get("wall_elapsed_ms", 0) or 0
+            for role, values in (diagnostics.get("role_usage") or {}).items():
+                for field in ("model_calls", "prompt_tokens", "completion_tokens", "total_tokens"):
+                    roles[role][field] += values.get(field, 0) or 0
+    return {
+        **dict(totals),
+        "wall_elapsed_ms": round(totals["wall_elapsed_ms"], 2),
+        "by_role": {role: dict(values) for role, values in sorted(roles.items())},
+        "monetary_cost": None,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured.",
+    }
+
+
 def summarize(results, corpus=None):
     grouped = defaultdict(list)
     if corpus:
@@ -65,10 +139,24 @@ def summarize(results, corpus=None):
             ),
             "deterministic_passed": sum(r["deterministic_status"] == "passed" for r in rows),
             "deterministic_failed": sum(r["deterministic_status"] == "failed" for r in rows),
+            "quality": quality_summary(rows),
+            "resources": resource_summary(rows),
+            "delegation": {
+                "orders_agent_tasks": sum(
+                    bool(r.get("delegation", {}).get("orders_agent_called")) for r in rows
+                ),
+                "policy_agent_tasks": sum(
+                    bool(r.get("delegation", {}).get("policy_agent_called")) for r in rows
+                ),
+                "delegate_calls": sum(
+                    r.get("delegation", {}).get("delegate_calls", 0) or 0 for r in rows
+                ),
+            },
         }
 
     return {
         "overall": counts(results),
+        "quality": quality_summary(results),
         "by_scenario": {
             k: {
                 **counts(v),
@@ -94,6 +182,15 @@ def summarize(results, corpus=None):
         "by_variant": {
             v: counts([r for r in results if r["variant"] == v]) for v in ("original", "derived")
         },
+        "by_partition_group": {
+            group: counts([r for r in results if r.get("partition_group") == group])
+            for group in ("ab_comparison", "b_only", "holdout_excluded")
+            if any(r.get("partition_group") == group for r in results)
+        },
+        "by_source_file": {
+            source: counts([r for r in results if r.get("source_file") == source])
+            for source in sorted({r.get("source_file") for r in results if r.get("source_file")})
+        },
     }
 
 
@@ -110,9 +207,20 @@ async def evaluate(
     arm_name=None,
     monitor=False,
     provider="agnes",
+    task_corpus=None,
+    corpus_digest_override=None,
+    grouping_method_override=None,
 ):
     # Keep the locked 116-task historical corpus unchanged; opt in to new benchmarks.
-    if dataset_path is None:
+    custom_corpus = dataset_path is not None or task_corpus is not None
+    if task_corpus is not None:
+        all_tasks = task_corpus
+        if not all_tasks or len({t.id for t in all_tasks}) != len(all_tasks):
+            raise ValueError("empty or duplicate benchmark task ids")
+        valid_fixtures = set(json.loads((DATA_DIR / "agent_fixtures.json").read_text())["profiles"])
+        if any(not set(t.fixtures) <= valid_fixtures for t in all_tasks):
+            raise ValueError("benchmark refers to unknown fixture")
+    elif dataset_path is None:
         all_tasks = load_tasks()
     else:
         all_tasks = [
@@ -125,6 +233,10 @@ async def evaluate(
             raise ValueError("empty or duplicate benchmark task ids")
         if any(not set(t.fixtures) <= valid_fixtures for t in all_tasks):
             raise ValueError("benchmark refers to unknown fixture")
+    partition_path = DATA_DIR / "agent_task_ab_partition.json"
+    partition_entries = {
+        row["id"]: row for row in json.loads(partition_path.read_text())["entries"]
+    }
     if split not in ("development", "holdout", "all"):
         raise ValueError("invalid split")
     selected = [
@@ -138,8 +250,8 @@ async def evaluate(
         selected = selected[:limit]
     if not selected:
         raise ValueError("no tasks selected")
-    if provider not in ("agnes", "deepseek"):
-        raise ValueError("provider must be agnes or deepseek")
+    if provider not in ("agnes", "deepseek", "qwen1"):
+        raise ValueError("provider must be agnes, deepseek, or qwen1")
     results = []
     monitor_events = []
     arm = arm_name or (
@@ -281,6 +393,10 @@ async def evaluate(
                             "model_calls_remaining_including_current",
                             "tokens_remaining",
                             "steps_remaining_including_current",
+                            "review_type",
+                            "evidence_checked",
+                            "facts_verified",
+                            "verdict",
                         )
                         details = {key: item[key] for key in safe_fields if key in item}
                         if name == "error" and "error" in details:
@@ -340,7 +456,11 @@ async def evaluate(
         )
         if not live:
             settings = settings.model_copy(
-                update={"agnes": SecretStr(""), "deepseek_api_key": SecretStr("")}
+                update={
+                    "agnes": SecretStr(""),
+                    "deepseek_api_key": SecretStr(""),
+                    "qwen1_api_key": SecretStr(""),
+                }
             )
         elif provider == "agnes" and not settings.agnes.get_secret_value():
             raise RuntimeError("AGNES binding required for live evaluation")
@@ -350,6 +470,17 @@ async def evaluate(
             # Explicit selection prevents an AGNES binding from taking priority.
             settings = settings.model_copy(
                 update={"agnes": SecretStr(""), "deepseek_thinking": "disabled"}
+            )
+        elif provider == "qwen1":
+            if not settings.qwen1_api_key.get_secret_value():
+                raise RuntimeError("QWEN1 binding required for live evaluation")
+            # Select only the requested credential and explicitly disable thinking.
+            settings = settings.model_copy(
+                update={
+                    "agnes": SecretStr(""),
+                    "deepseek_api_key": SecretStr(""),
+                    "qwen1_thinking": "disabled",
+                }
             )
         if delegation_enabled is not None:
             settings = settings.model_copy(
@@ -473,6 +604,16 @@ async def evaluate(
                         status_code, body, elapsed_ms = await request_chat(
                             client, payload, task_id=task.id, turn=n
                         )
+                        state = task_monitor_state[task.id]
+                        for event in body.get("events", []):
+                            if event.get("event") == "agent_started" and event.get("agent") in (
+                                "orders",
+                                "policy",
+                                "knowledge",
+                            ):
+                                state["specialist_agents"].add(event["agent"])
+                            if event.get("event") == "delegation_dispatched":
+                                state["delegate_dispatch_count"] += 1
                         responses.append(body)
                         if status_code == 200:
                             session_id = body.get("session_id", session_id)
@@ -514,6 +655,9 @@ async def evaluate(
                             task.forbidden_claims,
                             known_order_ids,
                             session_calls,
+                            policy_required=(
+                                partition_entries.get(task.id, {}).get("group") == "ab_comparison"
+                            ),
                         )
                         session_calls.extend(audit)
                         unavailable = status_code >= 500 or body.get("status") in (
@@ -544,6 +688,9 @@ async def evaluate(
                         {
                             "id": task.id,
                             "source_id": task.source_id,
+                            "source_file": partition_entries.get(task.id, {}).get("source_file"),
+                            "partition_group": partition_entries.get(task.id, {}).get("group"),
+                            "partition_basis": partition_entries.get(task.id, {}).get("basis"),
                             "derived_from": task.derived_from,
                             "variant": task.variant,
                             "scenario": task.scenario,
@@ -568,6 +715,7 @@ async def evaluate(
                             "turns": turns,
                         }
                     )
+                    results[-1]["quality"] = quality_summary([results[-1]])
                     state = task_monitor_state[task.id]
                     specialist_agents = sorted(state["specialist_agents"])
                     if delegation_policy == "required_when_eligible":
@@ -588,17 +736,28 @@ async def evaluate(
                         delegation_expected = False
                         delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
                         delegation_status = "used" if delegation_used else "not_expected"
+                    actual_delegate_calls = (
+                        max(state["delegate_calls"], state["delegate_dispatch_count"])
+                        if delegation_policy == "required_when_eligible"
+                        else state["delegate_calls"] or len(state["delegation_call_ids"])
+                    )
+                    results[-1]["delegation"] = {
+                        "specialist_agents": specialist_agents,
+                        "orders_agent_called": "orders" in specialist_agents,
+                        "policy_agent_called": "policy" in specialist_agents,
+                        "required_experts": sorted(state["required_experts"]),
+                        "completed_experts": sorted(state["completed_experts"]),
+                        "budget_blocked_experts": sorted(state["budget_blocked_experts"]),
+                        "delegate_calls": actual_delegate_calls,
+                        "status": delegation_status,
+                    }
                     log_progress(
                         "task_finished",
                         task_id=task.id,
                         status=results[-1]["task_status"],
                         delegation_expected=delegation_expected,
                         delegation_used=delegation_used,
-                        delegation_calls=(
-                            max(state["delegate_calls"], state["delegate_dispatch_count"])
-                            if delegation_policy == "required_when_eligible"
-                            else state["delegate_calls"] or len(state["delegation_call_ids"])
-                        ),
+                        delegation_calls=actual_delegate_calls,
                         specialist_agents=specialist_agents,
                         delegation_status=delegation_status,
                         required_experts=sorted(state["required_experts"]),
@@ -617,16 +776,23 @@ async def evaluate(
     executed = {r["id"] for r in results}
     manifest = (
         json.loads((DATA_DIR / "agent_task_splits.json").read_text())
-        if dataset_path is None
+        if not custom_corpus
         else {
-            "method": "Independent synthetic benchmark: deterministic, case-isolated 80/20 development/holdout split."
+            "method": grouping_method_override
+            or "Independent benchmark task corpus with case-isolated fixtures."
         }
     )
-    digest = (
-        corpus_digest()
-        if dataset_path is None
-        else hashlib.sha256(Path(dataset_path).read_bytes()).hexdigest()
-    )
+    if corpus_digest_override:
+        digest = corpus_digest_override
+    elif dataset_path is not None:
+        digest = hashlib.sha256(Path(dataset_path).read_bytes()).hexdigest()
+    elif task_corpus is not None:
+        encoded = "\n".join(
+            task.model_dump_json(exclude_none=True, by_alias=True) for task in task_corpus
+        ).encode()
+        digest = hashlib.sha256(encoded).hexdigest()
+    else:
+        digest = corpus_digest()
     return {
         "schema_version": 1,
         "corpus_digest": digest,
@@ -640,16 +806,33 @@ async def evaluate(
         "arm": arm,
         "agent_context_limit_tokens": min(settings.agent_context_tokens, 32_000),
         "agent_total_budget_tokens": settings.agent_total_tokens,
-        "model": (settings.agnes_model if live and provider == "agnes" else settings.deepseek_model)
-        if live
-        else "offline",
-        "thinking": settings.deepseek_thinking if live and provider == "deepseek" else None,
+        "model": (
+            settings.agnes_model
+            if live and provider == "agnes"
+            else settings.deepseek_model
+            if live and provider == "deepseek"
+            else settings.qwen1_model
+            if live and provider == "qwen1"
+            else "offline"
+        ),
+        "thinking": (
+            settings.deepseek_thinking
+            if live and provider == "deepseek"
+            else settings.qwen1_thinking
+            if live and provider == "qwen1"
+            else None
+        ),
         "selected_split": split,
         "corpus": corpus_summary(all_tasks),
         "selected": corpus_summary(selected),
         "unrun_count": len(all_tasks) - len(executed),
         "grouping_method": manifest["method"],
         "scope": "Derived tasks and turns are correlated members of source families, not independent new samples. Semantic review is pending, never silently treated as passed.",
+        "quality_protocol": {
+            "policy": "For each applicable evidence check, score whether at least one expected document family is cited using a citation that resolves to the fixture index; report check-level coverage and invalid citations. Manually selected policy tasks without explicit evidence assertions remain marked for semantic review.",
+            "faithfulness": "Record the production Critic (or legacy Faithfulness) verdict, review_type and evidence_checked from diagnostics/events, with no additional judge call. Critic pass is not factual verification. Report not_run and unavailable separately; do not count them as passes.",
+        },
+        "resources": resource_summary(results),
         "monitoring": {
             "enabled": monitor,
             "event_count": len(monitor_events),

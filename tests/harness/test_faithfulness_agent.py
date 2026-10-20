@@ -78,7 +78,7 @@ async def test_unknown_faithfulness_reference_fails_closed_and_preserves_repair_
     attempt = result["validation"]["attempts"][0]
     assert attempt["verdict"]["verdict"] == "fail"
     assert attempt["unknown_references"] == ["made_up_chunk"]
-    assert "未发送未核实内容" in result["answer"]
+    assert "未通过审核" in result["answer"] and "未发送" in result["answer"]
 
 
 @pytest.mark.asyncio
@@ -134,11 +134,17 @@ async def test_faithfulness_uses_shared_runner_read_only_tools_and_root_trace_pa
         validation_runtime_context.reset(runtime_token)
 
     assert verdict.verdict == "pass"
-    assert captured["spec"].name == "faithfulness"
+    assert captured["spec"].name == "critic"
     assert captured["spec"].tools == {"read_artifact"}
-    bundle = captured["initial_context"]["faithfulness_input"]
+    bundle = captured["initial_context"]["critic_input"]
     assert bundle["candidate_answer"] == "已核实 [return_policy_1]"
-    assert bundle["trusted_session_facts"]["last_order"]["order_id"] == "ORD1"
-    assert bundle["business_tool_results"][0]["name"] == "get_order"
+    assert set(bundle) == {
+        "original_user_question",
+        "candidate_answer",
+        "necessary_conversation_context",
+        "evidence_index",
+    }
+    assert bundle["evidence_index"][0]["refs"] == ["return_policy_1", "search_knowledge"]
+    assert not verdict.evidence_checked
     store.record.assert_awaited_once()
     assert store.record.await_args.kwargs["parent_run_id"] == "root1"

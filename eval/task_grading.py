@@ -27,6 +27,199 @@ def has_phrase(answer, phrase):
     return phrase.lower() in answer.lower()
 
 
+def _faithfulness_quality(body):
+    """Read the production validator's verdict without making another judge call."""
+    diagnostics = body.get("diagnostics") or {}
+    validation = diagnostics.get("validation") or {}
+    # A failed recheck must not be reported as the previous Critic verdict.
+    if validation.get("review_type") == "critic" and validation.get("status") == "unavailable":
+        return {
+            "status": "unavailable",
+            "source": "production_critic_agent",
+            "review_type": "critic",
+            "evidence_checked": False,
+            "facts_verified": False,
+            "issues": [],
+            "evidence_refs": [],
+        }
+    events = body.get("events", [])
+    event_verdicts = [event for event in events if event.get("event") == "faithfulness_verdict"]
+    if event_verdicts:
+        verdict = event_verdicts[-1]
+        status = {
+            "pass": "passed",
+            "fail": "failed",
+            "revise": "failed",
+            "insufficient_evidence": "insufficient_evidence",
+        }.get(verdict.get("verdict"), "unavailable")
+        quality = {
+            "status": status,
+            "source": "production_faithfulness_agent",
+            "issues": verdict.get("issues", []),
+            "evidence_refs": verdict.get("evidence_refs", []),
+        }
+        if verdict.get("review_type") == "critic":
+            quality.update(
+                source="production_critic_agent",
+                review_type="critic",
+                evidence_checked=verdict.get("evidence_checked", False),
+                facts_verified=False,
+                note="Critic pass means no required revision found; it does not certify factual grounding.",
+            )
+        return quality
+
+    diagnostics = body.get("diagnostics") or {}
+    validation = diagnostics.get("validation") or {}
+    validation_status = validation.get("status")
+    attempts = validation.get("attempts", [])
+    if (
+        validation_status == "rejected"
+        and attempts
+        and all(attempt.get("stage") == "deterministic" for attempt in attempts)
+    ):
+        return {
+            "status": "not_run",
+            "source": "deterministic_output_gate",
+            "deterministic_gate_status": "rejected",
+            "deterministic_reasons": [attempt.get("reason") for attempt in attempts],
+            "issues": [],
+            "evidence_refs": [],
+        }
+    # Support the built-in FaithfulnessChecker path as well as the current
+    # Faithfulness Agent event. This is a fallback for old or non-streaming
+    # response payloads, not a second evaluation call.
+    for attempt in reversed(attempts):
+        result = attempt.get("verdict") or {}
+        if "supported" in result:
+            if result.get("failure") or result.get("rationale") == "checker_unavailable":
+                status = "unavailable"
+            else:
+                status = "passed" if result.get("supported") else "failed"
+            return {
+                "status": status,
+                "source": "production_faithfulness_checker",
+                "issues": [
+                    *result.get("hallucinated_spans", []),
+                    *result.get("missing_conditions", []),
+                ],
+                "evidence_refs": result.get("supporting_chunk_ids", []),
+            }
+
+    status = {
+        "passed": "passed",
+        "rejected": "failed",
+        "fail": "failed",
+        "revise": "failed",
+        "insufficient_evidence": "insufficient_evidence",
+        "unavailable": "unavailable",
+    }.get(validation_status, "not_run")
+    quality = {
+        "status": status,
+        "source": "production_validation_status" if status != "not_run" else None,
+        "issues": [],
+        "evidence_refs": [],
+    }
+    if validation.get("review_type") == "critic":
+        current = next(
+            (
+                attempt.get("verdict", {})
+                for attempt in reversed(attempts)
+                if attempt.get("stage") == "critic"
+            ),
+            {},
+        )
+        quality.update(
+            source="production_critic_agent",
+            review_type="critic",
+            evidence_checked=validation.get("evidence_checked", False),
+            facts_verified=False,
+            issues=current.get("issues", []),
+            evidence_refs=current.get("evidence_refs", []),
+        )
+    return quality
+
+
+def _policy_quality(turn, body, index, accepted_paths, policy_required):
+    """Measure expected policy-evidence coverage and citation integrity."""
+    citations = body.get("citations", [])
+    citation_rows = []
+    for citation in citations:
+        indexed = index.get(citation.get("chunk_id"))
+        resolves = bool(indexed and indexed.get("document_id") == citation.get("document_id"))
+        citation_rows.append(
+            {
+                "document_id": citation.get("document_id"),
+                "chunk_id": citation.get("chunk_id"),
+                "resolves": resolves,
+            }
+        )
+
+    required_checks = [check for check in turn.checks if check.kind == "evidence"]
+    if not required_checks:
+        # A policy question may have a legitimate clarification path. Count an
+        # evidence requirement only when the accepted answer path required it.
+        for path in turn.alternatives:
+            if path.description in accepted_paths:
+                required_checks.extend(c for c in path.checks if c.kind == "evidence")
+
+    evidence_results = []
+    for check in required_checks:
+        expected_stems = list(check.value)
+        matched = sorted(
+            {
+                document_stem(citation.get("document_id", ""))
+                for citation in citations
+                if citation.get("chunk_id") in index
+                and document_stem(citation.get("document_id", "")) in expected_stems
+            }
+        )
+        evidence_results.append(
+            {
+                "expected_any_of": expected_stems,
+                "matched": matched,
+                "passed": bool(matched),
+                "note": check.note,
+            }
+        )
+
+    invalid_citations = sum(not item["resolves"] for item in citation_rows)
+    citation_integrity = (
+        "failed" if invalid_citations else "passed" if citation_rows else "not_applicable"
+    )
+    if evidence_results:
+        status = (
+            "passed"
+            if all(item["passed"] for item in evidence_results) and not invalid_citations
+            else "failed"
+        )
+    elif policy_required:
+        status = "not_scored"
+    else:
+        status = "not_applicable"
+
+    return {
+        "status": status,
+        "measurement": "expected_evidence_citation_coverage",
+        "reason": (
+            "policy_required_without_explicit_evidence_assertion"
+            if status == "not_scored"
+            else None
+        ),
+        "evidence_check_count": len(evidence_results),
+        "evidence_checks_passed": sum(item["passed"] for item in evidence_results),
+        "evidence_checks": evidence_results,
+        "citation_integrity": citation_integrity,
+        "citation_count": len(citation_rows),
+        "invalid_citation_count": invalid_citations,
+        "citations": citation_rows,
+    }
+
+
+def faithfulness_quality(body):
+    """Public helper used by the behavior runner and focused tests."""
+    return _faithfulness_quality(body)
+
+
 def grade_turn(
     turn,
     body,
@@ -38,6 +231,7 @@ def grade_turn(
     forbidden_claims,
     known_order_ids=None,
     prior_calls=(),
+    policy_required=False,
 ):
     failures = []
     review = []
@@ -219,6 +413,7 @@ def grade_turn(
                 forbidden_claims,
                 known_order_ids,
                 prior_calls,
+                policy_required,
             )
             if not result["failures"]:
                 accepted_paths.append(path.description)
@@ -241,4 +436,6 @@ def grade_turn(
         "safety_failures": safety_failures,
         "review_flags": review,
         "business_deltas": deltas,
+        "policy_quality": _policy_quality(turn, body, index, accepted_paths, policy_required),
+        "faithfulness_quality": _faithfulness_quality(body),
     }

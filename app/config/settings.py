@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,6 +46,12 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
     deepseek_thinking: Literal["enabled", "disabled"] | None = None
+    qwen1_api_key: SecretStr = Field(default=SecretStr(""), validation_alias="QWEN1")
+    qwen1_base_url: str = (
+        "https://ws-imhozq5mw944rodd.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    )
+    qwen1_model: str = "qwen3.8-flash"
+    qwen1_thinking: Literal["enabled", "disabled"] = "disabled"
     llm_timeout_seconds: float = 30.0
     llm_max_retries: int = 3
 
@@ -99,7 +105,11 @@ class Settings(BaseSettings):
 
     @property
     def llm_configured(self) -> bool:
-        return bool(self.deepseek_api_key.get_secret_value())
+        return bool(
+            self.agnes.get_secret_value()
+            or self.deepseek_api_key.get_secret_value()
+            or self.qwen1_api_key.get_secret_value()
+        )
 
     @property
     def embedding_configured(self) -> bool:

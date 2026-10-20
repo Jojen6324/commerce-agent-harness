@@ -99,6 +99,14 @@
 
 允许必要补问与条件性答复等替代结果。不是每个政策问题都必须先检索，也不是每个复杂任务都必须调用子Agent。
 
+## Policy 与 Faithfulness 质量指标
+
+每个任务轮次的结果会附带 `policy_quality` 和 `faithfulness_quality`，汇总也会按总体、来源家族、场景、数据来源文件和冻结分组报告。
+
+- Policy证据质量按适用的 `evidence` 检查逐项计分。某检查的允许来源是“任选其一”时，答案引用其中一个文档族且对应chunk真实存在于fixture索引即通过；同时记录全部引用的索引完整性。指标 `evidence_check_coverage` 衡量证据来源覆盖，不单独宣称引用内容已语义支持答案。14条人工补入的政策推理样本没有显式来源断言，标为 `not_scored` 并单独计数，不算进证据覆盖分母；其语义判断仍由 Faithfulness 裁定和既有语义审阅状态分别呈现。
+- Faithfulness复用生产请求中已运行的Faithfulness Agent/Checker裁定，保存通过/失败/证据不足、问题和证据引用，不再额外请求裁判模型，也不改变Harness成本或回答路径。每份报告分别列出 `unavailable` 和 `not_run`；它们不会被当作通过，也不会加入已得到裁定的通过率分母。
+- A与B使用同一Faithfulness配置。B的135条任务均可按上述字段汇总；A/B配对差异只统计共同的66条任务。分组清单中的31条Holdout仍不执行。
+
 ## 状态及补充语义审阅
 
 报告将以下状态分开：
@@ -119,6 +127,9 @@
 .venv/bin/python -m eval.runner --task behavior --limit 10
 .venv/bin/python -m eval.runner --task behavior --split development --full
 
+# 按冻结名单运行新 A/B 方案：A 运行66条配对任务；B运行全部135条开发任务；自动排除31条Holdout
+.venv/bin/python -m eval.agent_ab --llm --provider agnes --monitor
+
 # 只有显式选择才会运行保留集；别用其得分反复调参
 .venv/bin/python -m eval.runner --task behavior --split holdout --full
 
@@ -138,3 +149,7 @@
 报告同时给出全语料原始/派生条数、任务会话数、多轮会话数、轮数、source家族数、分组数；按场景、集合、原始/派生和source_id家族展示结果。部分家族只跑了原问、尚未跑其派生任务时，标记家族不完整，不把派生条数叠加成“独立样本量”。
 
 本次默认是**确定性离线演示模式**，不消费AGNES请求，不能将其结果称为AGNES工具选择准确率。真实模型、人工审阅和保留集结果均须另外标明。结果见 [开发集运行报告](agent-tasks-development-results.md)；完整逐轮JSON保存在忽略的 `eval/reports/`。
+
+## Critic 兼容字段
+
+现有 `faithfulness_quality` 字段继续兼容，但新审核角色是 `critic`；`review_type=critic` 与 `evidence_checked` 区分是否读取依据，`facts_verified=false` 明确 pass 不代表全量事实核验。`revise` 在原质量状态接口中映射为 `failed`，业务验收与数据集评分不变。详细边界见 [Critic Agent](critic-agent.md)。此次实现未进行真实模型评测或前后比较。

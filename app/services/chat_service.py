@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from contextvars import ContextVar
 
@@ -11,6 +10,7 @@ from app.config.settings import Settings
 from app.core.exceptions import (
     GuardrailError,
     InvalidRequestError,
+    LLMOutputError,
     LLMProviderError,
     RateLimitError,
 )
@@ -28,7 +28,7 @@ from app.harness.evidence import confirmed_item_observations
 from app.harness.executor import ToolExecutor
 from app.harness.runner import AgentRunner, AgentSpec, active_run_id
 from app.harness.validation import AnswerValidator, FaithfulnessVerdict
-from app.prompts.faithfulness import FAITHFULNESS_AGENT_PROMPT
+from app.prompts.faithfulness import CRITIC_AGENT_PROMPT
 from app.providers.fake import OfflineLLMProvider
 from app.providers.json_parser import parse_model
 from app.repositories.runtime import RuntimeStore
@@ -157,7 +157,7 @@ class ChatService:
         token = current_budget.set(budget)
         run_id = new_id("run_")
         active_root_token = active_run_id.set(run_id)
-        validation_state = {"context": context, "facts": facts, "root_run_id": run_id}
+        validation_state = {"context": context, "history": history[-4:], "root_run_id": run_id}
         validation_token = validation_runtime_context.set(validation_state)
         run_events = []
         result = {}
@@ -736,75 +736,55 @@ class ChatService:
         if not root_run_id:
             raise LLMProviderError("faithfulness root run is unavailable", retryable=False)
 
-        observed_results = []
+        # Keep the callable name for existing integrations. Critic gets an index
+        # of server-owned observations, never Main-generated evidence or a new
+        # all-evidence artifact. Existing owner/session-scoped reads remain the
+        # only route to the source content.
+        evidence_index = []
         for observation in observations:
+            name = observation.get("name")
+            if not name or name == "ask_user":
+                continue
             output = observation.get("output", {})
             data = output.get("output", output)
-            observed_results.append(
+            passages = data.get("chunks", data.get("evidence", []))
+            refs = {name, observation.get("call_id", "")}
+            refs.update(p.get("chunk_id", "") for p in passages if isinstance(p, dict))
+            ref = observation.get("artifact_ref") or output.get("artifact_ref")
+            sources = [
+                "/".join(str(p.get(k, "")) for k in ("title", "section")).strip("/")[:120]
+                for p in passages[:3]
+                if isinstance(p, dict)
+            ]
+            evidence_index.append(
                 {
-                    "name": observation.get("name"),
-                    "arguments": observation.get("arguments", {}),
-                    "call_id": observation.get("call_id"),
-                    "success": output.get("success", True),
-                    "artifact_ref": observation.get("artifact_ref") or output.get("artifact_ref"),
-                    "result": {
-                        key: value
-                        for key, value in data.items()
-                        if key not in ("chunks", "answer", "summary", "validation")
-                    },
+                    "refs": sorted(r for r in refs if r and r in known_refs),
+                    "source": (name + (": " + "; ".join(sources) if any(sources) else ""))[:400],
+                    "artifact_ref": ref,
                 }
             )
-        evidence_input = {
+        allowed_artifacts = frozenset(
+            item["artifact_ref"] for item in evidence_index if item["artifact_ref"]
+        )
+        history = runtime.get("history", [])
+        background = [{"role": m.role, "content": m.content[:600]} for m in history[-4:]]
+        if not background:
+            background = [
+                {"role": "user", "content": message[:600]}
+                for message in context.user_messages[-4:-1]
+            ]
+        review_input = {
             "original_user_question": query,
+            "necessary_conversation_context": background,
             "candidate_answer": answer,
-            "raw_observations": observed_results,
-            "business_tool_results": tool_facts,
-            "policy_evidence": [chunk.model_dump(mode="json") for chunk in chunks],
-            "trusted_session_facts": runtime.get("facts", {}),
-            "available_tools": tool_contracts,
-            "allowed_evidence_refs": sorted(ref for ref in known_refs if ref),
+            "evidence_index": evidence_index,
         }
-        if len(json.dumps(evidence_input, ensure_ascii=False, default=str)) > 12_000:
-            full_input_ref = await self.store.put(
-                {"kind": "faithfulness_input", **evidence_input}, context
-            )
-
-            def compact(value):
-                if isinstance(value, str):
-                    return value if len(value) <= 800 else value[:800] + "…"
-                if isinstance(value, list):
-                    return [compact(item) for item in value[:20]]
-                if isinstance(value, dict):
-                    return {key: compact(item) for key, item in list(value.items())[:40]}
-                return value
-
-            evidence_input = {
-                "original_user_question": query,
-                "candidate_answer": answer,
-                "raw_observations": [
-                    {key: value for key, value in observation.items() if key != "result"}
-                    for observation in observed_results
-                ],
-                "business_tool_results": compact(tool_facts),
-                "policy_evidence": [
-                    {
-                        **chunk.model_dump(mode="json", exclude={"content"}),
-                        "content_excerpt": chunk.content[:1000],
-                    }
-                    for chunk in chunks[:6]
-                ],
-                "omitted_policy_evidence_refs": [chunk.chunk_id for chunk in chunks[6:]],
-                "trusted_session_facts": compact(runtime.get("facts", {})),
-                "available_tools": compact(tool_contracts),
-                "allowed_evidence_refs": sorted(ref for ref in known_refs if ref),
-                "full_evidence_artifact_ref": full_input_ref,
-                "full_evidence_required_for_complete_review": True,
-            }
         spec = AgentSpec(
-            "faithfulness",
+            "critic",
             frozenset({"read_artifact"}),
-            prompt=FAITHFULNESS_AGENT_PROMPT,
-            max_steps=3,
+            prompt=CRITIC_AGENT_PROMPT,
+            max_steps=3,  # one optional read, verdict, at most one schema retry
+            artifact_refs=allowed_artifacts,
         )
         emit = delegation_event_sink.get()
         parent_token = None
@@ -812,27 +792,105 @@ class ChatService:
             parent_token = active_run_id.set(root_run_id)
         try:
             child = await self.runner.run(
-                "只审核 faithfulness_input 中的候选答复，并输出规定的 JSON 裁定。",
+                "审核 critic_input 中的候选答复，按需读取一次现有材料，输出裁定 JSON。",
                 context,
                 spec,
-                initial_context={"faithfulness_input": evidence_input},
+                initial_context={"critic_input": review_input},
                 emit=emit,
             )
             if child.get("status") != "completed":
                 failure = child.get("failure") or {}
+                if child.get("status") == "budget_exhausted":
+                    raise BudgetExceeded(failure.get("reason", "critic_budget_exhausted"))
+                if failure.get("code") == "LLM_OUTPUT_INVALID":
+                    raise LLMOutputError(failure.get("reason", "critic verdict invalid"))
                 raise LLMProviderError(
-                    failure.get("reason", "faithfulness agent did not complete"),
+                    failure.get("reason", "critic agent did not complete"),
                     retryable=failure.get("retryable", True),
                 )
             verdict = parse_model(child.get("answer", ""), FaithfulnessVerdict)
+            reads = [o for o in child.get("observations", []) if o.get("name") == "read_artifact"]
+
+            def complete_material(value):
+                if isinstance(value, list):
+                    return all(complete_material(item) for item in value)
+                if not isinstance(value, dict):
+                    return True
+                if (
+                    value.get("success") is False
+                    or value.get("facts_complete") is False
+                    or value.get("evidence_complete") is False
+                    or value.get("truncated") is True
+                    or ("chunk_id" in value and not value.get("content"))
+                    or ("content_excerpt" in value and not value.get("content"))
+                    or value.get("status") == "read_failed"
+                ):
+                    return False
+                return all(complete_material(item) for item in value.values())
+
+            evidence_checked = False
+            if reads:
+                read = reads[0]
+                output = read.get("output", {})
+                data = output.get("output", output)
+                if not isinstance(data, dict):
+                    data = {}
+                material = {
+                    k: v
+                    for k, v in data.items()
+                    if k
+                    not in (
+                        "artifact_ref",
+                        "summary",
+                        "notice",
+                        "success",
+                        "evidence_refs",
+                        "facts_complete",
+                        "evidence_complete",
+                        "missing_fields",
+                        "kind",
+                    )
+                    and not (k == "status" and v in ("complete", "completed"))
+                    and v not in (None, "", [], {})
+                }
+                evidence_checked = (
+                    len(reads) == 1
+                    and read.get("arguments", {}).get("ref") in allowed_artifacts
+                    and bool(material)
+                    and complete_material(output)
+                )
+                if not evidence_checked:
+                    verdict = FaithfulnessVerdict(
+                        verdict="insufficient_evidence",
+                        issues=["本次所需材料读取失败、不完整或缺少可核验内容，关键疑点尚未核实。"],
+                        correction_guidance="保留不确定性，补问缺少的信息或使用现有失败路径；不得猜测事实。",
+                    )
+            if verdict.verdict == "fail":
+                verdict = verdict.model_copy(update={"verdict": "revise"})
+            if verdict.verdict == "pass" and (verdict.issues or verdict.correction_guidance):
+                verdict = verdict.model_copy(update={"verdict": "revise"})
+            verdict = verdict.model_copy(
+                update={
+                    "evidence_checked": evidence_checked,
+                    # Unread known index entries cannot certify facts. Preserve
+                    # unknown refs so the existing deterministic check rejects
+                    # a fabricated source instead of silently accepting it.
+                    "evidence_refs": verdict.evidence_refs
+                    if evidence_checked
+                    else [ref for ref in verdict.evidence_refs if ref not in known_refs],
+                }
+            )
             verdict_event = {
                 "event": "faithfulness_verdict",
                 "run_id": child.get("run_id"),
                 "parent_run_id": root_run_id,
                 "trace_id": context.trace_id,
                 "session_id": context.session_id,
-                "agent": "faithfulness",
+                "agent": "critic",
                 "verdict": verdict.verdict,
+                "review_type": "critic",
+                "evidence_checked": verdict.evidence_checked,
+                "facts_verified": False,
                 "issues": verdict.issues,
                 "evidence_refs": verdict.evidence_refs,
             }
@@ -859,8 +917,8 @@ class ChatService:
                     "parent_run_id": root_run_id,
                     "trace_id": context.trace_id,
                     "session_id": context.session_id,
-                    "agent": "faithfulness",
-                    "reason": type(exc).__name__,
+                    "agent": "critic",
+                    "reason": getattr(exc, "message", str(exc)) or type(exc).__name__,
                 }
                 child.setdefault("events", []).append(error_event)
                 if emit:

@@ -46,6 +46,10 @@
     "b_only": "Run B only. These tasks do not require policy retrieval for their accepted outcome; Orders Agent remains optional.",
     "holdout": "Keep the original 21 + 10 Holdout tasks listed for provenance only; do not run them or use them to adjust this partition."
   },
+  "quality_metrics": {
+    "policy": "For each applicable checks[].kind == evidence assertion, count a hit when at least one expected document family is cited by a chunk that resolves to the fixture index. Record check-level coverage and citation integrity. Manual policy-reasoning additions without explicit evidence checks remain separately marked not_scored and are excluded from the evidence-coverage denominator.",
+    "faithfulness": "Record the production Faithfulness Agent/Checker verdict from response events or validation diagnostics, including issues and evidence references. Do not add a second judge call. Keep pass, fail, insufficient_evidence, unavailable, and not_run distinct; unavailable and not_run are not passes and are excluded from the judged-turn pass-rate denominator."
+  },
   "summary": {
     "total_records": 166,
     "development_tasks": 135,

@@ -9,7 +9,7 @@ from app.config.settings import Settings
 from app.harness.completion import policy_evidence_issue, repair_guidance
 from app.harness.delegation_policy import DelegationPolicy
 from app.harness.evidence import confirmed_item_observations
-from app.harness.requirements import request_requirements
+from app.harness.requirements import explicitly_requests_human_handoff, request_requirements
 from app.harness.runner import AgentRunner, AgentSpec
 from app.providers.base import LLMResponse
 from app.repositories.models import ActionRow, OrderRow
@@ -29,7 +29,9 @@ from app.tools.base import ToolContext
         ("ORD778899有裂纹是否不能售后", True),
         ("ORD778899快递延误能不能认定丢件并赔钱", True),
         ("ORD778899使用礼品卡的规则是什么", True),
+        ("满59是不是包邮", True),
         ("ORD778899能开票吗", True),
+        ("ORD778899是不是已签收", False),
         ("ORD778899是否签收了", False),
         ("ORD778899退款进度如何", False),
         ("ORD778899退款进度如何，审核通过后多久原路到账", True),
@@ -68,6 +70,22 @@ def test_consultation_and_explicit_proposal_requests_have_different_boundaries(
     needs = request_requirements(query)
     assert needs.action_requested is action
     assert needs.proposals_forbidden is forbidden
+
+
+@pytest.mark.parametrize(
+    "message,expected",
+    [
+        ("是ORD10002，不过我没提供税号", False),
+        ("能不能转人工？", False),
+        ("我想知道有没有人工客服", False),
+        ("我不要转人工，只想了解开票资料", False),
+        ("请帮我转人工", True),
+        ("请安排值班经理介入", True),
+        ("能不能转人工？如果可以，请帮我联系人工", True),
+    ],
+)
+def test_human_ticket_requires_an_explicit_request(message, expected):
+    assert explicitly_requests_human_handoff(message) is expected
 
 
 def test_reusable_purchase_evidence_excludes_live_state_and_other_orders():

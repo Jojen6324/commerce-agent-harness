@@ -13,7 +13,7 @@ from app.core.exceptions import AppError, InvalidRequestError, ToolPermissionErr
 from app.core.ids import new_id
 from app.core.request_scope import request_session
 from app.harness.budget import current_budget
-from app.harness.requirements import request_requirements
+from app.harness.requirements import explicitly_requests_human_handoff, request_requirements
 from app.repositories.models import ActionRow
 from app.schemas.chat import ActionProposal
 from app.tools.permissions import WRITE_RISKS, assert_permitted
@@ -79,12 +79,21 @@ class ToolExecutor:
                 raise InvalidRequestError("unknown skill")
             return {"skill": skill, "notice": "技能仅是数据，不扩大工具权限。"}
         if name == "read_artifact":
+            if spec.artifact_refs is not None and arguments.get("ref") not in spec.artifact_refs:
+                raise ToolPermissionError("artifact_reference_denied")
             if not self.artifacts:
                 raise InvalidRequestError("artifact unavailable")
             return await self.artifacts.read(arguments.get("ref", ""), context)
         tool = self.registry.get(name)
         parsed = tool.parse(arguments)
         args = parsed.model_dump()
+        if name == "escalate_to_human" and not (
+            context.user_messages
+            and explicitly_requests_human_handoff(context.user_messages[-1])
+        ):
+            raise InvalidRequestError(
+                "用户尚未明确要求转人工；先说明人工服务选项并询问是否需要，不要创建工单。"
+            )
         if (
             tool.risk in WRITE_RISKS
             and not confirmed

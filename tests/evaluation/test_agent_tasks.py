@@ -9,7 +9,7 @@ from app.config.settings import Settings
 from app.providers.base import LLMResponse
 from app.repositories.db import create_engine, create_session_factory, init_schema
 from app.services.container import build_container
-from eval.behavior import corpus_summary, evaluate
+from eval.behavior import corpus_summary, evaluate, quality_summary, summarize
 from eval.task_fixtures import BUSINESS_MODELS, install_fixture, snapshot
 from eval.task_grading import grade_turn
 from eval.task_review import apply_reviews, corpus_digest, render_catalog, response_digest
@@ -120,6 +120,147 @@ def test_fake_proposal_and_fake_citation_never_pass():
     }
     result = grade_turn(turn, body, 200, [], state, state, {}, [], {"ORD10003"})
     assert len(result["failures"]) == 2
+    assert result["policy_quality"]["citation_integrity"] == "failed"
+
+
+def test_policy_quality_records_expected_evidence_coverage_and_citation_integrity():
+    turn = Turn(
+        message="退货规则是什么",
+        expected_outcome="引用适用退货规则",
+        checks=[
+            Check(
+                kind="evidence",
+                value=["return_policy", "return_custom"],
+                note="需要可核验的政策证据",
+            )
+        ],
+    )
+    body = {
+        "answer": "可依据定制商品规则申请售后。",
+        "citations": [{"document_id": "return_custom_abc123", "chunk_id": "chunk-1"}],
+    }
+    result = grade_turn(
+        turn,
+        body,
+        200,
+        [],
+        empty_snapshot(),
+        empty_snapshot(),
+        {"chunk-1": {"document_id": "return_custom_abc123"}},
+        [],
+    )
+    quality = result["policy_quality"]
+    assert quality["status"] == "passed"
+    assert quality["evidence_check_count"] == 1
+    assert quality["evidence_checks_passed"] == 1
+    assert quality["evidence_checks"][0]["matched"] == ["return_custom"]
+
+    missing = grade_turn(
+        turn,
+        {"answer": "可以退货。", "citations": []},
+        200,
+        [],
+        empty_snapshot(),
+        empty_snapshot(),
+        {},
+        [],
+    )
+    assert missing["policy_quality"]["status"] == "failed"
+    assert missing["policy_quality"]["evidence_checks_passed"] == 0
+
+    manual = Turn(
+        message="保修范围是什么",
+        expected_outcome="基于适用条件解释",
+        checks=[],
+    )
+    not_scored = grade_turn(
+        manual,
+        {"answer": "需要先确认商品品类。"},
+        200,
+        [],
+        empty_snapshot(),
+        empty_snapshot(),
+        {},
+        [],
+        policy_required=True,
+    )
+    assert not_scored["policy_quality"]["status"] == "not_scored"
+    assert (
+        not_scored["policy_quality"]["reason"]
+        == "policy_required_without_explicit_evidence_assertion"
+    )
+
+
+def test_faithfulness_quality_reads_production_verdict_and_keeps_unjudged_separate():
+    from eval.task_grading import faithfulness_quality
+
+    passed = faithfulness_quality(
+        {
+            "events": [
+                {
+                    "event": "faithfulness_verdict",
+                    "verdict": "pass",
+                    "issues": [],
+                    "evidence_refs": ["return_policy_abc123"],
+                }
+            ]
+        }
+    )
+    assert passed == {
+        "status": "passed",
+        "source": "production_faithfulness_agent",
+        "issues": [],
+        "evidence_refs": ["return_policy_abc123"],
+    }
+    assert faithfulness_quality({})["status"] == "not_run"
+    assert (
+        faithfulness_quality(
+            {"diagnostics": {"validation": {"status": "unavailable", "attempts": []}}}
+        )["status"]
+        == "unavailable"
+    )
+
+
+def test_quality_rollup_reports_denominators_and_excludes_unjudged_turns():
+    rows = [
+        {
+            "id": "policy-task",
+            "source_id": "source-1",
+            "scenario": "policy",
+            "variant": "original",
+            "split": "development",
+            "split_group": "g1",
+            "partition_group": "ab_comparison",
+            "partition_basis": "explicit_evidence_check",
+            "source_file": "eval/dataset/agent_tasks.jsonl",
+            "task_status": "passed",
+            "deterministic_status": "passed",
+            "turns": [
+                {
+                    "policy_quality": {
+                        "status": "passed",
+                        "evidence_checks": [{"passed": True}],
+                    },
+                    "faithfulness_quality": {"status": "passed"},
+                },
+                {
+                    "policy_quality": {"status": "not_applicable", "evidence_checks": []},
+                    "faithfulness_quality": {"status": "not_run"},
+                },
+            ],
+        }
+    ]
+    quality = quality_summary(rows)
+    assert quality["policy"]["evidence_check_count"] == 1
+    assert quality["policy"]["evidence_check_coverage"] == 1.0
+    assert quality["faithfulness"]["judged_turns"] == 1
+    assert quality["faithfulness"]["pass_rate_among_judged"] == 1.0
+    assert quality["faithfulness"]["not_run"] == 1
+
+    report = summarize(rows)
+    assert report["overall"]["quality"] == quality
+    assert report["by_partition_group"]["ab_comparison"]["n"] == 1
+    assert report["by_source_file"]["eval/dataset/agent_tasks.jsonl"]["n"] == 1
 
 
 @pytest.mark.asyncio
@@ -393,3 +534,94 @@ def test_handoff_requires_a_real_result_or_an_honest_capability_boundary():
         task.turns[0], {"answer": "已进入人工队列，尚未接通。"}, 200, [call], state, state, {}, []
     )
     assert not real["failures"]
+
+
+def test_critic_quality_keeps_legacy_interface_without_claiming_fact_verification():
+    from eval.task_grading import faithfulness_quality
+
+    for verdict, expected in [("pass", "passed"), ("revise", "failed")]:
+        result = faithfulness_quality(
+            {
+                "events": [
+                    {
+                        "event": "faithfulness_verdict",
+                        "agent": "critic",
+                        "review_type": "critic",
+                        "verdict": verdict,
+                        "evidence_checked": False,
+                    }
+                ]
+            }
+        )
+        assert result["status"] == expected
+        assert result["source"] == "production_critic_agent"
+        assert result["review_type"] == "critic"
+        assert result["facts_verified"] is False
+        assert result["evidence_checked"] is False
+
+
+def test_failed_critic_recheck_is_not_reported_as_previous_verdict():
+    from eval.task_grading import faithfulness_quality
+
+    result = faithfulness_quality(
+        {
+            "events": [
+                {"event": "faithfulness_verdict", "review_type": "critic", "verdict": "revise"}
+            ],
+            "diagnostics": {"validation": {"status": "unavailable", "review_type": "critic"}},
+        }
+    )
+    assert result["status"] == "unavailable"
+    assert result["facts_verified"] is False
+
+
+def test_deterministic_output_rejection_is_not_misattributed_to_critic():
+    from eval.task_grading import faithfulness_quality
+
+    result = faithfulness_quality(
+        {
+            "diagnostics": {
+                "validation": {
+                    "status": "rejected",
+                    "attempts": [
+                        {
+                            "stage": "deterministic",
+                            "reason": "unknown_citation_or_action_claim",
+                        }
+                    ],
+                }
+            }
+        }
+    )
+    assert result["status"] == "not_run"
+    assert result["source"] == "deterministic_output_gate"
+    assert result["deterministic_gate_status"] == "rejected"
+
+
+def test_nonstreaming_critic_diagnostics_preserve_latest_issues():
+    from eval.task_grading import faithfulness_quality
+
+    result = faithfulness_quality(
+        {
+            "diagnostics": {
+                "validation": {
+                    "review_type": "critic",
+                    "status": "revise",
+                    "evidence_checked": True,
+                    "attempts": [
+                        {
+                            "stage": "critic",
+                            "verdict": {
+                                "verdict": "revise",
+                                "issues": ["当前答复遗漏第二问"],
+                                "evidence_refs": ["get_order"],
+                            },
+                        }
+                    ],
+                }
+            }
+        }
+    )
+    assert result["status"] == "failed"
+    assert result["issues"] == ["当前答复遗漏第二问"]
+    assert result["evidence_checked"] is True and result["facts_verified"] is False

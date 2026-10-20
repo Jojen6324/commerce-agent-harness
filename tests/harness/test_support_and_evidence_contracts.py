@@ -101,15 +101,22 @@ async def test_durable_support_inbox_permissions_dedup_claim_and_resolve(tmp_pat
     try:
         model = SimpleNamespace(
             generate=AsyncMock(
-                return_value=native("escalate_to_human", {"reason": "用户要求人工审核退款"})
+                side_effect=[
+                    native("escalate_to_human", {"reason": "用户要求人工审核退款"}),
+                    LLMResponse(
+                        '{"verdict":"pass","issues":[],"evidence_refs":[],'
+                        '"correction_guidance":"","evidence_checked":false}'
+                    ),
+                    native("escalate_to_human", {"reason": "用户要求人工审核退款"}),
+                    LLMResponse(
+                        '{"verdict":"pass","issues":[],"evidence_refs":[],'
+                        '"correction_guidance":"","evidence_checked":false}'
+                    ),
+                ]
             )
         )
         c.chat_service.runner.llm = model
-        c.chat_service.validator.llm = SimpleNamespace(
-            generate=AsyncMock(
-                side_effect=AssertionError("database receipt must not require another model call")
-            )
-        )
+        c.chat_service.validator.llm = model
         app = create_app(settings)
         app.state.container = c
         async with httpx.AsyncClient(
@@ -121,6 +128,7 @@ async def test_durable_support_inbox_permissions_dedup_claim_and_resolve(tmp_pat
             assert created.status_code == 200
             body = created.json()
             assert "待人工受理" in body["answer"] and "尚未接通" in body["answer"]
+            assert body["diagnostics"]["validation"]["review_type"] == "critic"
             assert body["pending_action"] is None
             async with c.session_factory() as db:
                 tickets = list((await db.scalars(select(SupportTicketRow))).all())

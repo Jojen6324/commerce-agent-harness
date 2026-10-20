@@ -18,12 +18,30 @@ POLICY_TOPIC = re.compile(
 POLICY_QUESTION = re.compile(
     r"规则|政策|规定|时效|条件|流程|怎么|怎样|如何|哪里|哪儿|地址|寄哪|"
     r"什么时候|何时|几点|多久|几天|多少(?:元|钱|天|小时|工作日|费用|年|个月)|"
+    r"(?:是不是|是否|算不算).{0,8}(?:包邮|免运费|运费|无理由|保修|质保|优惠券|退款|退货|换货|赔偿|赔付|发票|开票)|"
     r"能否|能不能|可不可以|可否|能退|退吗|允许|起算|从哪|区别|建议|考虑|资格|期限|"
     r"还能.{0,8}取消|可以.{0,8}(?:退|取消|保修|寄回)|"
     r"(?:能|可以|是否).{0,8}(?:抵|免|使用|退|换|取消|申请|保修|叠加|售后|开票|赔)|"
     r"(?:能否|能不能|是不是能|是否能).{0,8}(?:确定|判断|推出|说明)|"
     r"(?:属于|算不算|是否是).{0,8}质量问题|"
     r"谁(?:来)?承担|由谁|谁出|费用|运费|无理由|补差价"
+)
+_HUMAN_REQUEST_ACTION = re.compile(
+    r"(?:"
+    r"请(?:帮我|为我|替我)?(?:现在|马上|立即|直接)?"
+    r"(?:转人工|转接人工|接通人工|联系人工|找人工|安排.{0,4}(?:人工|真人|值班经理)|人工审核)"
+    r"|"
+    r"(?:帮我|替我|为我|给我|我要|我需要|我想找|我想要|安排|联系|转接|接通|直接|现在|马上|立即)"
+    r".{0,4}(?:转人工|人工客服|人工服务|人工坐席|真人客服|真人坐席|人工处理|人工介入|人工审核|值班经理|真人)"
+    r")"
+)
+_HUMAN_REQUEST_NEGATION = re.compile(
+    r"(?:不要|别|不用|不需要|无需|不必|暂不).{0,8}"
+    r"(?:转人工|人工客服|人工服务|人工坐席|真人客服|人工处理|人工介入|人工审核)"
+)
+_HUMAN_REQUEST_QUESTION = re.compile(
+    r"(?:怎么|如何|怎样|哪里|哪儿|有没有|是否|能不能|可不可以|能否).{0,12}"
+    r"(?:转人工|人工客服|人工服务|真人客服|人工处理|人工介入)"
 )
 
 
@@ -34,6 +52,17 @@ def _negated_at(text, start):
             text[max(0, start - 12) : start],
         )
     )
+
+
+def explicitly_requests_human_handoff(message: str) -> bool:
+    """Only authorize a persistent human-service ticket on an explicit ask."""
+    clauses = re.split(r"[，,。；;！？!?\n]", message)
+    for clause in clauses:
+        if _HUMAN_REQUEST_NEGATION.search(clause) or _HUMAN_REQUEST_QUESTION.search(clause):
+            continue
+        if _HUMAN_REQUEST_ACTION.search(clause):
+            return True
+    return False
 
 
 @dataclass(frozen=True)

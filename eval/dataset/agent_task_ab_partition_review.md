@@ -10,6 +10,11 @@
 
 A/B 集合中A为单 Main Agent，B在需要政策检索时强制委派Policy Agent；Orders Agent由Main自主选择。Faithfulness设置在两组保持一致。B-only只运行B。所有开发任务未来都进入B；仅A/B集合进入配对差异分析。
 
+## Policy 与 Faithfulness 质量记录
+
+Policy证据质量按显式 `evidence` 验收逐条统计：引用须命中该项允许的文档族，且chunk必须解析到fixture索引；报告证据覆盖率和引用完整性。14条人工补入的政策推理样本没有显式来源断言，会单独标记为 `not_scored`，不混入证据覆盖率分母。
+Faithfulness直接记录生产Harness已有的Faithfulness Agent/Checker裁定、问题及证据引用，不额外调用裁判模型。通过、失败、证据不足、校验不可用和未触发分别统计；不可用/未触发不会计作通过或纳入已裁定通过率分母。A/B配置相同。
+
 ## 数量
 
 | 项目 | 数量 |

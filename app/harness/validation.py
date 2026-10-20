@@ -19,12 +19,19 @@ from app.schemas.retrieval import RetrievedChunk
 
 
 class FaithfulnessVerdict(BaseModel):
+    """Compatibility name for the Critic's compact review verdict.
+
+    Legacy callers may still send ``fail``; new Critic runs use ``revise``.
+    A pass is not a certificate of factual grounding.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
-    verdict: Literal["pass", "fail", "insufficient_evidence"]
+    verdict: Literal["pass", "revise", "fail", "insufficient_evidence"]
     issues: list[str] = Field(default_factory=list, max_length=20)
     evidence_refs: list[str] = Field(default_factory=list, max_length=30)
     correction_guidance: str = Field(default="", max_length=1200)
+    evidence_checked: bool = False
 
 
 Verifier = Callable[..., Awaitable[FaithfulnessVerdict]]
@@ -86,7 +93,11 @@ class AnswerValidator:
         grounded_observations = [
             observation for observation in observations if observation.get("name") != "ask_user"
         ]
-        if result["status"] == "needs_input" and not grounded_observations:
+        if (
+            result["status"] == "needs_input"
+            and not grounded_observations
+            and self.verifier is None
+        ):
             return result
         chunks = {}
         tool_facts = []
@@ -117,6 +128,8 @@ class AnswerValidator:
             set(chunks)
             | {o["name"] for o in observations}
             | {o.get("call_id", "") for o in observations}
+            | {o.get("artifact_ref", "") for o in observations}
+            | {o.get("output", {}).get("artifact_ref", "") for o in observations}
         )
         cited = cited_refs(answer)
         unknown = cited - known_refs
@@ -154,20 +167,22 @@ class AnswerValidator:
                 pending_completion_claim=bool(pending and completion_claim),
             )
         provider = getattr(self.llm, "provider", self.llm)
-        if any(
+        if self.verifier is None and any(
             o["output"].get("success") and support_receipt(o["output"].get("output", {})) == answer
             for o in observations
         ):
             # Exact server-rendered database receipt, no free-form claims. The
-            # dispatch has already committed it; another LLM cannot add assurance.
+            # dispatch has already committed it. Legacy callers without Critic
+            # keep this fast path; configured Critic reviews every delivered answer.
             return result
         if not observations:
             if completion_claim:
                 return reject(
                     "unverified_action_completion", "尚未执行或核实业务操作，无法确认已完成。"
                 )
-            return result
-        if answer in verified and len(observations) == 1:
+            if self.verifier is None:
+                return result
+        if answer in verified and len(observations) == 1 and self.verifier is None:
             return result
         if isinstance(provider, OfflineLLMProvider):
             return result
@@ -186,7 +201,15 @@ class AnswerValidator:
         audit: list[dict] = []
 
         def finish(value: dict, verdict_status: str) -> dict:
-            validation = {"status": verdict_status, "attempts": audit}
+            validation: dict = {"status": verdict_status, "attempts": audit}
+            if self.verifier is not None:
+                validation.update(
+                    review_type="critic",
+                    evidence_checked=bool(
+                        audit and audit[-1].get("verdict", {}).get("evidence_checked")
+                    ),
+                    facts_verified=False,
+                )
             value = {**value, "validation": validation}
             value["events"] = [
                 *value.get("events", []),
@@ -217,7 +240,7 @@ class AnswerValidator:
                 return finish(
                     {
                         **result,
-                        "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请稍后重试。",
+                        "answer": "答复审核暂不可用，本轮未发送候选答复。请稍后重试。",
                         "status": "failed",
                         "failure": failure,
                     },
@@ -235,21 +258,9 @@ class AnswerValidator:
                         "correction_guidance": "仅使用输入中可验证的证据引用重新核对；不得编造来源。",
                     }
                 )
-            elif (
-                verdict.verdict == "pass"
-                and any(o.get("name") != "ask_user" for o in observations)
-                and not verdict.evidence_refs
-            ):
-                verdict = verdict.model_copy(
-                    update={
-                        "verdict": "fail",
-                        "issues": [*verdict.issues, "missing_evidence_references"],
-                        "correction_guidance": "给每项事实标注输入中真实存在的 chunk_id、工具名或调用引用。",
-                    }
-                )
             audit.append(
                 {
-                    "stage": "faithfulness_agent",
+                    "stage": "critic",
                     "candidate_sha256": hashlib.sha256(answer.encode()).hexdigest(),
                     "verdict": verdict.model_dump(mode="json"),
                     "unknown_references": sorted(invalid_refs),
@@ -269,7 +280,7 @@ class AnswerValidator:
             safe_answer = (
                 "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。"
                 if verdict.verdict == "insufficient_evidence"
-                else "候选答复未通过证据校验，本轮未发送未核实内容。"
+                else "候选答复未通过审核，本轮未发送该答复。请补充信息或转人工。"
             )
             failure = {
                 "code": "ANSWER_VALIDATION_FAILED",

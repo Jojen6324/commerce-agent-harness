@@ -281,6 +281,10 @@ def build() -> tuple[dict, str]:
             "b_only": "Run B only. These tasks do not require policy retrieval for their accepted outcome; Orders Agent remains optional.",
             "holdout": "Keep the original 21 + 10 Holdout tasks listed for provenance only; do not run them or use them to adjust this partition.",
         },
+        "quality_metrics": {
+            "policy": "For each applicable checks[].kind == evidence assertion, count a hit when at least one expected document family is cited by a chunk that resolves to the fixture index. Record check-level coverage and citation integrity. Manual policy-reasoning additions without explicit evidence checks remain separately marked not_scored and are excluded from the evidence-coverage denominator.",
+            "faithfulness": "Record the production Faithfulness Agent/Checker verdict from response events or validation diagnostics, including issues and evidence references. Do not add a second judge call. Keep pass, fail, insufficient_evidence, unavailable, and not_run distinct; unavailable and not_run are not passes and are excluded from the judged-turn pass-rate denominator.",
+        },
         "summary": {
             "total_records": len(entries),
             "development_tasks": len(development),
@@ -311,6 +315,11 @@ def render_markdown(manifest: dict) -> str:
         "显式证据候选按源验收中的 `checks[].kind == evidence` 识别，共52条（23+29）。其余任务逐条依据用户消息、预期结果、关键事实、验收项、fixture和适用知识文档审查；不以场景名或数据集标签作为分组理由。",
         "",
         "A/B 集合中A为单 Main Agent，B在需要政策检索时强制委派Policy Agent；Orders Agent由Main自主选择。Faithfulness设置在两组保持一致。B-only只运行B。所有开发任务未来都进入B；仅A/B集合进入配对差异分析。",
+        "",
+        "## Policy 与 Faithfulness 质量记录",
+        "",
+        "Policy证据质量按显式 `evidence` 验收逐条统计：引用须命中该项允许的文档族，且chunk必须解析到fixture索引；报告证据覆盖率和引用完整性。14条人工补入的政策推理样本没有显式来源断言，会单独标记为 `not_scored`，不混入证据覆盖率分母。",
+        "Faithfulness直接记录生产Harness已有的Faithfulness Agent/Checker裁定、问题及证据引用，不额外调用裁判模型。通过、失败、证据不足、校验不可用和未触发分别统计；不可用/未触发不会计作通过或纳入已裁定通过率分母。A/B配置相同。",
         "",
         "## 数量",
         "",

@@ -65,6 +65,9 @@ class BusinessCases:
         case["proposals_forbidden"] = requirements.proposals_forbidden or (
             case.get("proposals_forbidden", False) and not requirements.action_requested
         )
+        case["operation_authorized"] = not case["proposals_forbidden"] and (
+            requirements.action_requested or case.get("operation_authorized", False)
+        )
         facts["active_case"] = case
         return facts
 
@@ -133,7 +136,11 @@ class BusinessCases:
                 case["missing_fields"] = out.get("missing_fields", [])
             if o.get("artifact_ref"):
                 refs.append(
-                    {"tool": name, "artifact_ref": o["artifact_ref"], "observed_at": time.time()}
+                    {
+                        "tool": name,
+                        "artifact_ref": o["artifact_ref"],
+                        "observed_at": o.get("observed_at", time.time()),
+                    }
                 )
         case["observations"] = refs[-12:]
         status = result.get("status")

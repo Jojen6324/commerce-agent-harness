@@ -326,7 +326,13 @@ async def test_externalized_specialist_result_keeps_summary_facts_and_evidence()
         "核对", context(), AgentSpec("main", frozenset(["delegate_task"]))
     )
     assert result["status"] == "completed"
-    message = json.loads(llm.generate.call_args_list[1].args[0][-1]["content"])
+    message = json.loads(
+        next(
+            m["content"]
+            for m in reversed(llm.generate.call_args_list[1].args[0])
+            if m["role"] == "tool"
+        )
+    )
     assert message["summary"] == output["summary"]
     assert message["facts"] == facts and message["evidence_refs"] == ["policy_01"]
     assert message["missing_fields"] == ["quality_proof"]

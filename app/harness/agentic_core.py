@@ -420,7 +420,7 @@ class BoundedRole:
                             raise
                         return result(text)
                     issue = completion_issue(
-                        text, main=spec.name == "main", observations=observations, query=query
+                        text, main=spec.name != "critic", observations=observations, query=query
                     )
                     issue = issue or policy_evidence_issue(
                         query, observations, requirements=requirements
@@ -553,6 +553,7 @@ class BoundedRole:
                         "arguments": args,
                         "call_id": call["id"],
                         "output": output,
+                        "observed_at": time.time(),
                     }
                     observations.append(observation)
                     ref = None
@@ -598,6 +599,8 @@ class BoundedRole:
                             "content": json.dumps(message_output, ensure_ascii=False),
                         }
                     )
+                    if name == "delegate_task":
+                        messages.append({"role": "system", "content": HANDOFF_GUIDANCE})
                     pending = output.get("pending_action")
                     if pending:
                         await event("needs_confirmation")

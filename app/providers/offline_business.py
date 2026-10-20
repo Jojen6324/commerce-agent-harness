@@ -37,7 +37,19 @@ def offline_decision(query, observations, history, *, spec=None):
                 break
     if any(w in query for w in ("订单", "物流", "取消", "退款申请", "退货申请")):
         if not order:
-            return [], "请提供要处理的订单号。"
+            return [
+                {
+                    "id": new_id("call_"),
+                    "type": "function",
+                    "function": {
+                        "name": "ask_user",
+                        "arguments": json.dumps(
+                            {"question": "请提供要处理的订单号。", "missing_fields": ["order_id"]},
+                            ensure_ascii=False,
+                        ),
+                    },
+                }
+            ], ""
         name = (
             "cancel_order"
             if "取消" in query

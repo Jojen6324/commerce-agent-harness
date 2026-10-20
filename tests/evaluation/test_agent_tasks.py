@@ -273,7 +273,25 @@ async def test_multiturn_refund_uses_api_and_commits_exactly_expected_changes():
             {
                 "generate": AsyncMock(
                     side_effect=[
-                        LLMResponse("请提供订单号和退款原因。"),
+                        LLMResponse(
+                            "",
+                            tool_calls=[
+                                {
+                                    "id": "clarify",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "ask_user",
+                                        "arguments": json.dumps(
+                                            {
+                                                "question": "请提供订单号和退款原因。",
+                                                "missing_fields": ["order_id", "reason"],
+                                            }
+                                        ),
+                                    },
+                                }
+                            ],
+                            finish_reason="tool_calls",
+                        ),
                         LLMResponse(
                             "",
                             tool_calls=[
@@ -322,7 +340,25 @@ async def test_wrong_proposal_is_not_confirmed_by_evaluator():
             {
                 "generate": AsyncMock(
                     side_effect=[
-                        LLMResponse("请提供订单号和原因"),
+                        LLMResponse(
+                            "",
+                            tool_calls=[
+                                {
+                                    "id": "clarify",
+                                    "type": "function",
+                                    "function": {
+                                        "name": "ask_user",
+                                        "arguments": json.dumps(
+                                            {
+                                                "question": "请提供订单号和原因",
+                                                "missing_fields": ["order_id", "reason"],
+                                            }
+                                        ),
+                                    },
+                                }
+                            ],
+                            finish_reason="tool_calls",
+                        ),
                         LLMResponse(
                             "",
                             tool_calls=[

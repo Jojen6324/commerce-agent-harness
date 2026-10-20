@@ -29,6 +29,16 @@ def completion_issue(answer: str, *, main=True, observations=(), query=""):
     if main and not handoff and (claimed_handoff or unfinished_offer):
         return "missing_handoff_receipt"
     requirements = request_requirements(query)
+    if (
+        main
+        and requirements.action_requested
+        and re.search(
+            r"(?:尚未|还未|缺少|未提供|没有提供|未说明).{0,24}(?:原因|订单号|SKU|信息|尺码)|"
+            r"请(?:先)?(?:补充|提供|说明|告知).{0,24}(?:原因|订单号|SKU|信息|尺码)",
+            answer,
+        )
+    ):
+        return "unstructured_clarification"
     unexecuted_action_claim = re.search(
         r"(?:正在(?:为您|帮您|为你|帮你)?(?:办理|处理)?|"
         r"(?:马上|这就|即将|我来|我将)(?:为您|帮您|为你|帮你)?(?:办理|处理)?)"
@@ -128,6 +138,7 @@ def policy_evidence_issue(query: str, observations=(), *, requirements=None):
 def repair_guidance(issue):
     """Only repair the observed defect; never imply unrelated write authority."""
     guidance = {
+        "unstructured_clarification": "缺少办理所需信息时，必须调用 ask_user 明确 missing_fields；把已核实的部分放入 answer。不能用普通文本补问后将任务标为 completed；不要丢失当前业务目标。",
         "empty_answer": "交付完整答案；简单问题可以直接回答，不必调用工具。",
         "unfinished_progress": "不要停留在稍后查询的承诺；现在查证并回答，缺少必要信息才补问。",
         "missing_handoff_receipt": "用户要求人工时，取得真实入队回执后再说明状态；无法入队则如实说明，不编造工单。",

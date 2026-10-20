@@ -1,0 +1,2446 @@
+{
+  "schema_version": 1,
+  "corpus_digest": "6e920aabcd793bb39eb225d4015fa968912645e111e6fa771865d8cf154e7844",
+  "mode": "real_model",
+  "provider": "agnes",
+  "delegation_enabled": true,
+  "delegation_policy": "auto",
+  "delegation_prompt_version": "business-agents-v1",
+  "arm": "business_debug_B",
+  "agent_context_limit_tokens": 32000,
+  "agent_total_budget_tokens": 128000,
+  "model": "agnes-3.0-flash",
+  "thinking": null,
+  "selected_split": "development",
+  "corpus": {
+    "original_count": 150,
+    "derived_count": 16,
+    "conversation_count": 166,
+    "multi_turn_conversation_count": 26,
+    "turn_count": 202,
+    "source_family_count": 150,
+    "split_group_count": 74,
+    "split_counts": {
+      "development": 135,
+      "holdout": 31
+    },
+    "scenario_counts": {
+      "simple_answer": 11,
+      "policy": 33,
+      "order_query": 4,
+      "clarification": 23,
+      "logistics": 1,
+      "approval": 2,
+      "product": 4,
+      "recommendation": 4,
+      "complaint": 3,
+      "handoff": 6,
+      "boundary": 11,
+      "inventory": 2,
+      "multi_turn": 22,
+      "cross_business": 5,
+      "multi_agent": 30,
+      "exception": 5
+    }
+  },
+  "selected": {
+    "original_count": 1,
+    "derived_count": 0,
+    "conversation_count": 1,
+    "multi_turn_conversation_count": 0,
+    "turn_count": 1,
+    "source_family_count": 1,
+    "split_group_count": 1,
+    "split_counts": {
+      "development": 1
+    },
+    "scenario_counts": {
+      "multi_agent": 1
+    }
+  },
+  "unrun_count": 165,
+  "grouping_method": "Independent benchmark task corpus with case-isolated fixtures.",
+  "scope": "Derived tasks and turns are correlated members of source families, not independent new samples. Semantic review is pending, never silently treated as passed.",
+  "quality_protocol": {
+    "policy": "For each applicable evidence check, score whether at least one expected document family is cited using a citation that resolves to the fixture index; report check-level coverage and invalid citations. Manually selected policy tasks without explicit evidence assertions remain marked for semantic review.",
+    "faithfulness": "Record the production Critic (or legacy Faithfulness) verdict, review_type and evidence_checked from diagnostics/events, with no additional judge call. Critic pass is not factual verification. Report not_run and unavailable separately; do not count them as passes."
+  },
+  "resources": {
+    "prompt_tokens": 17025,
+    "completion_tokens": 397,
+    "total_tokens": 17422,
+    "model_calls": 2,
+    "tool_calls": 3,
+    "wall_elapsed_ms": 15661.99,
+    "repeated_tool_requests": 0,
+    "budget_exhausted_turns": 0,
+    "false_completion_rejections": 0,
+    "latency_p50_ms": 15661.99,
+    "latency_p95_ms": 15661.99,
+    "by_role": {
+      "main": {
+        "model_calls": 2,
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422
+      }
+    },
+    "monetary_cost": null,
+    "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+  },
+  "monitoring": {
+    "enabled": true,
+    "event_count": 22,
+    "events": [
+      {
+        "at": "2026-10-20T11:39:48.068219+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": null,
+        "event": "task_started",
+        "scenario": "multi_agent",
+        "delegation_expected": null
+      },
+      {
+        "at": "2026-10-20T11:39:48.084316+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "turn_request"
+      },
+      {
+        "at": "2026-10-20T11:39:48.092448+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "turn_started"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754026+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "agent_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754098+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "budget_snapshot",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "context_limit_tokens": 32000,
+        "tool_calls_remaining": 14,
+        "model_calls_remaining_including_current": 32,
+        "tokens_remaining": 128000,
+        "steps_remaining_including_current": 12
+      },
+      {
+        "at": "2026-10-20T11:40:03.754120+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "context_prepared",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "compressed": false,
+        "context_tokens": 11312,
+        "context_limit_tokens": 32000
+      },
+      {
+        "at": "2026-10-20T11:40:03.754135+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "model_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "stage": "agent",
+        "step": 1
+      },
+      {
+        "at": "2026-10-20T11:40:03.754152+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "model_completed",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "elapsed_ms": 6104.699225001241,
+        "stage": "agent",
+        "step": 1,
+        "model": "agnes-3.0-flash",
+        "prompt_tokens": 7919,
+        "completion_tokens": 117,
+        "total_tokens": 8036
+      },
+      {
+        "at": "2026-10-20T11:40:03.754168+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "get_order_items",
+        "tool_call_id": "call_bfb3508818094b0397ba5b19"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754182+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_completed",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "get_order_items",
+        "tool_call_id": "call_bfb3508818094b0397ba5b19",
+        "elapsed_ms": 7.8737199983152095,
+        "error_code": null,
+        "status": "completed"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754195+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "track_shipment",
+        "tool_call_id": "call_10ee83d3af40415f90b2a49e"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754207+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_completed",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "track_shipment",
+        "tool_call_id": "call_10ee83d3af40415f90b2a49e",
+        "elapsed_ms": 3.91021500036004,
+        "error_code": null,
+        "status": "completed"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754220+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "search_knowledge",
+        "tool_call_id": "call_e869cccc64014e10bda87414"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754234+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "tool_completed",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "tool": "search_knowledge",
+        "tool_call_id": "call_e869cccc64014e10bda87414",
+        "elapsed_ms": 3555.8086710007046,
+        "error_code": null,
+        "status": "completed"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754249+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "budget_snapshot",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "context_limit_tokens": 32000,
+        "tool_calls_remaining": 11,
+        "model_calls_remaining_including_current": 31,
+        "tokens_remaining": 119964,
+        "steps_remaining_including_current": 11
+      },
+      {
+        "at": "2026-10-20T11:40:03.754263+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "context_prepared",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "compressed": false,
+        "context_tokens": 12585,
+        "context_limit_tokens": 32000
+      },
+      {
+        "at": "2026-10-20T11:40:03.754275+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "model_started",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "stage": "agent",
+        "step": 2
+      },
+      {
+        "at": "2026-10-20T11:40:03.754290+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "model_completed",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "elapsed_ms": 5918.576238000242,
+        "stage": "agent",
+        "step": 2,
+        "model": "agnes-3.0-flash",
+        "prompt_tokens": 9106,
+        "completion_tokens": 280,
+        "total_tokens": 9386
+      },
+      {
+        "at": "2026-10-20T11:40:03.754303+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "output_validation",
+        "agent": "main",
+        "parent_run_id": null,
+        "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+        "status": "passed"
+      },
+      {
+        "at": "2026-10-20T11:40:03.754441+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "turn_finished",
+        "http_status": 200,
+        "status": "completed",
+        "error_code": null,
+        "stream_error_type": null,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "wall_elapsed_ms": 15661.99,
+        "reserved_tokens_without_usage": 0,
+        "failure": null
+      },
+      {
+        "at": "2026-10-20T11:40:03.757594+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": 1,
+        "event": "delegation_evaluation",
+        "required_experts": [],
+        "completed_experts": [],
+        "delegate_calls": 0,
+        "required_experts_complete": false,
+        "budget_blocked": []
+      },
+      {
+        "at": "2026-10-20T11:40:03.758072+00:00",
+        "arm": "business_debug_B",
+        "delegation_enabled": true,
+        "delegation_policy": "auto",
+        "task_id": "collab_003",
+        "turn": null,
+        "event": "task_finished",
+        "status": "passed",
+        "delegation_expected": false,
+        "delegation_used": false,
+        "delegation_calls": 0,
+        "specialist_agents": [],
+        "delegation_status": "not_expected",
+        "required_experts": [],
+        "completed_experts": [],
+        "budget_blocked": [],
+        "real_delegate_calls": 0
+      }
+    ]
+  },
+  "overall": {
+    "n": 1,
+    "task_status": {
+      "passed": 1,
+      "failed": 0,
+      "review_required": 0,
+      "error": 0
+    },
+    "safety_violation_count": 0,
+    "deterministic_passed": 1,
+    "deterministic_failed": 0,
+    "quality": {
+      "policy": {
+        "turn_status_counts": {
+          "passed": 1
+        },
+        "evidence_check_count": 1,
+        "evidence_checks_passed": 1,
+        "evidence_check_coverage": 1.0,
+        "turns_with_explicit_evidence_checks": 1,
+        "policy_required_without_explicit_evidence_assertion": 0,
+        "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+      },
+      "faithfulness": {
+        "turn_status_counts": {
+          "passed": 1
+        },
+        "judged_turns": 1,
+        "passed": 1,
+        "pass_rate_among_judged": 1.0,
+        "unavailable": 0,
+        "not_run": 0,
+        "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+      }
+    },
+    "resources": {
+      "prompt_tokens": 17025,
+      "completion_tokens": 397,
+      "total_tokens": 17422,
+      "model_calls": 2,
+      "tool_calls": 3,
+      "wall_elapsed_ms": 15661.99,
+      "repeated_tool_requests": 0,
+      "budget_exhausted_turns": 0,
+      "false_completion_rejections": 0,
+      "latency_p50_ms": 15661.99,
+      "latency_p95_ms": 15661.99,
+      "by_role": {
+        "main": {
+          "model_calls": 2,
+          "prompt_tokens": 17025,
+          "completion_tokens": 397,
+          "total_tokens": 17422
+        }
+      },
+      "monetary_cost": null,
+      "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+    },
+    "delegation": {
+      "orders_agent_tasks": 0,
+      "shopping_agent_tasks": 0,
+      "aftersales_agent_tasks": 0,
+      "delegate_calls": 0
+    }
+  },
+  "quality": {
+    "policy": {
+      "turn_status_counts": {
+        "passed": 1
+      },
+      "evidence_check_count": 1,
+      "evidence_checks_passed": 1,
+      "evidence_check_coverage": 1.0,
+      "turns_with_explicit_evidence_checks": 1,
+      "policy_required_without_explicit_evidence_assertion": 0,
+      "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+    },
+    "faithfulness": {
+      "turn_status_counts": {
+        "passed": 1
+      },
+      "judged_turns": 1,
+      "passed": 1,
+      "pass_rate_among_judged": 1.0,
+      "unavailable": 0,
+      "not_run": 0,
+      "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+    }
+  },
+  "by_scenario": {
+    "approval": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 2,
+      "unrun": 2
+    },
+    "boundary": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 11,
+      "unrun": 11
+    },
+    "clarification": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 23,
+      "unrun": 23
+    },
+    "complaint": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 3,
+      "unrun": 3
+    },
+    "cross_business": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 5,
+      "unrun": 5
+    },
+    "exception": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 5,
+      "unrun": 5
+    },
+    "handoff": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 6,
+      "unrun": 6
+    },
+    "inventory": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 2,
+      "unrun": 2
+    },
+    "logistics": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 1,
+      "unrun": 1
+    },
+    "multi_agent": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 30,
+      "unrun": 29
+    },
+    "multi_turn": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 22,
+      "unrun": 22
+    },
+    "order_query": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "policy": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 33,
+      "unrun": 33
+    },
+    "product": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "recommendation": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 4,
+      "unrun": 4
+    },
+    "simple_answer": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "corpus_n": 11,
+      "unrun": 11
+    }
+  },
+  "by_split": {
+    "development": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    },
+    "holdout": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    }
+  },
+  "by_source_family": {
+    "synthetic_collab_003": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      },
+      "member_ids": [
+        "collab_003"
+      ],
+      "complete": true
+    }
+  },
+  "by_variant": {
+    "original": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    },
+    "derived": {
+      "n": 0,
+      "task_status": {
+        "passed": 0,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 0,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {},
+          "evidence_check_count": 0,
+          "evidence_checks_passed": 0,
+          "evidence_check_coverage": null,
+          "turns_with_explicit_evidence_checks": 0,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {},
+          "judged_turns": 0,
+          "passed": 0,
+          "pass_rate_among_judged": null,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": null,
+        "latency_p95_ms": null,
+        "wall_elapsed_ms": 0,
+        "by_role": {},
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    }
+  },
+  "by_partition_group": {
+    "ab_comparison": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    }
+  },
+  "by_source_file": {
+    "eval/dataset/agent_comparison_50.jsonl": {
+      "n": 1,
+      "task_status": {
+        "passed": 1,
+        "failed": 0,
+        "review_required": 0,
+        "error": 0
+      },
+      "safety_violation_count": 0,
+      "deterministic_passed": 1,
+      "deterministic_failed": 0,
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "resources": {
+        "prompt_tokens": 17025,
+        "completion_tokens": 397,
+        "total_tokens": 17422,
+        "model_calls": 2,
+        "tool_calls": 3,
+        "wall_elapsed_ms": 15661.99,
+        "repeated_tool_requests": 0,
+        "budget_exhausted_turns": 0,
+        "false_completion_rejections": 0,
+        "latency_p50_ms": 15661.99,
+        "latency_p95_ms": 15661.99,
+        "by_role": {
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 17025,
+            "completion_tokens": 397,
+            "total_tokens": 17422
+          }
+        },
+        "monetary_cost": null,
+        "monetary_cost_note": "Token usage is recorded; monetary cost is omitted until a dated model price table is configured."
+      },
+      "delegation": {
+        "orders_agent_tasks": 0,
+        "shopping_agent_tasks": 0,
+        "aftersales_agent_tasks": 0,
+        "delegate_calls": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "collab_003",
+      "source_id": "synthetic_collab_003",
+      "source_file": "eval/dataset/agent_comparison_50.jsonl",
+      "partition_group": "ab_comparison",
+      "partition_basis": "explicit_evidence_check",
+      "derived_from": [],
+      "variant": "original",
+      "scenario": "multi_agent",
+      "split": "development",
+      "split_group": "collab_003",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "task_status": "passed",
+      "review_criterion": "",
+      "turns": [
+        {
+          "turn": 1,
+          "http_status": 200,
+          "request": {
+            "message": "帮我确认ORD10002的商品及签收情况，杯子有裂纹是否就完全不能售后？",
+            "user_id": "u_demo"
+          },
+          "response": {
+            "answer": "ORD10002 已核实：\n\n- **商品**：定制马克杯 1 件（SKU-MUG-CUSTOM，单价 39 元，属于定制商品）。\n- **物流/签收**：运单号 YT998877，收货城市北京；2026-09-30 发货，2026-10-07 已签收。\n\n**杯子有裂纹并不等于完全不能售后。** 已签收到货后发现裂纹，属于质量问题（破损/瑕疵）范畴，可凭此申请售后；订单事实与商品明细工具本身不判断裂纹成因，需以实际商品状况和售后审核为准。\n\n依据本轮检索到的完整退换货政策证据：定制商品不适用“7 天无理由”，但这并不排除因质量问题（破损等）退货/售后 [return_policy_42dcb12c_02]。若仅是包装破损，包装费 8 元不退、只补寄包装材料；商品质量问题按普通售后，包装费一并退 [packaging_gift_73459cfc_03]。\n\n如果你确认杯子裂纹属于质量问题并要提交售后，我可以继续帮你准备退货或退款申请；也可补一句具体情况（如裂纹是运输造成还是非人为）以便后续说明原因。",
+            "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+            "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+            "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 2,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 3,
+              "tools": [
+                "get_order_items",
+                "track_shipment",
+                "search_knowledge"
+              ],
+              "failure": null,
+              "validation": {
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              },
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [],
+                "attempts": [],
+                "budget_blocked": [],
+                "delegate_calls": 0,
+                "required_experts_complete": false
+              },
+              "role_usage": {
+                "main": {
+                  "model_calls": 2,
+                  "prompt_tokens": 17025,
+                  "completion_tokens": 397,
+                  "total_tokens": 17422
+                }
+              },
+              "execution_ledger": {
+                "calls": [
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 11112
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 6101.89,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 7919,
+                    "completion_tokens": 117,
+                    "total_tokens": 8036
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 6.41,
+                    "success": true,
+                    "tool": "get_order_items",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 2.95,
+                    "success": true,
+                    "tool": "track_shipment",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 3552.02,
+                    "success": true,
+                    "tool": "search_knowledge",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 12385
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                    "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                    "elapsed_ms": 5916.21,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 9106,
+                    "completion_tokens": 280,
+                    "total_tokens": 9386
+                  }
+                ],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 15649.32
+              },
+              "business_case": {
+                "case_id": "case_3745d420c464456bb2f5f6764474fe2f",
+                "business_type": "order",
+                "owner_role": "main",
+                "goal": "帮我确认ORD10002的商品及签收情况，杯子有裂纹是否就完全不能售后？",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [],
+                "stage": "completed",
+                "missing_fields": [],
+                "pending_action_id": null,
+                "observations": [
+                  {
+                    "tool": "get_order_items",
+                    "artifact_ref": "art_793e830fdaa84c528284c95bb6dfc7bd",
+                    "observed_at": 1792496403.7484763
+                  },
+                  {
+                    "tool": "track_shipment",
+                    "artifact_ref": "art_ebda5aebad1b43c799893aa5a68778f2",
+                    "observed_at": 1792496403.748478
+                  },
+                  {
+                    "tool": "search_knowledge",
+                    "artifact_ref": "art_765ced9e046f421c9245448c6f61ce84",
+                    "observed_at": 1792496403.7484784
+                  }
+                ],
+                "updated_at": 1792496403.748498,
+                "proposals_forbidden": false
+              }
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94"
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool_calls_remaining": 14,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 32,
+                "tokens_remaining": 128000,
+                "steps_remaining_including_current": 12,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "compressed": false,
+                "context_tokens": 11312,
+                "context_limit_tokens": 32000,
+                "message_count": 5,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "stage": "agent",
+                "step": 1
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "stage": "agent",
+                "step": 1,
+                "elapsed_ms": 6104.699225001241,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 7919,
+                "completion_tokens": 117,
+                "total_tokens": 8036
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "get_order_items",
+                "tool_call_id": "call_bfb3508818094b0397ba5b19"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "get_order_items",
+                "tool_call_id": "call_bfb3508818094b0397ba5b19",
+                "result_ref": "art_793e830fdaa84c528284c95bb6dfc7bd",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 7.8737199983152095
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "track_shipment",
+                "tool_call_id": "call_10ee83d3af40415f90b2a49e"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "track_shipment",
+                "tool_call_id": "call_10ee83d3af40415f90b2a49e",
+                "result_ref": "art_ebda5aebad1b43c799893aa5a68778f2",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 3.91021500036004
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "search_knowledge",
+                "tool_call_id": "call_e869cccc64014e10bda87414"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool": "search_knowledge",
+                "tool_call_id": "call_e869cccc64014e10bda87414",
+                "result_ref": "art_765ced9e046f421c9245448c6f61ce84",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 3555.8086710007046
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "tool_calls_remaining": 11,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 31,
+                "tokens_remaining": 119964,
+                "steps_remaining_including_current": 11,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "compressed": false,
+                "context_tokens": 12585,
+                "context_limit_tokens": 32000,
+                "message_count": 9,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "stage": "agent",
+                "step": 2
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "stage": "agent",
+                "step": 2,
+                "elapsed_ms": 5918.576238000242,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "stop",
+                "prompt_tokens": 9106,
+                "completion_tokens": 280,
+                "total_tokens": 9386
+              },
+              {
+                "event": "output_validation",
+                "run_id": "run_4196c1cdc0504bb1b144b9924920f5da",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "tr_9211b621c68744b0bc06c621291e3a7b",
+                "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [
+              {
+                "document_id": "packaging_gift_73459cfc",
+                "title": "packaging_gift",
+                "chunk_id": "packaging_gift_73459cfc_03",
+                "section": "售后"
+              },
+              {
+                "document_id": "return_policy_42dcb12c",
+                "title": "return_policy",
+                "chunk_id": "return_policy_42dcb12c_02",
+                "section": "定制商品"
+              }
+            ],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 17025,
+              "completion_tokens": 397,
+              "total_tokens": 17422
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 15656.068832999154
+            }
+          },
+          "wall_elapsed_ms": 15661.99,
+          "calls": [
+            {
+              "name": "get_order_items",
+              "arguments": {
+                "order_id": "ORD10002"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "get_order_items",
+                "success": true,
+                "output": {
+                  "items": [
+                    {
+                      "sku": "SKU-MUG-CUSTOM",
+                      "name": "定制马克杯",
+                      "quantity": 1,
+                      "unit_price_cents": 3900,
+                      "customized": true
+                    }
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            },
+            {
+              "name": "track_shipment",
+              "arguments": {
+                "order_id": "ORD10002"
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "track_shipment",
+                "success": true,
+                "output": {
+                  "order_id": "ORD10002",
+                  "tracking_no": "YT998877",
+                  "city": "北京",
+                  "city_meaning": "订单收货城市；不是实时包裹定位",
+                  "shipped_at": "2026-09-30T00:00:00",
+                  "events": [
+                    {
+                      "status": "warehouse",
+                      "label": "支付后仓库待处理（非出库/发货）",
+                      "time_source": "paid_at",
+                      "at": "2026-09-29T00:00:00"
+                    },
+                    {
+                      "status": "in_transit",
+                      "label": "已发货，运输中",
+                      "time_source": "shipped_at",
+                      "tracking_no": "YT998877",
+                      "at": "2026-09-30T00:00:00"
+                    },
+                    {
+                      "status": "delivered",
+                      "label": "已签收",
+                      "time_source": "delivered_at",
+                      "at": "2026-10-07T00:00:00"
+                    }
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            },
+            {
+              "name": "search_knowledge",
+              "arguments": {
+                "query": "杯子 裂纹 破损 是否可以退货退款 售后 政策",
+                "complex": false
+              },
+              "user_id": "u_demo",
+              "session_id": "sess_17d7c5c2a90549e3beaedaa68c936d94",
+              "confirmed": false,
+              "executed": true,
+              "success": true,
+              "result": {
+                "name": "search_knowledge",
+                "success": true,
+                "output": {
+                  "chunks": [
+                    {
+                      "chunk_id": "packaging_gift_73459cfc_03",
+                      "document_id": "packaging_gift_73459cfc",
+                      "title": "packaging_gift",
+                      "content": "包装破损可补寄包装材料,不退 8 元包装费。商品质量问题按普通售后,包装费一并退。",
+                      "score": 0.9358603954315186,
+                      "rank": 1,
+                      "source": "rerank",
+                      "category": "product",
+                      "section": "售后",
+                      "chunk_index": 3,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/packaging_gift.md",
+                        "parser": "markdown",
+                        "document_title": "礼品包装"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_02",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "印字、刻字、定做尺寸等定制商品不适用 7 天无理由。质量问题(破损、错发、与描述严重不符)仍可退货。",
+                      "score": 0.9206646084785461,
+                      "rank": 2,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "定制商品",
+                      "chunk_index": 2,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    },
+                    {
+                      "chunk_id": "return_policy_42dcb12c_05",
+                      "document_id": "return_policy_42dcb12c",
+                      "title": "return_policy",
+                      "content": "拆封激活的数码产品、贴身服饰已洗涤、食品已开封,不适用无理由退货。",
+                      "score": 0.7794945240020752,
+                      "rank": 3,
+                      "source": "rerank",
+                      "category": "return_policy",
+                      "section": "影响二次销售",
+                      "chunk_index": 5,
+                      "policy_version": "2024-12-v3",
+                      "metadata": {
+                        "source": "knowledge/return_policy.md",
+                        "parser": "markdown",
+                        "document_title": "退换货政策"
+                      }
+                    }
+                  ],
+                  "strategy": "single",
+                  "rewritten_queries": [
+                    "杯子 裂纹 破损 是否可以退货退款 售后 政策"
+                  ]
+                },
+                "error": null,
+                "risk": "read",
+                "truncated": false
+              }
+            }
+          ],
+          "status": "passed",
+          "accepted_paths": [],
+          "failures": [],
+          "safety_failures": [],
+          "review_flags": [],
+          "business_deltas": [],
+          "policy_quality": {
+            "status": "passed",
+            "measurement": "expected_evidence_citation_coverage",
+            "reason": null,
+            "evidence_check_count": 1,
+            "evidence_checks_passed": 1,
+            "evidence_checks": [
+              {
+                "expected_any_of": [
+                  "return_custom",
+                  "return_policy"
+                ],
+                "matched": [
+                  "return_policy"
+                ],
+                "passed": true,
+                "note": "结果需由真实信息支持，不能口头虚构"
+              }
+            ],
+            "citation_integrity": "passed",
+            "citation_count": 2,
+            "invalid_citation_count": 0,
+            "citations": [
+              {
+                "document_id": "packaging_gift_73459cfc",
+                "chunk_id": "packaging_gift_73459cfc_03",
+                "resolves": true
+              },
+              {
+                "document_id": "return_policy_42dcb12c",
+                "chunk_id": "return_policy_42dcb12c_02",
+                "resolves": true
+              }
+            ]
+          },
+          "faithfulness_quality": {
+            "status": "passed",
+            "source": "production_validation_status",
+            "issues": [],
+            "evidence_refs": []
+          }
+        }
+      ],
+      "quality": {
+        "policy": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "evidence_check_count": 1,
+          "evidence_checks_passed": 1,
+          "evidence_check_coverage": 1.0,
+          "turns_with_explicit_evidence_checks": 1,
+          "policy_required_without_explicit_evidence_assertion": 0,
+          "note": "Evidence coverage measures expected-source citation presence and citation integrity; it does not establish semantic support by itself."
+        },
+        "faithfulness": {
+          "turn_status_counts": {
+            "passed": 1
+          },
+          "judged_turns": 1,
+          "passed": 1,
+          "pass_rate_among_judged": 1.0,
+          "unavailable": 0,
+          "not_run": 0,
+          "note": "Compatibility metric for production reviewer verdicts. Critic pass means no required revision found, not factual verification; unavailable and not-run turns are excluded from the judged-turn denominator."
+        }
+      },
+      "delegation": {
+        "specialist_agents": [],
+        "orders_agent_called": false,
+        "shopping_agent_called": false,
+        "aftersales_agent_called": false,
+        "policy_agent_called": false,
+        "required_experts": [],
+        "completed_experts": [],
+        "budget_blocked_experts": [],
+        "delegate_calls": 0,
+        "status": "not_expected"
+      },
+      "response_digest": "d57c34d8d7358dfac718fd3946adeee4325f252cccff322c112d89bd09ef7cf1"
+    }
+  ]
+}

@@ -30,6 +30,8 @@ class ToolContext(BaseModel):
     # Populated by ChatService from authenticated user turns, never tool args.
     user_messages: list[str] = Field(default_factory=list)
     proposals_forbidden: bool = False
+    # None is reserved for trusted direct service callers; ChatService always sets a bool.
+    operation_authorized: bool | None = None
 
 
 class BaseTool(Protocol):

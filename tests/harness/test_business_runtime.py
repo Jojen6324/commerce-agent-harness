@@ -164,3 +164,123 @@ async def test_requested_state_does_not_prove_approval():
     )
     assert value["status"] == "validation_failed"
     assert value["failure"]["reason"] == "unverified_approval"
+
+
+@pytest.mark.asyncio
+async def test_consultation_without_operation_request_cannot_prepare_return(tmp_path):
+    import json
+
+    from app.repositories.models import ActionRow
+
+    def native(name, args, call_id):
+        return LLMResponse(
+            "",
+            tool_calls=[
+                {
+                    "id": call_id,
+                    "type": "function",
+                    "function": {"name": name, "arguments": json.dumps(args, ensure_ascii=False)},
+                }
+            ],
+            finish_reason="tool_calls",
+        )
+
+    c = await build_container(
+        Settings(app_env="testing", database_url=f"sqlite+aiosqlite:///{tmp_path}/consult.db"),
+        seed=True,
+    )
+    c.chat_service.runner.llm = SimpleNamespace(
+        generate=AsyncMock(
+            side_effect=[
+                native(
+                    "create_return_request",
+                    {"order_id": "ORD10002", "reason": "裂纹"},
+                    "unauthorized-proposal",
+                ),
+                native(
+                    "ask_user",
+                    {
+                        "question": "请补充裂纹的情况以便核对资格。",
+                        "missing_fields": ["quality_details"],
+                    },
+                    "clarify",
+                ),
+            ]
+        )
+    )
+    try:
+        response = await c.chat_service.chat(
+            ChatRequest(message="ORD10002杯子有裂纹，可以退货吗？", user_id="u_demo"),
+            trace_id="consult",
+        )
+        assert response.pending_action is None
+        async with c.session_factory() as db:
+            assert await db.scalar(select(func.count()).select_from(ActionRow)) == 0
+    finally:
+        await c.aclose()
+
+
+@pytest.mark.asyncio
+async def test_plain_text_clarification_repairs_into_resumable_case(tmp_path):
+    import json
+
+    c = await build_container(
+        Settings(app_env="testing", database_url=f"sqlite+aiosqlite:///{tmp_path}/clarify.db"),
+        seed=True,
+    )
+    llm = AsyncMock(
+        side_effect=[
+            LLMResponse("您尚未说明退货原因，请先补充具体原因。"),
+            LLMResponse(
+                "",
+                tool_calls=[
+                    {
+                        "id": "clarify",
+                        "type": "function",
+                        "function": {
+                            "name": "ask_user",
+                            "arguments": json.dumps(
+                                {"question": "请补充退货原因。", "missing_fields": ["reason"]},
+                                ensure_ascii=False,
+                            ),
+                        },
+                    }
+                ],
+                finish_reason="tool_calls",
+            ),
+            LLMResponse(
+                "",
+                tool_calls=[
+                    {
+                        "id": "proposal",
+                        "type": "function",
+                        "function": {
+                            "name": "create_return_request",
+                            "arguments": json.dumps(
+                                {"order_id": "ORD10002", "reason": "杯子有裂纹"}, ensure_ascii=False
+                            ),
+                        },
+                    }
+                ],
+                finish_reason="tool_calls",
+            ),
+        ]
+    )
+    c.chat_service.runner.llm = SimpleNamespace(generate=llm)
+    try:
+        first = await c.chat_service.chat(
+            ChatRequest(message="帮我退货，订单ORD10002", user_id="u_demo"), trace_id="clarify-1"
+        )
+        second = await c.chat_service.chat(
+            ChatRequest(message="杯子有裂纹", user_id="u_demo", session_id=first.session_id),
+            trace_id="clarify-2",
+        )
+        assert first.status == "needs_input"
+        assert (
+            first.diagnostics["business_case"]["case_id"]
+            == second.diagnostics["business_case"]["case_id"]
+        )
+        assert second.pending_action is not None
+        assert llm.await_count == 3
+    finally:
+        await c.aclose()

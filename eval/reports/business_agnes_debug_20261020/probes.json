@@ -1,0 +1,1549 @@
+{
+  "kind": "diagnostic_conversations_not_benchmark",
+  "provider": "agnes",
+  "fixture_source": "collab_003",
+  "generated_at": "2026-10-20T11:42:06.119459+00:00",
+  "conversations": [
+    {
+      "id": "explicit_aftersales",
+      "turns": [
+        {
+          "request": {
+            "message": "请让售后专家核实ORD10002的商品和签收情况，再核对杯子出现裂纹是否还能申请售后。只咨询，不要创建申请或转人工。",
+            "session_id": null,
+            "user_id": "u_demo",
+            "stream": false,
+            "confirm_action_id": null,
+            "idempotency_key": null
+          },
+          "response": {
+            "answer": "ORD10002核实结果如下（仅咨询，未创建任何申请、也未转人工）：\n\n**商品与签收情况**\n- 订单内为1件“定制马克杯”，SKU-MUG-CUSTOM，数量1，单价39.00元，标记为定制商品。\n- 物流显示：2026-09-29支付后仓库待处理（不是出库/发货）；2026-09-30已发货；2026-10-07已签收。收货城市为北京，这是订单收货城市，不代表实时包裹位置。\n\n**杯子出现裂纹是否还能申请售后（规则层面，不替个案下结论）**\n- 定制商品不适用“7天无理由退货”，但如果裂纹属于质量问题/破损，仍可走退货退款路径；前提是要能证明裂纹是质量问题或商品侧破损，而非签收后人为损坏。\n- 如果无法证明质量问题/破损，通常不能仅凭“定制件不想要了”等理由退货；此时可考虑保修说明或进一步人工复核，具体以提交材料后的审核结果为准。\n\n**目前不能确认的事项**\n- 我无法仅凭订单信息判断裂纹成因或质量责任；也没有收到裂纹照片/签收时状态说明等个案证据。\n- 未生成退款/退货/取消订单等写操作提案，也未创建人工工单。",
+            "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+            "trace_id": "probe-explicit_aftersales-1",
+            "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 5,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 5,
+              "tools": [
+                "get_order_items",
+                "track_shipment",
+                "search_knowledge",
+                "delegate_task",
+                "get_order_items",
+                "track_shipment"
+              ],
+              "failure": null,
+              "validation": {
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              },
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [
+                  "aftersales"
+                ],
+                "attempts": [
+                  {
+                    "expert": "aftersales",
+                    "status": "completed",
+                    "child_run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027"
+                  }
+                ],
+                "budget_blocked": [],
+                "delegate_calls": 1,
+                "required_experts_complete": false
+              },
+              "role_usage": {
+                "main": {
+                  "model_calls": 2,
+                  "prompt_tokens": 18160,
+                  "completion_tokens": 567,
+                  "total_tokens": 18727
+                },
+                "aftersales": {
+                  "model_calls": 3,
+                  "prompt_tokens": 22610,
+                  "completion_tokens": 870,
+                  "total_tokens": 23480
+                }
+              },
+              "execution_ledger": {
+                "calls": [
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 11207
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 7020.63,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 7978,
+                    "completion_tokens": 269,
+                    "total_tokens": 8247
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 9803
+                  },
+                  {
+                    "kind": "model",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 4926.93,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 6830,
+                    "completion_tokens": 67,
+                    "total_tokens": 6897
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 6.36,
+                    "success": true,
+                    "tool": "get_order_items",
+                    "agent": "aftersales"
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 3.47,
+                    "success": true,
+                    "tool": "track_shipment",
+                    "agent": "aftersales"
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 10334
+                  },
+                  {
+                    "kind": "model",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 2359.18,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 7339,
+                    "completion_tokens": 75,
+                    "total_tokens": 7414
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 2688.43,
+                    "success": true,
+                    "tool": "search_knowledge",
+                    "agent": "aftersales"
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 11525
+                  },
+                  {
+                    "kind": "model",
+                    "role": "aftersales",
+                    "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 21409.1,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 8441,
+                    "completion_tokens": 728,
+                    "total_tokens": 9169
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 31474.58,
+                    "success": true,
+                    "tool": "delegate_task",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 3.01,
+                    "success": true,
+                    "tool": "get_order_items",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 2.42,
+                    "success": true,
+                    "tool": "track_shipment",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 13487
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                    "trace_id": "probe-explicit_aftersales-1",
+                    "elapsed_ms": 29593.61,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 10182,
+                    "completion_tokens": 298,
+                    "total_tokens": 10480
+                  }
+                ],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 68152.72
+              },
+              "business_case": {
+                "case_id": "case_7970dc9d543d4c41a22e9c7ab52db340",
+                "business_type": "aftersales",
+                "owner_role": "aftersales",
+                "goal": "请让售后专家核实ORD10002的商品和签收情况，再核对杯子出现裂纹是否还能申请售后。只咨询，不要创建申请或转人工。",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [
+                  {
+                    "role": "aftersales",
+                    "goal": "只咨询、不创建申请/不转人工：1) 核实订单 ORD10002 的商品明细，确认是否有杯子类商品及其SKU/是否定制；2) 查物流签收情况（是否已签收、城市、关键节点）；3) 基于“杯子出现裂纹”核对能否申请售后/退货退款或仅退款的规则与前提。仅返回事实与政策证据摘要，不生成任何待确认写操作提案。",
+                    "status": "completed",
+                    "child_run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                    "missing_fields": []
+                  }
+                ],
+                "stage": "completed",
+                "missing_fields": [],
+                "pending_action_id": null,
+                "observations": [
+                  {
+                    "tool": "get_order_items",
+                    "artifact_ref": "art_cfba87afbcc14f0dbb8a1e073049d7f2",
+                    "observed_at": 1792496603.6514204
+                  },
+                  {
+                    "tool": "track_shipment",
+                    "artifact_ref": "art_50c651d876e74d59b9d63af6d1126ea3",
+                    "observed_at": 1792496603.651423
+                  },
+                  {
+                    "tool": "search_knowledge",
+                    "artifact_ref": "art_2054d97723d64a5285bd94950c67e415",
+                    "observed_at": 1792496603.6514237
+                  },
+                  {
+                    "tool": "delegate_task",
+                    "artifact_ref": "art_dca2da592e4f45529ec10a416bd887a5",
+                    "observed_at": 1792496603.651429
+                  },
+                  {
+                    "tool": "get_order_items",
+                    "artifact_ref": "art_1c561d53b95b4c92935cbdf00331185d",
+                    "observed_at": 1792496603.6514297
+                  },
+                  {
+                    "tool": "track_shipment",
+                    "artifact_ref": "art_dd519cd173c846fa8aa72e69f11ac380",
+                    "observed_at": 1792496603.6514301
+                  }
+                ],
+                "updated_at": 1792496603.6514325,
+                "proposals_forbidden": true,
+                "previous_goal": "请让售后专家核实ORD10002的商品和签收情况，再核对杯子出现裂纹是否还能申请售后。只咨询，不要创建申请或转人工。"
+              }
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6"
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool_calls_remaining": 14,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 32,
+                "tokens_remaining": 128000,
+                "steps_remaining_including_current": 12,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "compressed": false,
+                "context_tokens": 11407,
+                "context_limit_tokens": 32000,
+                "message_count": 5,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 1
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 1,
+                "elapsed_ms": 7023.00163900145,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 7978,
+                "completion_tokens": 269,
+                "total_tokens": 8247
+              },
+              {
+                "event": "delegation",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "delegate_task",
+                "tool_call_id": "call_3d621cb58906444f983f4897"
+              },
+              {
+                "event": "delegation_dispatched",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "expert": "aftersales",
+                "source": "model",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "main"
+              },
+              {
+                "event": "agent_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6"
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool_calls_remaining": 6,
+                "delegation_calls_remaining": 0,
+                "model_calls_remaining_including_current": 8,
+                "tokens_remaining": 87753,
+                "steps_remaining_including_current": 6,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "compressed": false,
+                "context_tokens": 10003,
+                "context_limit_tokens": 32000,
+                "message_count": 5,
+                "tool_count": 17
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 1
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 1,
+                "elapsed_ms": 4929.696881001291,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 6830,
+                "completion_tokens": 67,
+                "total_tokens": 6897
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "get_order_items",
+                "tool_call_id": "call_62c9f113b0374207b02b5a29"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "get_order_items",
+                "tool_call_id": "call_62c9f113b0374207b02b5a29",
+                "result_ref": "art_cfba87afbcc14f0dbb8a1e073049d7f2",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 8.238288002758054
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "track_shipment",
+                "tool_call_id": "call_3e9ee3a566334659b1a8312b"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "track_shipment",
+                "tool_call_id": "call_3e9ee3a566334659b1a8312b",
+                "result_ref": "art_50c651d876e74d59b9d63af6d1126ea3",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 4.7638850010116585
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool_calls_remaining": 4,
+                "delegation_calls_remaining": 0,
+                "model_calls_remaining_including_current": 7,
+                "tokens_remaining": 80856,
+                "steps_remaining_including_current": 5,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "compressed": false,
+                "context_tokens": 10534,
+                "context_limit_tokens": 32000,
+                "message_count": 8,
+                "tool_count": 17
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 2
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 2,
+                "elapsed_ms": 2362.452433000726,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 7339,
+                "completion_tokens": 75,
+                "total_tokens": 7414
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "search_knowledge",
+                "tool_call_id": "call_657c3e03f22a4d11a101153d"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "search_knowledge",
+                "tool_call_id": "call_657c3e03f22a4d11a101153d",
+                "result_ref": "art_2054d97723d64a5285bd94950c67e415",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 2690.282434999972
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool_calls_remaining": 3,
+                "delegation_calls_remaining": 0,
+                "model_calls_remaining_including_current": 6,
+                "tokens_remaining": 73442,
+                "steps_remaining_including_current": 4,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "compressed": false,
+                "context_tokens": 11725,
+                "context_limit_tokens": 32000,
+                "message_count": 10,
+                "tool_count": 17
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 3
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "aftersales",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 3,
+                "elapsed_ms": 21411.510730998998,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "stop",
+                "prompt_tokens": 8441,
+                "completion_tokens": 728,
+                "total_tokens": 9169
+              },
+              {
+                "event": "delegation_result",
+                "expert": "aftersales",
+                "status": "completed",
+                "child_run_id": "run_f0c8f35e5dc646228c91aa6ad1a42027",
+                "parent_run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "agent": "main"
+              },
+              {
+                "event": "delegation_completed",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "delegate_task",
+                "tool_call_id": "call_3d621cb58906444f983f4897",
+                "result_ref": "art_dca2da592e4f45529ec10a416bd887a5",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 31475.358286999835
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "get_order_items",
+                "tool_call_id": "call_60ac1d59ee454a8a92cab257"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "get_order_items",
+                "tool_call_id": "call_60ac1d59ee454a8a92cab257",
+                "result_ref": "art_1c561d53b95b4c92935cbdf00331185d",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 3.745030000573024
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "track_shipment",
+                "tool_call_id": "call_40721f1d85e545b19b8560a1"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool": "track_shipment",
+                "tool_call_id": "call_40721f1d85e545b19b8560a1",
+                "result_ref": "art_dd519cd173c846fa8aa72e69f11ac380",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 3.1417629979841877
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "tool_calls_remaining": 9,
+                "delegation_calls_remaining": 2,
+                "model_calls_remaining_including_current": 28,
+                "tokens_remaining": 96273,
+                "steps_remaining_including_current": 11,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "compressed": false,
+                "context_tokens": 13687,
+                "context_limit_tokens": 32000,
+                "message_count": 9,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 2
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "stage": "agent",
+                "step": 2,
+                "elapsed_ms": 29596.143798000412,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "stop",
+                "prompt_tokens": 10182,
+                "completion_tokens": 298,
+                "total_tokens": 10480
+              },
+              {
+                "event": "output_validation",
+                "run_id": "run_4816f741988e42889b963c5ca275a3fa",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-explicit_aftersales-1",
+                "session_id": "sess_b8c53c3c7e6e4582a1a4fdf6634fe1d6",
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 40770,
+              "completion_tokens": 1437,
+              "total_tokens": 42207
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 68161.98694299965
+            }
+          }
+        }
+      ],
+      "checks": {
+        "aftersales_started": true,
+        "aftersales_order_lookup": true,
+        "aftersales_policy_lookup": true,
+        "no_order_or_policy_agent": true,
+        "no_business_side_effect": true,
+        "no_pending_action": true
+      }
+    },
+    {
+      "id": "return_clarification_confirmation",
+      "turns": [
+        {
+          "request": {
+            "message": "帮我退货，订单ORD10002",
+            "session_id": null,
+            "user_id": "u_demo",
+            "stream": false,
+            "confirm_action_id": null,
+            "idempotency_key": null
+          },
+          "response": {
+            "answer": "该订单已发货且签收，商品为定制马克杯（SKU-MUG-CUSTOM），退货需寄回商品。您尚未说明退货原因，请先补充具体原因。",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "trace_id": "probe-return_clarification_confirmation-1",
+            "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 2,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "get_order"
+              ],
+              "failure": null,
+              "validation": {
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              },
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [],
+                "attempts": [],
+                "budget_blocked": [],
+                "delegate_calls": 0,
+                "required_experts_complete": false
+              },
+              "role_usage": {
+                "main": {
+                  "model_calls": 2,
+                  "prompt_tokens": 15972,
+                  "completion_tokens": 69,
+                  "total_tokens": 16041
+                }
+              },
+              "execution_ledger": {
+                "calls": [
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                    "trace_id": "probe-return_clarification_confirmation-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 10951
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                    "trace_id": "probe-return_clarification_confirmation-1",
+                    "elapsed_ms": 2672.21,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 7827,
+                    "completion_tokens": 32,
+                    "total_tokens": 7859
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                    "trace_id": "probe-return_clarification_confirmation-1",
+                    "elapsed_ms": 2.99,
+                    "success": true,
+                    "tool": "get_order",
+                    "agent": "main"
+                  },
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                    "trace_id": "probe-return_clarification_confirmation-1",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 11244
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                    "trace_id": "probe-return_clarification_confirmation-1",
+                    "elapsed_ms": 11328.46,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 8145,
+                    "completion_tokens": 37,
+                    "total_tokens": 8182
+                  }
+                ],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 14058.3
+              },
+              "business_case": {
+                "case_id": "case_c64a1d4932b54f0086fd754535990bb2",
+                "business_type": "order",
+                "owner_role": "main",
+                "goal": "帮我退货，订单ORD10002",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [],
+                "stage": "completed",
+                "missing_fields": [],
+                "pending_action_id": null,
+                "observations": [
+                  {
+                    "tool": "get_order",
+                    "artifact_ref": "art_84b98677bb054fd884c7ddb9283644d8",
+                    "observed_at": 1792496617.728325
+                  }
+                ],
+                "updated_at": 1792496617.728328,
+                "proposals_forbidden": false
+              }
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418"
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool_calls_remaining": 14,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 32,
+                "tokens_remaining": 128000,
+                "steps_remaining_including_current": 12,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "compressed": false,
+                "context_tokens": 11151,
+                "context_limit_tokens": 32000,
+                "message_count": 4,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 1
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 1,
+                "elapsed_ms": 2674.4325830004527,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 7827,
+                "completion_tokens": 32,
+                "total_tokens": 7859
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool": "get_order",
+                "tool_call_id": "call_c2a6113614054f2cb1ca05b7"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool": "get_order",
+                "tool_call_id": "call_c2a6113614054f2cb1ca05b7",
+                "result_ref": "art_84b98677bb054fd884c7ddb9283644d8",
+                "status": "completed",
+                "error_code": null,
+                "elapsed_ms": 3.871518998494139
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool_calls_remaining": 13,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 31,
+                "tokens_remaining": 120141,
+                "steps_remaining_including_current": 11,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "compressed": false,
+                "context_tokens": 11444,
+                "context_limit_tokens": 32000,
+                "message_count": 6,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 2
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 2,
+                "elapsed_ms": 11330.658554998081,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "stop",
+                "prompt_tokens": 8145,
+                "completion_tokens": 37,
+                "total_tokens": 8182
+              },
+              {
+                "event": "output_validation",
+                "run_id": "run_ba2ea3201f314d5a9e6233b8304a5f72",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-1",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "status": "passed",
+                "review_type": "deterministic",
+                "facts_verified": false,
+                "attempts": []
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 15972,
+              "completion_tokens": 69,
+              "total_tokens": 16041
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 14061.8064650007
+            }
+          }
+        },
+        {
+          "request": {
+            "message": "杯子有裂纹",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "user_id": "u_demo",
+            "stream": false,
+            "confirm_action_id": null,
+            "idempotency_key": null
+          },
+          "response": {
+            "answer": "请确认提交退货申请：{\"order_id\": \"ORD10002\", \"reason\": \"杯子有裂纹\"}",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "trace_id": "probe-return_clarification_confirmation-2",
+            "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+            "status": "awaiting_confirmation",
+            "diagnostics": {
+              "model_calls": 1,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "create_return_request"
+              ],
+              "failure": null,
+              "validation": null,
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [],
+                "attempts": [],
+                "budget_blocked": [],
+                "delegate_calls": 0,
+                "required_experts_complete": false
+              },
+              "role_usage": {
+                "main": {
+                  "model_calls": 1,
+                  "prompt_tokens": 7978,
+                  "completion_tokens": 47,
+                  "total_tokens": 8025
+                }
+              },
+              "execution_ledger": {
+                "calls": [
+                  {
+                    "kind": "model_reservation",
+                    "role": "main",
+                    "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                    "trace_id": "probe-return_clarification_confirmation-2",
+                    "elapsed_ms": 0,
+                    "success": true,
+                    "requested_tokens": 11142
+                  },
+                  {
+                    "kind": "model",
+                    "role": "main",
+                    "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                    "trace_id": "probe-return_clarification_confirmation-2",
+                    "elapsed_ms": 13147.26,
+                    "success": true,
+                    "model": "agnes-3.0-flash",
+                    "prompt_tokens": 7978,
+                    "completion_tokens": 47,
+                    "total_tokens": 8025
+                  },
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                    "trace_id": "probe-return_clarification_confirmation-2",
+                    "elapsed_ms": 3.73,
+                    "success": true,
+                    "tool": "create_return_request",
+                    "agent": "main"
+                  }
+                ],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 13178.49
+              },
+              "business_case": {
+                "case_id": "case_e01f1349c55f45a9af1a36c72215b497",
+                "business_type": "aftersales",
+                "owner_role": "main",
+                "goal": "杯子有裂纹",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [],
+                "stage": "pending_confirmation",
+                "missing_fields": [],
+                "pending_action_id": "act_7b2901210c414a9182a7dad996ac2306",
+                "observations": [
+                  {
+                    "tool": "create_return_request",
+                    "artifact_ref": "art_06973a9315b448248f6fac3dafbd9ace",
+                    "observed_at": 1792496630.9154465
+                  }
+                ],
+                "updated_at": 1792496630.9154491,
+                "proposals_forbidden": false
+              }
+            },
+            "events": [
+              {
+                "event": "agent_started",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418"
+              },
+              {
+                "event": "budget_snapshot",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool_calls_remaining": 14,
+                "delegation_calls_remaining": 3,
+                "model_calls_remaining_including_current": 32,
+                "tokens_remaining": 128000,
+                "steps_remaining_including_current": 12,
+                "context_limit_tokens": 32000
+              },
+              {
+                "event": "context_prepared",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "compressed": false,
+                "context_tokens": 11342,
+                "context_limit_tokens": 32000,
+                "message_count": 6,
+                "tool_count": 21
+              },
+              {
+                "event": "model_started",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 1
+              },
+              {
+                "event": "model_completed",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "stage": "agent",
+                "step": 1,
+                "elapsed_ms": 13149.778618997516,
+                "model": "agnes-3.0-flash",
+                "finish_reason": "tool_calls",
+                "prompt_tokens": 7978,
+                "completion_tokens": 47,
+                "total_tokens": 8025
+              },
+              {
+                "event": "tool_started",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool": "create_return_request",
+                "tool_call_id": "call_ef516ff4ab4a4135b121eb40"
+              },
+              {
+                "event": "tool_completed",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "tool": "create_return_request",
+                "tool_call_id": "call_ef516ff4ab4a4135b121eb40",
+                "result_ref": "art_06973a9315b448248f6fac3dafbd9ace",
+                "status": "awaiting_confirmation",
+                "error_code": null,
+                "elapsed_ms": 4.573452002659906
+              },
+              {
+                "event": "needs_confirmation",
+                "run_id": "run_245278d3ed984d6ba8681e530735b9b4",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-2",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": {
+              "action_id": "act_7b2901210c414a9182a7dad996ac2306",
+              "tool_name": "create_return_request",
+              "arguments": {
+                "order_id": "ORD10002",
+                "reason": "杯子有裂纹"
+              },
+              "risk": "write",
+              "summary": "请确认提交退货申请：{\"order_id\": \"ORD10002\", \"reason\": \"杯子有裂纹\"}"
+            },
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 7978,
+              "completion_tokens": 47,
+              "total_tokens": 8025
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 13181.776592999086
+            }
+          }
+        },
+        {
+          "request": {
+            "message": "确认提交",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "user_id": "u_demo",
+            "stream": false,
+            "confirm_action_id": "act_7b2901210c414a9182a7dad996ac2306",
+            "idempotency_key": null
+          },
+          "response": {
+            "answer": "订单 ORD10002 申请已提交，尚不代表退款完成。",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "trace_id": "probe-return_clarification_confirmation-3",
+            "run_id": "run_4850795249254e539569f38c333be113",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 0,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 1,
+              "tools": [
+                "create_return_request"
+              ],
+              "failure": null,
+              "validation": null,
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [],
+                "attempts": [],
+                "budget_blocked": [],
+                "delegate_calls": 0,
+                "required_experts_complete": false
+              },
+              "role_usage": {},
+              "execution_ledger": {
+                "calls": [
+                  {
+                    "kind": "tool",
+                    "role": "main",
+                    "run_id": "run_4850795249254e539569f38c333be113",
+                    "trace_id": "probe-return_clarification_confirmation-3",
+                    "elapsed_ms": 4.96,
+                    "success": true,
+                    "tool": "create_return_request",
+                    "agent": "main"
+                  }
+                ],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 12.26
+              },
+              "business_case": {
+                "case_id": "case_e01f1349c55f45a9af1a36c72215b497",
+                "business_type": "aftersales",
+                "owner_role": "main",
+                "goal": "杯子有裂纹",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [],
+                "stage": "completed",
+                "missing_fields": [],
+                "pending_action_id": null,
+                "observations": [
+                  {
+                    "tool": "create_return_request",
+                    "artifact_ref": "art_06973a9315b448248f6fac3dafbd9ace",
+                    "observed_at": 1792496630.9154465
+                  }
+                ],
+                "updated_at": 1792496630.9343321,
+                "proposals_forbidden": false
+              }
+            },
+            "events": [
+              {
+                "event": "confirmation",
+                "run_id": "run_4850795249254e539569f38c333be113",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-3",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "action_id": "act_7b2901210c414a9182a7dad996ac2306",
+                "status": "completed"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 15.06693999908748
+            }
+          }
+        },
+        {
+          "request": {
+            "message": "确认提交",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "user_id": "u_demo",
+            "stream": false,
+            "confirm_action_id": "act_7b2901210c414a9182a7dad996ac2306",
+            "idempotency_key": null
+          },
+          "response": {
+            "answer": "订单 ORD10002 申请已提交，尚不代表退款完成。",
+            "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+            "trace_id": "probe-return_clarification_confirmation-4",
+            "run_id": "run_969adee38cf64933b600929699344f5a",
+            "status": "completed",
+            "diagnostics": {
+              "model_calls": 0,
+              "reserved_tokens_without_usage": 0,
+              "tool_calls": 0,
+              "tools": [
+                "create_return_request"
+              ],
+              "failure": null,
+              "validation": null,
+              "degradations": [],
+              "delegation": {
+                "mode": "auto",
+                "required_experts": [],
+                "completed_experts": [],
+                "attempts": [],
+                "budget_blocked": [],
+                "delegate_calls": 0,
+                "required_experts_complete": false
+              },
+              "role_usage": {},
+              "execution_ledger": {
+                "calls": [],
+                "cost": null,
+                "cost_note": "Unpriced unless explicit per-million prices are configured.",
+                "elapsed_ms": 4.54
+              },
+              "business_case": {
+                "case_id": "case_ea9d769380ac4f2890e857aaa946bc26",
+                "business_type": "aftersales",
+                "owner_role": "main",
+                "goal": "确认提交",
+                "target": "ORD10002",
+                "target_order_id": "ORD10002",
+                "target_product_sku": null,
+                "tasks": [],
+                "stage": "completed",
+                "missing_fields": [],
+                "pending_action_id": null,
+                "observations": [],
+                "updated_at": 1792496630.9449384,
+                "proposals_forbidden": false
+              }
+            },
+            "events": [
+              {
+                "event": "confirmation",
+                "run_id": "run_969adee38cf64933b600929699344f5a",
+                "parent_run_id": null,
+                "agent": "main",
+                "trace_id": "probe-return_clarification_confirmation-4",
+                "session_id": "sess_d49526f519c94c04bfe6028dcb99f418",
+                "action_id": "act_7b2901210c414a9182a7dad996ac2306",
+                "status": "completed"
+              }
+            ],
+            "intent": null,
+            "complexity": null,
+            "strategy": null,
+            "citations": [],
+            "pending_action": null,
+            "refused": false,
+            "error_code": null,
+            "token_usage": {
+              "prompt_tokens": 0,
+              "completion_tokens": 0,
+              "total_tokens": 0
+            },
+            "latency": {
+              "intent_ms": 0.0,
+              "routing_ms": 0.0,
+              "retrieval_ms": 0.0,
+              "rerank_ms": 0.0,
+              "tool_ms": 0.0,
+              "llm_ms": 0.0,
+              "total_ms": 7.250763999763876
+            }
+          }
+        }
+      ],
+      "checks": {
+        "first_needs_input": false,
+        "same_case": false,
+        "second_has_proposal": true,
+        "one_return_record": true,
+        "same_confirmation_receipt": true,
+        "receipt_does_not_claim_settlement": true
+      }
+    }
+  ]
+}

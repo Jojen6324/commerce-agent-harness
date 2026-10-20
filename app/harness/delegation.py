@@ -118,6 +118,7 @@ class DelegationService:
             pending_action_id=pending.get("action_id") if pending else None,
             child_run_id=result.get("run_id"),
         ).model_dump()
+        envelope["facts_complete"] = all(f["result"].get("facts_complete", True) for f in facts)
         envelope["completed_means"] = "本次委派完成；业务是否执行仅由真实工具状态证明。"
         envelope["summary_complete"] = len(result.get("answer", "")) <= 1500
         if pending:

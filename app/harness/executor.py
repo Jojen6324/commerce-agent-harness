@@ -126,6 +126,11 @@ class ToolExecutor:
             raise InvalidRequestError(
                 f"invalid arguments for {name}: 用户本轮只咨询或禁止操作，不能创建待确认提案；请只查询和解释。"
             )
+        if tool.risk in WRITE_RISKS and not confirmed and context.operation_authorized is False:
+            raise InvalidRequestError(
+                f"invalid arguments for {name}: 用户本任务尚未明确请求办理或准备方案，不能创建待确认提案；"
+                "请回答咨询或补问。是否授权由服务端任务状态决定，不能更换工具或参数绕过。"
+            )
         # Model-provided identity is never authoritative.
         if "user_id" in args:
             args["user_id"] = context.user_id

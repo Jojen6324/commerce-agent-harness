@@ -153,7 +153,10 @@ class ChatService:
         cases = BusinessCases(self._settings.agent_live_state_ttl_seconds)
         facts = cases.prepare(facts, request.message)
         context = context.model_copy(
-            update={"proposals_forbidden": facts["active_case"].get("proposals_forbidden", False)}
+            update={
+                "proposals_forbidden": facts["active_case"].get("proposals_forbidden", False),
+                "operation_authorized": facts["active_case"].get("operation_authorized", False),
+            }
         )
         ledger = ExecutionLedger(trace_id=trace_id)
         ledger_token = current_ledger.set(ledger)

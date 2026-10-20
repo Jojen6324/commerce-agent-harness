@@ -1,4 +1,4 @@
-"""Paired evaluation of the SAME tasks in A/B/C delegation modes.
+"""Paired A/B evaluation on the SAME tasks.
 
 Examples:
  python -m scripts.compare_agent_benchmark --split development --limit 3 --live
@@ -20,7 +20,11 @@ from eval.behavior import evaluate
 from eval.task_schema import DATA_DIR
 
 DATASET = DATA_DIR / "agent_comparison_50.jsonl"
-DEFAULT_OUTPUT = Path("eval/reports/agent_comparison_50_abc.json")
+DEFAULT_OUTPUT = Path("eval/reports/agent_comparison_50_ab.json")
+ARM_CONFIG = {
+    "A": (False, "off"),
+    "B": (True, "required_when_eligible"),
+}
 
 
 def summarize_variant(report: dict) -> dict:
@@ -47,7 +51,28 @@ def summarize_variant(report: dict) -> dict:
     real_delegate_calls = 0
     required_turns = 0
     completed_required_turns = 0
+    diagnostic_expected_tasks = 0
+    diagnostic_used_tasks = 0
+    diagnostic_missing_tasks = 0
+    diagnostic_incomplete_tasks = 0
     total_tokens = model_calls = 0
+    for case in cases:
+        task_required: set[str] = set()
+        task_completed: set[str] = set()
+        task_delegate_calls = 0
+        for turn in case["turns"]:
+            response = turn.get("response")
+            if not isinstance(response, dict):
+                continue
+            delegation = (response.get("diagnostics") or {}).get("delegation") or {}
+            task_required.update(delegation.get("required_experts", []))
+            task_completed.update(delegation.get("completed_experts", []))
+            task_delegate_calls += delegation.get("delegate_calls", 0) or 0
+        if task_required:
+            diagnostic_expected_tasks += 1
+            diagnostic_used_tasks += task_delegate_calls > 0 or bool(task_completed)
+            diagnostic_missing_tasks += task_delegate_calls == 0 and not task_completed
+            diagnostic_incomplete_tasks += not task_required <= task_completed
     for turn in response_turns:
         response = turn["response"]
         diagnostics = response.get("diagnostics") or {}
@@ -106,7 +131,7 @@ def summarize_variant(report: dict) -> dict:
     required_turns = max(
         required_turns,
         sum(bool(event.get("delegation_expected")) for event in task_events)
-        if report.get("arm") == "C"
+        if report.get("delegation_policy") == "required_when_eligible"
         else 0,
     )
     completed_required_turns = max(
@@ -137,18 +162,23 @@ def summarize_variant(report: dict) -> dict:
         "model_calls": model_calls,
         "total_tokens": total_tokens,
         "role_usage": role_usage,
-        "delegation_expected_tasks": len(expected),
-        "delegation_used_tasks": sum(bool(event.get("delegation_used")) for event in expected),
-        "delegation_missing_tasks": sum(
-            event.get("delegation_status") == "missing" for event in expected
+        "delegation_expected_tasks": max(len(expected), diagnostic_expected_tasks),
+        "delegation_used_tasks": max(
+            sum(bool(event.get("delegation_used")) for event in expected), diagnostic_used_tasks
         ),
-        "delegation_incomplete_tasks": sum(
-            event.get("delegation_status") == "required_incomplete" for event in expected
+        "delegation_missing_tasks": max(
+            sum(event.get("delegation_status") == "missing" for event in expected),
+            diagnostic_missing_tasks,
+        ),
+        "delegation_incomplete_tasks": max(
+            sum(event.get("delegation_status") == "required_incomplete" for event in expected),
+            diagnostic_incomplete_tasks,
         ),
         "specialist_agent_starts": sum(
             1
             for event in report.get("monitoring", {}).get("events", [])
-            if event.get("event") == "agent_started" and event.get("agent") != "main"
+            if event.get("event") == "agent_started"
+            and event.get("agent") in ("orders", "policy", "knowledge")
         ),
         "turn_wall_elapsed_ms": {
             "total": round(sum(durations), 2),
@@ -159,42 +189,28 @@ def summarize_variant(report: dict) -> dict:
     }
 
 
-def pair_results(single: dict, multi: dict, c_mode: dict | None = None) -> list[dict]:
-    reports = [single, multi] + ([c_mode] if c_mode is not None else [])
+def pair_results(single: dict, multi: dict) -> list[dict]:
+    reports = [single, multi]
     indexed = [{case["id"]: case for case in report["cases"]} for report in reports]
     if any(set(item) != set(indexed[0]) for item in indexed[1:]):
-        raise ValueError("A/B/C case ids differ")
+        raise ValueError("A/B case ids differ")
     if any(report["corpus_digest"] != single["corpus_digest"] for report in reports[1:]):
-        raise ValueError("A/B/C benchmark dataset differs")
+        raise ValueError("A/B benchmark dataset differs")
     left, right = indexed[:2]
-    third = indexed[2] if len(indexed) > 2 else None
     return [
         {
             "id": key,
             "scenario": left[key]["scenario"],
-            "single": left[key]["task_status"],
-            "multi": right[key]["task_status"],
-            "single_deterministic": left[key]["deterministic_status"],
-            "multi_deterministic": right[key]["deterministic_status"],
-            "single_safety_failures": sum(
-                len(t.get("safety_failures", [])) for t in left[key]["turns"]
-            ),
-            "multi_safety_failures": sum(
+            "A": left[key]["task_status"],
+            "B": right[key]["task_status"],
+            "A_deterministic": left[key]["deterministic_status"],
+            "B_deterministic": right[key]["deterministic_status"],
+            "A_safety_failures": sum(len(t.get("safety_failures", [])) for t in left[key]["turns"]),
+            "B_safety_failures": sum(
                 len(t.get("safety_failures", [])) for t in right[key]["turns"]
             ),
-            "single_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in left[key]["turns"]],
-            "multi_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in right[key]["turns"]],
-            **(
-                {
-                    "c": third[key]["task_status"],
-                    "c_deterministic": third[key]["deterministic_status"],
-                    "c_turn_wall_elapsed_ms": [
-                        t.get("wall_elapsed_ms") for t in third[key]["turns"]
-                    ],
-                }
-                if third is not None
-                else {}
-            ),
+            "A_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in left[key]["turns"]],
+            "B_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in right[key]["turns"]],
         }
         for key in left
     ]
@@ -221,9 +237,9 @@ async def main() -> None:
     parser.add_argument(
         "--arms",
         nargs="+",
-        choices=["A", "B", "C"],
-        default=["A", "B", "C"],
-        help="Run A (delegation off), B (model-directed delegation), C (required evidence preflight)",
+        choices=["A", "B"],
+        default=["A", "B"],
+        help="Run A (single agent) and/or B (required Policy Agent for retrieval, optional Orders Agent)",
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
@@ -239,22 +255,17 @@ async def main() -> None:
     )
     # Each evaluation gets the same tasks, model, 32K context and 80K run cap;
     # only the delegation policy changes. Fixtures are reinstalled per case.
-    config = {
-        "A": (False, "off"),
-        "B": (True, "auto"),
-        "C": (True, "required_when_eligible"),
-    }
     reports = {}
     for arm in args.arms:
-        enabled, policy = config[arm]
+        enabled, policy = ARM_CONFIG[arm]
         reports[arm] = await evaluate(
             **options,
             delegation_enabled=enabled,
             delegation_policy=policy,
             arm_name=arm,
         )
-    a, b, c_mode = reports.get("A"), reports.get("B"), reports.get("C")
-    paired = pair_results(a, b, c_mode) if a and b else []
+    a, b = reports.get("A"), reports.get("B")
+    paired = pair_results(a, b) if a and b else []
     reference = next(iter(reports.values()))
     data = {
         "created_at": datetime.now(UTC).isoformat(),
@@ -270,17 +281,15 @@ async def main() -> None:
             "The offline mode verifies harness plumbing only and cannot establish agent quality. "
             "Passing deterministic checks is not semantic approval. No statistical significance "
             "is implied by this small, partly correlated synthetic task corpus. "
-            "B leaves delegation to the model. C selects required evidence experts from the live request, history and confirmed facts; dataset scenario labels are used only for reporting. "
+            "A is single-agent. B requires Policy Agent retrieval when live request/history/facts indicate a need for policy evidence; Main Agent may optionally delegate order facts to Orders. Dataset scenario labels are reporting metadata only. "
             "Monitoring reports requested versus completed specialists and never stops a run automatically."
         ),
-        "single_summary": summarize_variant(a) if a else None,
-        "multi_summary": summarize_variant(b) if b else None,
-        "c_summary": summarize_variant(c_mode) if c_mode else None,
+        "a_summary": summarize_variant(a) if a else None,
+        "b_summary": summarize_variant(b) if b else None,
         "paired": paired,
         "arms": {key: summarize_variant(report) for key, report in reports.items()},
-        "single_report": a,
-        "multi_report": b,
-        "c_report": c_mode,
+        "a_report": a,
+        "b_report": b,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")

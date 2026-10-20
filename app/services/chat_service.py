@@ -90,14 +90,27 @@ class ChatService:
         )
         self.delegation_policy = DelegationPolicy(self.delegation_mode)
         self.delegation_enabled = self.delegation_mode is not DelegationMode.OFF
+        self.main_spec = self.spec
         if self.delegation_enabled:
             self.executor.delegate = DelegationService(self.runner, self.executor, self.store)
             self.spec = AgentSpec(
                 "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
             )
+            # Required mode runs Policy Agent for retrieval work. Main Agent
+            # can optionally delegate only order facts to the Orders specialist.
+            self.main_spec = (
+                AgentSpec(
+                    "main",
+                    self.spec.tools,
+                    max_steps=settings.max_agent_steps,
+                    delegate_agents=("orders",),
+                )
+                if self.delegation_mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE
+                else self.spec
+            )
         self.validator = AnswerValidator(
             self.provider,
-            tool_contracts=self.executor.schemas(self.spec),
+            tool_contracts=self.executor.schemas(self.main_spec),
             verifier=self._verify_faithfulness,
         )
         self.runner.output_validator = self.validator.validate
@@ -258,7 +271,7 @@ class ChatService:
                             await record_event(
                                 {
                                     "event": "delegation_started",
-                                    "source": "c_preflight",
+                                    "source": "policy_preflight",
                                     "expert": expert,
                                     "tool": "delegate_task",
                                 }
@@ -277,7 +290,7 @@ class ChatService:
                                                 "event": "delegation_allocation",
                                                 "expert": expert,
                                                 "allocation": allocation,
-                                                "source": "c_preflight",
+                                                "source": "policy_preflight",
                                             }
                                         )
                                         output = await self.executor.execute(
@@ -365,7 +378,7 @@ class ChatService:
                             await record_event(
                                 {
                                     "event": "delegation_result",
-                                    "source": "c_preflight",
+                                    "source": "policy_preflight",
                                     "expert": expert,
                                     "status": attempt["status"],
                                     "child_run_id": attempt.get("child_run_id"),
@@ -383,7 +396,7 @@ class ChatService:
                     result = await self.runner.run(
                         request.message,
                         context,
-                        self.spec,
+                        self.main_spec,
                         history=history,
                         summary=summary,
                         facts=facts,

@@ -1,4 +1,4 @@
-"""Request-time evidence routing for the C-mode delegation path.
+"""Request-time evidence routing for required policy retrieval.
 
 This policy only sees the live conversation and user-scoped confirmed facts. It
 has no dependency on benchmark IDs, scenarios, labels, or expected answers.
@@ -50,14 +50,14 @@ class DelegationPolicy:
             return DelegationDecision(self.mode)
 
         needs = request_requirements(request, history=history, confirmed_facts=confirmed_facts)
-        eligible = needs.order and needs.policy
+        experts: tuple[str, ...]
         if self.mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE:
-            eligible = eligible and needs.identified_order
-        experts = (
-            (("policy", "orders") if self.mode is DelegationMode.AUTO else ("orders", "policy"))
-            if eligible
-            else ()
-        )
+            # Retrieval work is always researched by Policy Agent. Order facts
+            # remain with Main Agent unless it optionally delegates to Orders.
+            experts = ("policy",) if needs.policy else ()
+        else:
+            eligible = needs.order and needs.policy
+            experts = ("policy", "orders") if eligible else ()
         return DelegationDecision(
             self.mode,
             experts,

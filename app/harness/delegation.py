@@ -84,7 +84,9 @@ class DelegationService:
                     "event": "delegation_dispatched",
                     "parent_run_id": parent,
                     "expert": args.agent,
-                    "source": "c_preflight" if delegation_include_observations.get() else "model",
+                    "source": "policy_preflight"
+                    if delegation_include_observations.get()
+                    else "model",
                 }
             )
         async with self.gate:

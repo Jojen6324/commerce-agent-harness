@@ -166,7 +166,11 @@ async def evaluate(
                 call_id = details.get("tool_call_id")
                 if call_id:
                     state["delegation_call_ids"].add(call_id)
-            if event == "agent_started" and details.get("agent") not in (None, "main"):
+            if event == "agent_started" and details.get("agent") in (
+                "orders",
+                "policy",
+                "knowledge",
+            ):
                 state["specialist_agents"].add(details["agent"])
             if event == "delegation_plan":
                 state["required_experts"].update(details.get("required_experts", []))
@@ -411,11 +415,6 @@ async def evaluate(
                 base_url="http://task-eval",
             ) as client:
                 for task in selected:
-                    delegation_expected = (
-                        bool(delegation_enabled and task.scenario == "multi_agent")
-                        if arm != "C"
-                        else False
-                    )
                     task_monitor_state[task.id] = {
                         "delegation_call_ids": set(),
                         "specialist_agents": set(),
@@ -430,7 +429,7 @@ async def evaluate(
                         "task_started",
                         task_id=task.id,
                         scenario=task.scenario,
-                        delegation_expected=delegation_expected,
+                        delegation_expected=None,
                     )
                     await install_fixture(c.session_factory, task.fixtures)
                     calls.clear()
@@ -571,7 +570,7 @@ async def evaluate(
                     )
                     state = task_monitor_state[task.id]
                     specialist_agents = sorted(state["specialist_agents"])
-                    if arm == "C":
+                    if delegation_policy == "required_when_eligible":
                         delegation_expected = bool(state["required_experts"])
                         actual_calls = max(
                             state["delegate_calls"], state["delegate_dispatch_count"]
@@ -586,14 +585,9 @@ async def evaluate(
                             else "not_required"
                         )
                     else:
+                        delegation_expected = False
                         delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
-                        delegation_status = (
-                            "used"
-                            if delegation_used
-                            else "missing"
-                            if delegation_expected
-                            else "not_expected"
-                        )
+                        delegation_status = "used" if delegation_used else "not_expected"
                     log_progress(
                         "task_finished",
                         task_id=task.id,
@@ -602,7 +596,7 @@ async def evaluate(
                         delegation_used=delegation_used,
                         delegation_calls=(
                             max(state["delegate_calls"], state["delegate_dispatch_count"])
-                            if arm == "C"
+                            if delegation_policy == "required_when_eligible"
                             else state["delegate_calls"] or len(state["delegation_call_ids"])
                         ),
                         specialist_agents=specialist_agents,
@@ -612,7 +606,7 @@ async def evaluate(
                         budget_blocked=sorted(state["budget_blocked_experts"]),
                         real_delegate_calls=(
                             max(state["delegate_calls"], state["delegate_dispatch_count"])
-                            if arm == "C"
+                            if delegation_policy == "required_when_eligible"
                             else state["delegate_calls"]
                         ),
                     )

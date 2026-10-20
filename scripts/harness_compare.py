@@ -1,4 +1,4 @@
-"""Fixed small real-model A/B/C comparison. Run A from the preserved baseline archive."""
+"""Fixed small real-model A/B comparison on the current harness."""
 
 import argparse
 import asyncio
@@ -13,7 +13,7 @@ from app.services.container import build_container
 
 async def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--variant", choices=["A", "B", "C"], required=True)
+    p.add_argument("--variant", choices=["A", "B"], required=True)
     p.add_argument("--output", required=True)
     args = p.parse_args()
     import os
@@ -28,8 +28,12 @@ async def main():
         deepseek_base_url="https://apihub.agnes-ai.com/v1",
         deepseek_model="agnes-3.0-flash",
     )
-    if args.variant != "A":
-        settings = settings.model_copy(update={"agent_delegation_enabled": args.variant == "C"})
+    settings = settings.model_copy(
+        update={
+            "agent_delegation_enabled": args.variant == "B",
+            "agent_delegation_policy": "required_when_eligible" if args.variant == "B" else "off",
+        }
+    )
     c = await build_container(settings, seed=True)
     rows = []
     try:

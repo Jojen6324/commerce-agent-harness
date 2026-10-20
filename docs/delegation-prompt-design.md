@@ -1,6 +1,6 @@
 # 委派提示词设计
 
-提示词版本：`evidence-delegation-v2`。维护位置：`app/prompts/delegation.py`。参考资料读取日期：2026-10-20。
+提示词版本：`evidence-delegation-v3`。维护位置：`app/prompts/delegation.py`。参考资料读取日期：2026-10-20。
 
 ## 公开实现参考
 
@@ -24,4 +24,4 @@
 
 系统指令与交接数据分开。工具白名单、输入 Schema、身份、资源归属、任务总预算与实际写入审批由原执行器强制执行，提示词不能扩大权限。
 
-报告记录 C 组的 `delegation_prompt_version`，保留历史版本结果。AGNES 调试用例是同一批样本在不同代码版本下的回归，不能作为独立新样本或全量成功率。提示词优化不修改数据集与确定性评分规则。
+报告记录 B 组的 `delegation_prompt_version`，保留历史版本结果。B 强制 Policy Agent 处理需要知识检索的请求，Main Agent 可按需委派 Orders。AGNES 调试用例是同一批样本在不同代码版本下的回归，不能作为独立新样本或全量成功率。提示词优化不修改数据集与确定性评分规则。

@@ -9,12 +9,12 @@ flowchart TD
     U[User Request] --> C[ChatService: session / trace / root run]
     C --> B[Shared request Budget]
     C --> P{DelegationPolicy}
-    P -->|OFF 或不符合条件| M[Main AgentRunner]
-    P -->|符合条件| D[DelegationService]
-    D --> O[Read-only Orders Agent]
-    D --> R[Policy Research Agent]
-    O --> M
+    P -->|A: OFF / 无需政策检索| M[Main AgentRunner]
+    P -->|B: 需要政策检索| D[Policy Agent via DelegationService]
+    D --> R[Read-only Policy Research Agent]
     R --> M
+    M -->|按需选择| O[Read-only Orders Agent]
+    O --> M
     M --> T[ToolExecutor: schema / role / identity / ownership / risk]
     T -->|read| M
     T -->|write proposal| A[Persisted Action, wait for explicit confirmation]
@@ -30,7 +30,7 @@ flowchart TD
 
 `AgentRunner` 是所有 Agent 的模型与工具循环。角色由 `AgentSpec` 限制工具：Main Agent 拥有当前业务所需工具；Policy 只允许 `search_knowledge` 与 `read_artifact`；Orders 只允许白名单只读业务工具；Faithfulness 只允许 `read_artifact`。所有工具调用继续经过 `ToolExecutor` 的参数 Schema、角色、服务端身份、资源归属、风险、deadline 和预算检查。子 Agent 的推理过程保存在独立 run 中，不会作为消息追加到用户历史。
 
-`DelegationPolicy` 依据当前请求、历史和已经确认的事实，在 `OFF`、`AUTO`、`REQUIRED_WHEN_ELIGIBLE` 下决定是否需要专家。策略不读取评测 ID、场景标签或期望答案。`delegate_task` 仍可由 Main Agent 自主使用；多 Agent 不是所有请求的强制路径。
+评测只比较 A/B 两组：A 是单 Agent；B 在当前请求、历史或已确认事实表明需要知识检索时，强制运行 Policy Agent。策略不读取评测 ID、场景标签或期望答案。订单查询不强制委派；B 的 Main Agent 可以按需调用只读 Orders Agent，且委派 Schema 与执行器都只允许该角色。Policy Agent 的必需检索不由模型自行决定。`AUTO` 仍保留为兼容运行选项，但不属于本 A/B 对照。
 
 ## 检索与证据
 
@@ -85,7 +85,7 @@ Faithfulness 输入包含原始问题、候选答复、原始工具观察、政�
 
 ### 2. 复杂政策追问与补检索
 
-用户问“ORD10002 里的定制马克杯超过七天且有质量问题，能否退货？”。C 模式识别同时需要订单与政策证据，建立 Orders 和 Policy 子 run。Policy 第一次检索如果未覆盖定制商品的质量例外，会换一个 query 补检索；只有检索观察中的 Chunk ID 能进入结构化 findings。Main 合并真实订单商品与政策范围，再由 Faithfulness 审核最终回答。
+用户问“ORD10002 里的定制马克杯超过七天且有质量问题，能否退货？”。B 模式根据政策证据需求强制建立 Policy 子 run；Main 可以另外选择 Orders Agent 查询商品事实。Policy 第一次检索如果未覆盖定制商品的质量例外，会换一个 query 补检索；只有检索观察中的 Chunk ID 能进入结构化 findings。Main 合并真实订单商品与政策范围，再由 Faithfulness 审核最终回答。
 
 ```json
 {
@@ -97,17 +97,16 @@ Faithfulness 输入包含原始问题、候选答复、原始工具观察、政�
     "agent": "main",
     "status": "completed",
     "events": [
-      {"event": "delegation_plan", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "mode": "required_when_eligible", "required_experts": ["orders", "policy"]},
-      {"event": "delegation_started", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "orders", "source": "c_preflight"},
-      {"event": "delegation_allocation", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "orders", "allocation": {"tokens": 32000, "model_calls": 10, "tool_calls": 3}},
-      {"event": "tool_completed", "trace_id": "tr_policy_02", "run_id": "run_orders_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "orders", "tool": "get_order_items", "status": "completed", "success": true},
-      {"event": "delegation_result", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "orders", "status": "completed", "child_run_id": "run_orders_02"},
-      {"event": "delegation_started", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "policy", "source": "c_preflight"},
+      {"event": "delegation_plan", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "mode": "required_when_eligible", "required_experts": ["policy"]},
+      {"event": "delegation_started", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "policy", "source": "policy_preflight"},
       {"event": "tool_completed", "trace_id": "tr_policy_02", "run_id": "run_policy_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "policy", "tool": "search_knowledge", "tool_call_id": "call_policy_01", "status": "completed", "success": true, "result_ref": "art_policy_01"},
       {"event": "policy_search_deduplicated", "trace_id": "tr_policy_02", "run_id": "run_policy_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "policy", "tool": "search_knowledge", "tool_call_id": "call_policy_repeat"},
       {"event": "tool_completed", "trace_id": "tr_policy_02", "run_id": "run_policy_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "policy", "tool": "search_knowledge", "tool_call_id": "call_policy_repeat", "status": "deduplicated", "success": false},
       {"event": "tool_completed", "trace_id": "tr_policy_02", "run_id": "run_policy_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "policy", "tool": "search_knowledge", "tool_call_id": "call_policy_02", "status": "completed", "success": true, "result_ref": "art_policy_02"},
       {"event": "delegation_result", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "policy", "status": "completed", "child_run_id": "run_policy_02", "evidence_refs": ["chunk_return_custom_01", "chunk_quality_exception_02"]},
+      {"event": "delegation_started", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "orders", "source": "model"},
+      {"event": "tool_completed", "trace_id": "tr_policy_02", "run_id": "run_orders_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "orders", "tool": "get_order_items", "status": "completed", "success": true},
+      {"event": "delegation_result", "trace_id": "tr_policy_02", "run_id": "run_root_02", "parent_run_id": null, "session_id": "sess_demo_02", "agent": "main", "expert": "orders", "status": "completed", "child_run_id": "run_orders_02"},
       {"event": "faithfulness_verdict", "trace_id": "tr_policy_02", "run_id": "run_review_02", "parent_run_id": "run_root_02", "session_id": "sess_demo_02", "agent": "faithfulness", "verdict": "pass", "evidence_refs": ["get_order_items", "chunk_return_custom_01", "chunk_quality_exception_02"]}
     ]
   },
@@ -171,23 +170,23 @@ Faithfulness 输入包含原始问题、候选答复、原始工具观察、政�
 
 重点自动化覆盖包括：检索工具只执行 retrieval node 且不调用生成 LLM；Policy Agent 对不足证据补充不同 query、去重重复 query、拒绝伪造引用并保留适用范围；Faithfulness 对无证据结论 fail closed、将不通过反馈给 Main Agent 并在有界修正后重新审核；大 Artifact 读取复用原引用而不是复制；root/policy/orders/Faithfulness run 共用 trace 并校验父级和会话归属；旧 SQLite 表前向补充 `trace_id`；已有订单、审批确认、幂等和跨用户拒绝测试继续通过。
 
-最终离线检查：全套 pytest **328 passed**；`ruff check .`、全仓 `ruff format --check .`（201 个 Python 文件）和 Mypy（139 个源码文件）均通过。评测脚本和配对测试只做了 Ruff 格式化；格式化前后的 Python AST 相同，评测集与 fixture 没有变化。
+最终离线检查：全套 pytest **330 passed**；`ruff check .`、全仓 `ruff format --check .`（201 个 Python 文件）和 Mypy（139 个源码文件）均通过。评测脚本和配对测试只做了 Ruff 格式化；格式化前后的 Python AST 相同，评测集与 fixture 没有变化。
 
 | 指标 | 改造前已有实测 | 本次架构改造后 |
 | --- | ---: | ---: |
 | Qwen A 开发集通过 | 37/40 (92.5%)，commit `5a63af9` | 尚未运行 |
-| Qwen C 开发集通过 | 34/40 (85.0%)，commit `5a63af9` | 尚未运行 |
-| Qwen A/C 模型调用、Token、平均轮耗时 | 313/460 次调用；1,726,507/1,866,161 评测 Token；17.02/25.08 秒 | 尚未运行 |
-| 确定性自动化测试 | 317 passed（重构前分支基线） | 328 passed |
+| Qwen C 开发集通过（仅历史对照） | 34/40 (85.0%)，commit `5a63af9` | 不适用于本次 A/B 设计 |
+| Qwen A/C 模型调用、Token、平均轮耗时（仅历史） | 313/460 次调用；1,726,507/1,866,161 评测 Token；17.02/25.08 秒 | 新 A/B 尚未运行 |
+| 确定性自动化测试 | 317 passed（重构前分支基线） | 330 passed |
 | 测试语料 / Fixture / 评分规则 | 50 条任务文件，SHA-256 `376f0d6889862624f848832a409b687c511a503fb2a7207bf44e41f1346630bb` | 未修改 |
 
-改造前 Qwen 结果的逐任务与失败分类见[历史完整 A/C 报告](qwen38-flash-full-ac-20261020.md)。它记录在本次架构重构前的代码提交 `5a63af9`，不能当成本分支改造后的成绩。当前完整 Qwen A/C 开发集评测**按用户最新指示暂缓**，因此本次改造后的任务成功率、失败类型、模型调用数、Token 和耗时目前均未测得；自动化 Fake/offline 测试不替代真实模型评测。
+改造前 Qwen 结果的逐任务与失败分类见[历史完整 A/C 报告](qwen38-flash-full-ac-20261020.md)。它记录在本次架构重构前的代码提交 `5a63af9`，不能当成本分支改造后的成绩。用户要求只保留 A/B 对照且此前要求先不跑，因此新 A/B 开发集评测暂未运行；本次改造后的任务成功率、失败类型、模型调用数、Token 和耗时目前均未测得；自动化 Fake/offline 测试不替代真实模型评测。
 
-本次未改动 `agent_tasks.jsonl`、`agent_comparison_50.jsonl`、fixtures、开发/保留划分或评分逻辑。保留集未用于调参。开发集 A/C 全量真实回归的复跑命令与报告位置见历史报告；运行时应将每个新结果保存到独立目录，避免覆盖 `eval/reports/qwen38_flash_ac_20261020/`。
+本次未改动 `agent_tasks.jsonl`、`agent_comparison_50.jsonl`、fixtures、开发/保留划分或评分逻辑。保留集未用于调参。A/B 真实回归时将新结果保存到独立目录，避免覆盖 `eval/reports/qwen38_flash_ac_20261020/` 中的历史记录。
 
 ## 已知限制
 
-- Qwen/AGNES 的本次重构后开发集质量仍待真实模型评测；历史 Qwen C 低于 A，不能据架构设计推断本次已修复。
+- Qwen/AGNES 的新 A/B 开发集质量仍待真实模型评测；历史 Qwen C 低于 A，不能据架构设计推断本次已修复。
 - Token 预算使用启发式估算，供应商未返回 usage 的失败请求采用保守预留；它不是账单精确值。
 - Faithfulness 是与主模型同供应商/模型时可能相关的模型裁判，无法替代人工审查；通过 verdict 只能说明所给输入和引用通过当前规则。
 - `user_id` 仍是演示 API 身份，不是公网可信认证。SQLite `init_schema` 仅对本地兼容做增量 trace 列，生产迁移仍应执行 Alembic。

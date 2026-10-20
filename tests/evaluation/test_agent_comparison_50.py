@@ -6,7 +6,7 @@ import pytest
 
 from eval.behavior import evaluate
 from eval.task_schema import DATA_DIR, AgentTask
-from scripts.compare_agent_benchmark import pair_results
+from scripts.compare_agent_benchmark import ARM_CONFIG, pair_results, summarize_variant
 
 DATASET = DATA_DIR / "agent_comparison_50.jsonl"
 
@@ -54,7 +54,7 @@ def test_comparison_requires_same_ids_and_digest():
         pair_results(report(["a"]), report(["b"]))
 
 
-def test_comparison_can_pair_c_mode_on_the_same_task_manifest():
+def test_comparison_pairs_only_single_agent_a_and_policy_required_b():
     def report(status):
         return {
             "corpus_digest": "same",
@@ -69,19 +69,62 @@ def test_comparison_can_pair_c_mode_on_the_same_task_manifest():
             ],
         }
 
-    paired = pair_results(report("passed"), report("failed"), report("review_required"))
-    assert paired[0]["single"] == "passed"
-    assert paired[0]["multi"] == "failed"
-    assert paired[0]["c"] == "review_required"
+    paired = pair_results(report("passed"), report("failed"))
+    assert paired[0]["A"] == "passed"
+    assert paired[0]["B"] == "failed"
+    assert ARM_CONFIG == {"A": (False, "off"), "B": (True, "required_when_eligible")}
+
+
+def test_b_summary_derives_required_policy_usage_without_monitor_stream():
+    response = {
+        "diagnostics": {
+            "delegation": {
+                "required_experts": ["policy"],
+                "completed_experts": ["policy"],
+                "budget_blocked": [],
+                "delegate_calls": 1,
+            },
+            "role_usage": {"policy": {"model_calls": 2, "total_tokens": 50}},
+            "model_calls": 3,
+        },
+        "token_usage": {"total_tokens": 60},
+    }
+    report = {
+        "cases": [{"id": "task", "turns": [{"response": response}]}],
+        "monitoring": {"events": []},
+        "overall": {
+            "task_status": {"passed": 1},
+            "deterministic_passed": 1,
+            "safety_violation_count": 0,
+        },
+        "delegation_enabled": True,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32_000,
+        "agent_total_budget_tokens": 80_000,
+        "delegation_prompt_version": "test",
+        "mode": "deterministic_offline",
+    }
+
+    summary = summarize_variant(report)
+    assert summary["delegation_expected_tasks"] == 1
+    assert summary["delegation_used_tasks"] == 1
+    assert summary["delegation_incomplete_tasks"] == 0
+    assert summary["required_expert_roles"] == ["policy"]
 
 
 @pytest.mark.asyncio
 async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation():
+    from sse_starlette.sse import AppStatus
+
+    # SSE's shutdown event is process-global and may be bound to an earlier
+    # pytest event loop; reset it so this test owns the event it creates.
+    AppStatus.should_exit_event = None
     report = await evaluate(
         dataset_path=DATASET,
         split="development",
         limit=1,
         delegation_enabled=True,
+        delegation_policy="required_when_eligible",
         monitor=True,
     )
     case = report["cases"][0]
@@ -96,5 +139,4 @@ async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation(
     assert case["turns"][0]["wall_elapsed_ms"] >= 0
     assert len(task_events) == 1
     assert task_events[0]["delegation_expected"] is True
-    assert task_events[0]["delegation_used"] is False
-    assert task_events[0]["delegation_status"] == "missing"
+    assert task_events[0]["delegation_status"] in ("required_complete", "required_incomplete")

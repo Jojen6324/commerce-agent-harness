@@ -38,6 +38,38 @@ async def test_specialists_cannot_write_or_delegate():
 
 
 @pytest.mark.asyncio
+async def test_main_order_delegation_schema_and_executor_are_role_limited():
+    executor = ToolExecutor(ToolRegistry(), None)
+    executor.delegate = AsyncMock(return_value={"status": "completed"})
+    spec = AgentSpec(
+        "main",
+        frozenset({"delegate_task"}),
+        delegate_agents=("orders",),
+    )
+
+    schema = executor.schemas(spec)[0]["function"]["parameters"]
+    assert schema["properties"]["agent"]["enum"] == ["orders"]
+
+    with pytest.raises(ToolPermissionError):
+        await executor.execute(
+            "delegate_task",
+            {"agent": "policy", "goal": "检索退货政策"},
+            context(),
+            spec,
+        )
+    executor.delegate.assert_not_awaited()
+
+    result = await executor.execute(
+        "delegate_task",
+        {"agent": "orders", "goal": "查询订单状态"},
+        context(),
+        spec,
+    )
+    assert result["status"] == "completed"
+    executor.delegate.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_specialist_failure_returns_bounded_structured_result():
     runner = SimpleNamespace(
         run=AsyncMock(

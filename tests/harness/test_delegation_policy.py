@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from app.harness.delegation_policy import DelegationMode, DelegationPolicy
 
 
-def test_required_policy_selects_only_evidence_roles_needed_by_request():
+def test_required_policy_expert_runs_for_rag_but_orders_remains_optional():
     policy = DelegationPolicy(DelegationMode.REQUIRED_WHEN_ELIGIBLE)
 
     order = policy.decide("核实 ORD10001 的物流状态")
@@ -12,8 +12,8 @@ def test_required_policy_selects_only_evidence_roles_needed_by_request():
     simple = policy.decide("你好")
 
     assert order.experts == ()
-    assert cross_domain.experts == ("orders", "policy")
-    assert adjacent_order_id.experts == ("orders", "policy")
+    assert cross_domain.experts == ("policy",)
+    assert adjacent_order_id.experts == ("policy",)
     assert simple.experts == ()
 
 
@@ -25,7 +25,7 @@ def test_policy_uses_history_and_confirmed_facts_for_anaphoric_follow_up():
         confirmed_facts={"last_order": {"order_id": "ORD10001"}},
     )
 
-    assert decision.experts == ("orders", "policy")
+    assert decision.experts == ("policy",)
 
 
 def test_auto_only_selects_independent_cross_domain_work_and_off_selects_none():
@@ -35,19 +35,13 @@ def test_auto_only_selects_independent_cross_domain_work_and_off_selects_none():
     assert DelegationPolicy("off").decide(query).experts == ()
 
 
-def test_c_skips_simple_queries_and_missing_identity_without_dataset_labels():
+def test_required_policy_uses_live_retrieval_need_not_order_identity_or_dataset_labels():
     policy = DelegationPolicy("required_when_eligible")
-    for query in (
-        "核实 ORD778899 的物流状态",
-        "退款政策是什么",
-        "忘记订单号了，能不能退款",
-        "ORD778899退款进度如何",
-    ):
-        assert policy.decide(query).experts == ()
-    assert policy.decide("核实 ORD778899 的商品，破损的退货政策怎么规定").experts == (
-        "orders",
-        "policy",
-    )
+    assert policy.decide("核实 ORD778899 的物流状态").experts == ()
+    assert policy.decide("退款政策是什么").experts == ("policy",)
+    assert policy.decide("忘记订单号了，能不能退款").experts == ("policy",)
+    assert policy.decide("ORD778899退款进度如何").experts == ()
+    assert policy.decide("核实 ORD778899 的商品，破损的退货政策怎么规定").experts == ("policy",)
 
 
 def test_expert_context_remains_valid_json_when_history_and_facts_are_large():

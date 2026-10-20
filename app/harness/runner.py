@@ -65,6 +65,7 @@ class AgentSpec:
     prompt: str = SYSTEM
     max_steps: int = 8
     finalize_on_tool_limit: bool = False
+    delegate_agents: tuple[str, ...] | None = None
 
 
 class AgentRunner:

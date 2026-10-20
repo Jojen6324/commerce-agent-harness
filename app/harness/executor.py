@@ -66,6 +66,8 @@ class ToolExecutor:
             args = DelegateInput.model_validate(arguments)
             if spec.name != "main" or self.delegate is None:
                 raise ToolPermissionError("delegation_denied")
+            if spec.delegate_agents is not None and args.agent not in spec.delegate_agents:
+                raise ToolPermissionError("delegation_role_denied")
             return await self.delegate(args, context)
         if name == "load_skill":
             from app.skills.loader import skill_by_name
@@ -294,13 +296,18 @@ class ToolExecutor:
         from app.skills.loader import load_skills
 
         skill_names = [skill["name"] for skill in load_skills()]
+        delegate_description = (
+            "委派独立的只读订单事实调查给 Orders 专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。"
+            if spec.delegate_agents == ("orders",)
+            else "委派独立只读调查给 policy 或 orders 专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。"
+        )
         extras = {
             "ask_user": (
                 "仅缺少必要订单号、原因或政策例外条件时补问，不猜参数。不要用本工具请求操作批准；参数齐全时调用业务工具生成pending_action，由后端处理确认。",
                 AskInput.model_json_schema(),
             ),
             "delegate_task": (
-                "委派独立只读调查给policy或orders专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。",
+                delegate_description,
                 DelegateInput.model_json_schema(),
             ),
             "load_skill": (
@@ -324,6 +331,12 @@ class ToolExecutor:
         }
         for name, (description, parameters) in extras.items():
             if name in spec.tools:
+                if name == "delegate_task" and spec.delegate_agents is not None:
+                    parameters = DelegateInput.model_json_schema()
+                    parameters["properties"]["agent"] = {
+                        "type": "string",
+                        "enum": list(spec.delegate_agents),
+                    }
                 if name == "load_skill" and not skill_names:
                     continue
                 schemas.append(

@@ -39,7 +39,7 @@ def test_runner_and_delegation_share_evidence_requirements(query, policy):
     needs = request_requirements(query)
     assert needs.policy is policy
     assert bool(policy_evidence_issue(query)) is policy
-    expected = ("orders", "policy") if policy else ()
+    expected = ("policy",) if policy else ()
     assert DelegationPolicy("required_when_eligible").decide(query).experts == expected
 
 

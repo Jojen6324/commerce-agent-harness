@@ -27,9 +27,10 @@
 
 本分支已将主路径替换为 Python `AgentRunner`，移除 LangGraph 与独立意图分类。
 主 Agent 根据当前目标、历史、事实和工具目录直接决定回答、补问、查询、按需专家委派或业务提案。
-完整 RAG、答案校验、上下文压缩和本地业务工具继续复用。写入必须经持久化 `action_id` 确认。
+原有检索、答案校验、上下文压缩和本地业务工具继续复用；生产知识检索已改为纯检索，由 Harness Agent 显式决定是否补查。写入必须经持久化 `action_id` 确认。
 
 - [启动、源码导读、三个演示与能力边界](docs/harness.md)
+- [最终 Harness 架构、跨 Agent Trace 样例、验收结果与限制](docs/harness-architecture-v2.md)
 - [本次基线、模拟测试与真实模型对照](docs/harness-evaluation.md)
 - [新任务语料、来源家族划分与验收协议](docs/agent-task-evaluation.md)
 - 生成模型：云端 `AGNES` 绑定，`https://apihub.agnes-ai.com/v1`，`agnes-3.0-flash`；不自动切换其他付费服务。
@@ -43,7 +44,7 @@
 | 能力 | 当前实现 |
 |:---|:---|
 | 自主执行 | 一套 Python AgentRunner，直接回答、补问、调用工具或按需委派 |
-| 完整 RAG | KnowledgeService 统一改写、BM25/BGE、RRF、精排、多轮检索与自纠错 |
+| 可追溯 RAG | `search_knowledge` 纯检索：BM25/BGE、RRF、精排和来源元数据；需要补检索时由 Agent 显式发起 |
 | 业务工具与权限 | ToolExecutor 统一 Schema、归属、角色白名单、风险、超时和结果记录 |
 | 按需多 Agent | 主 Agent、只读知识专家、只读订单专家；深度 1，共享预算 |
 | 人工确认 | 持久化 Action、有效期、幂等键、条件更新与本地事务 |
@@ -51,7 +52,7 @@
 | 可观测性 | run/call ID、工具与专家进度、压缩与校验事件；最终答案校验后返回 |
 
 新路径不再返回意图分类结果，兼容字段 `intent`、`complexity`、`strategy` 可为 null。
-详细边界与当前验证结果见 [Harness 文档](docs/harness.md) 和 [本次对照报告](docs/harness-evaluation.md)。
+详细流程、边界与当前验证结果见 [Harness 文档](docs/harness.md)、[架构改造验收](docs/harness-architecture-v2.md) 和 [历史对照报告](docs/harness-evaluation.md)。
 
 人工服务请求现在保存为数据库工单，支持受保护的人工受理、解决和同会话状态查询。配置与能力边界见 [最小人工工单服务](docs/support-service.md)；保存工单不代表已经接通真人。
 

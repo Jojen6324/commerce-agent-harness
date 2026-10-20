@@ -1,4 +1,6 @@
-# 04 · Adaptive-RAG 与检索
+# 04 · Adaptive-RAG 与检索（旧运行时说明）
+
+> 本章的 Adaptive Router、Self-RAG 多跳和生成式检索循环属于旧实现记录。当前生产 `search_knowledge` 是纯检索工具；补充 query 和答案审核由 Agent Harness 显式控制。当前设计见[最终 Harness 架构与验收](harness-architecture-v2.md)。
 
 > 一句话：先路由复杂度，再决定不检索 / 一跳 hybrid / Self-RAG 多跳；BM25 与向量用 RRF 融 **rank** 不融分数。
 

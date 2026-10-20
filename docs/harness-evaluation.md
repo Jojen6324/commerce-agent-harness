@@ -1,4 +1,6 @@
-# 本次 Harness 重构验证与对照
+# 历史 Harness 重构验证与对照
+
+> 本报告的自动化测试和测量结果来自后续五阶段 Policy/Faithfulness 架构重构之前的代码。当前架构与验收状态见[Harness 架构改造验收](harness-architecture-v2.md)；其中的历史 AGNES/Qwen 数字不能当作当前代码成绩。
 
 ## 基线与条件
 

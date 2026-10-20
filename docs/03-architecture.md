@@ -1,6 +1,8 @@
 > 本文中的 Graph / intent 流程属于旧基线。当前主路径请读 [Agent Harness](harness.md)；旧实现由 Git 基线分支保留。
 
-# 03 · 系统架构
+# 03 · 系统架构（历史 LangGraph 实现）
+
+> 本章保留旧版 LangGraph 架构作项目历史参考，不代表当前生产主路径。当前 Python AgentRunner、纯检索工具、Policy/Faithfulness 专家和完整 Trace 见[最终 Harness 架构与验收](harness-architecture-v2.md)。
 
 > 一句话：Graph 进程内编译一次；DB session 每个请求新建，用 contextvars 交给工具，禁止把连接编进图。
 

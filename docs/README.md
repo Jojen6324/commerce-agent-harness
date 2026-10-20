@@ -1,5 +1,7 @@
 # 技术文档
 
+> 当前运行时已从 LangGraph/Adaptive Router 切换到轻量 Agent Harness。新架构入口、Trace 样例与最新验收结果见[Harness 架构改造验收](harness-architecture-v2.md)；本目录中明确标注“旧运行时”的章节作为历史/技术背景保留。
+
 生产向手册。结构参考 [Diátaxis](https://diataxis.fr/)：先能跑，再讲概念，再查参考，最后看上线。
 
 **原则：只写仓库里真实存在的行为。** 评测数字以 [10 · 评测](10-evaluation.md) 和 [`eval/MEASURED.md`](../eval/MEASURED.md) 为准。

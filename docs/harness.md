@@ -24,7 +24,7 @@ cd ..
 已真实验证文本、JSON object 和原生 function tool calling。无 AGNES 时进入确定性离线演示，不切换其他付费服务。
 没有通用的自然语言动作解析器，也没有自动 JSON 兼容模式：截断、非法 JSON、缺参数均不能执行。
 
-核心默认值见 `.env.example`：16K 上下文（含 Schema 和输出预留）、60K 总 Token、24 次模型尝试、300 秒 deadline、普通工具 30 秒超时、RAG 工具 180 秒超时、8 个 Agent 步骤、6 次工具调用。多步骤演示可显式提高 `MAX_TOOL_CALLS=16`。
+模型调用的上下文硬上限为 32K（包含工具 Schema 和输出预留），主/子 Agent、检索、Faithfulness 审核和修正共享任务级 Token、模型调用、工具调用与 deadline 预算。Settings 默认任务预算为 80K Token、24 次模型调用、300 秒；环境变量可收紧这些值。普通工具默认 30 秒，知识检索默认 180 秒，主 Agent 默认最多 8 步、6 次工具调用。
 Token 估计是 CJK 字符启发式，不能替代供应商精确 tokenizer；不能安全放下关键上下文时停止。
 `token_usage` 仅累计已返回的 usage，失败请求保守预留单独列在 `diagnostics.reserved_tokens_without_usage`，不能当作已计费 Token。
 
@@ -37,11 +37,11 @@ PDF/Office 的 Unstructured extras、Postgres、Redis、Qdrant 是可选能力�
 1. `services/chat_service.py`：校验会话归属、加载历史与摘要、结构化事实和待确认 Action；同会话并发明确返回冲突。模型调用期间没有业务长事务。
 2. `harness/runner.py`：唯一的模型—工具循环。`AgentSpec` 控制角色与白名单。普通文本结束；`ask_user` 补问；工具观察回填；`delegate_task` 委派；写工具生成确认提案。没有全局 intent classifier、固定 Planner→Executor 或 LangGraph。
 3. `harness/executor.py`：所有业务、专家、Skill、HTTP 代理和确认执行统一经过 Schema、角色、身份、资源归属、风险、超时检查。身份来自服务端 Context，不接受模型选择用户。参数错误可有限修正；权限拒绝终止；模型无法调用隐藏写入入口。
-4. `services/knowledge.py`：`retrieve_evidence` 复用查询改写、BM25+BGE、RRF、去重和精排；complex=true 使用有限 SelfRAG 补检索。`answer_question` 追加原生成与忠实度自纠错。两个接口共用检索实现，证据含原文、来源、版本、document_id 和 chunk_id。
-5. `harness/validation.py`：先检查未知引用和不实业务完成声明，再按需复用忠实度判断与有限修正。业务工具实际结果进入校验。问候不强制调用知识裁判。原样返回已验证知识答复时复用校验，改写或合并业务事实后重新判断。
+4. `services/knowledge.py` 和 `tools/knowledge_service.py`：运行时 `search_knowledge` 只做一次 BM25+BGE 混合召回、RRF、去重、精排和缓存读写，返回带原文、来源、版本、品类、限制、document_id、chunk_id 的证据。它不调用生成模型改写 query、判定充分性或生成答案；需要补检索时由 Agent 发起下一次显式工具调用。`answer_question` 只保留为非生产兼容 helper，不在主 Agent 工具集中。
+5. `harness/validation.py` 与 `ChatService._verify_faithfulness`：先检查未知引用、退款/取消等完成声明和服务端回执；一般的、有工具证据的候选答案再交给只读 Faithfulness Agent 核对。审核结果引用必须来自真实 chunk 或工具观察；审核失败的反馈回到 Main Agent，最多修正两次，审核不可用时 fail closed。准确的服务端业务回执、无工具观察的闲聊等确定性路径不重复调用模型裁决。
 6. `harness/context.py`、`harness/budget.py`：每次主/子模型调用前准备上下文；大结果外置、保留受控引用和结构化事实、压缩早期历史。保留 tool_call_id 配对、当前目标和受保护事实。历史/摘要在后续轮次真实加载。RAG、校验和专家共享 ContextVar 预算；失败保守保留额度。
-7. `harness/delegation.py`：同一个 Runner 配置主 Agent、知识专家、订单专家。只允许主 Agent 委派，深度 1。两个明确 independent 的只读任务可并行，其他串行；共享预算、独立 DB session、取消时清理子任务。父级只接收事实、证据、缺失条件和短摘要，不接收全部子会话。
-8. `repositories/runtime.py`、`repositories/models.py`：持久化会话事实、大结果引用、run 事件与 Action。外置数据按用户和会话双重隔离。事件不保存隐藏推理或认证头。
+7. `harness/delegation_policy.py` 和 `harness/delegation.py`：`OFF / AUTO / REQUIRED_WHEN_ELIGIBLE` 只依据当前请求、历史和已确认事实选择专家，不读评测标签。Policy 角色只拥有 `search_knowledge`、`read_artifact`，结构化结论经 Pydantic 校验，引用逐一对照成功检索观察；最多三条不同政策 query。订单专家仅拥有白名单只读业务工具。所有角色复用 `AgentRunner`，写操作只在 Main Agent 的原权限内，专家不能写入或继续委派。
+8. `repositories/runtime.py`、`repositories/models.py`：持久化可信会话事实、来源 run/trace、Artifact、Run 事件与 Action。Trace ID 贯穿 root 与子 run，`parent_run_id` 显式关联政策和 Faithfulness 子任务。Artifact、Run、Session 均校验 user/session 所属；临时子 Agent 对话不追加到用户消息历史。事件不保存隐藏推理或认证头。
 9. `ToolExecutor.confirm`：通过 Action 的归属、TTL、条件更新 claim、服务器保存参数再次校验；本地写入与 Action 成功结果同事务提交。相同 Action 并发/重试返回持久化结果。模型不会重新规划确认参数。
 
 Skills 保留现有 JSON 定义，只注入短目录，由 `load_skill` 按需加载；不能扩大工具权限，本次未生成或修改业务 Skill。
@@ -117,7 +117,7 @@ PY
 - Hermes Agent `22063fc099ec9ad8357d7f8f6e6248a0400680d3`（MIT）：阅读 [`agent/context_compressor.py`](https://github.com/NousResearch/hermes-agent/blob/22063fc099ec9ad8357d7f8f6e6248a0400680d3/agent/context_compressor.py) 与 `context_compressor_prellm.py`，参考调用前压缩、保护首尾及确定性降级。本实现不调用辅助付费模型，也不复制其多供应商 fallback 系统。
 
 
-新的任务语料、逐题人工审阅目录、fixture与分组协议见 [任务行为评测](agent-task-evaluation.md)。原intent工具命中指标已移除；语义待审阅与实际通过分开计数，保留集必须显式选择。
+新的任务语料、逐题人工审阅目录、fixture与分组协议见 [任务行为评测](agent-task-evaluation.md)。本次架构的执行流程、Trace 样例、回归状态和已知限制见 [Harness 架构改造验收](harness-architecture-v2.md)。原 intent 工具命中指标已移除；语义待审阅与实际通过分开计数，保留集必须显式选择。
 
 
 ## 提案、结束状态与慢环境配置

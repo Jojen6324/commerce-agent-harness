@@ -1,6 +1,8 @@
 > 本文中的 Graph / intent 流程属于旧基线。当前主路径请读 [Agent Harness](harness.md)；旧实现由 Git 基线分支保留。
 
-# 05 · 智能体、工具与 HITL
+# 05 · 智能体、工具与 HITL（旧 Graph 运行时说明）
+
+> 本章的意图分类、Planner/Executor 图节点属于旧实现记录。当前 AgentRunner、工具白名单、多 Agent Trace 和校验闭环见[最终 Harness 架构与验收](harness-architecture-v2.md)。业务工具、确认和幂等协议仍由当前实现复用。
 
 > 一句话：意图 LLM + 覆盖层；Skill 按需收缩工具目录；写操作 HITL + 幂等；读失败换工具；MCP 与本地工具同一套 Function Calling。
 

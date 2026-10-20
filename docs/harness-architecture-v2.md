@@ -171,7 +171,7 @@ Faithfulness 输入包含原始问题、候选答复、原始工具观察、政�
 
 重点自动化覆盖包括：检索工具只执行 retrieval node 且不调用生成 LLM；Policy Agent 对不足证据补充不同 query、去重重复 query、拒绝伪造引用并保留适用范围；Faithfulness 对无证据结论 fail closed、将不通过反馈给 Main Agent 并在有界修正后重新审核；大 Artifact 读取复用原引用而不是复制；root/policy/orders/Faithfulness run 共用 trace 并校验父级和会话归属；旧 SQLite 表前向补充 `trace_id`；已有订单、审批确认、幂等和跨用户拒绝测试继续通过。
 
-最终离线检查：全套 pytest **328 passed**；`ruff check .`、Mypy（139 个源码文件）通过；本次涉及的 `app/` 和 Harness/Knowledge 测试文件通过 Ruff 格式检查。全仓 `ruff format --check .` 仍有三个这次没有修改的文件不符合格式：`eval/behavior.py`、`scripts/compare_agent_benchmark.py`、`tests/evaluation/test_agent_comparison_50.py`。这三处的差异在重构开始前已存在，本次不做无关格式改写。
+最终离线检查：全套 pytest **328 passed**；`ruff check .`、全仓 `ruff format --check .`（201 个 Python 文件）和 Mypy（139 个源码文件）均通过。评测脚本和配对测试只做了 Ruff 格式化；格式化前后的 Python AST 相同，评测集与 fixture 没有变化。
 
 | 指标 | 改造前已有实测 | 本次架构改造后 |
 | --- | ---: | ---: |

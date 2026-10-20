@@ -85,9 +85,7 @@ async def test_production_search_is_single_pass_pure_retrieval_with_complete_sou
     reranker = AsyncMock()
     reranker.rerank.return_value = [chunk]
     llm = AsyncMock()
-    service = KnowledgeService(
-        retriever, reranker, llm, Settings(app_env="testing")
-    )
+    service = KnowledgeService(retriever, reranker, llm, Settings(app_env="testing"))
 
     result = await EvidenceTool(service).run(
         {"query": "耳机七天无理由，激活后是否例外", "complex": True},

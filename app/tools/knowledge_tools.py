@@ -55,12 +55,7 @@ class SearchKnowledgeTool(Tool):
         return ToolResult(
             name=self.name,
             success=True,
-            output={
-                "chunks": [
-                    c.model_dump(mode="json")
-                    for c in chunks
-                ]
-            },
+            output={"chunks": [c.model_dump(mode="json") for c in chunks]},
         )
 
 

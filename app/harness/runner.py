@@ -397,8 +397,8 @@ class AgentRunner:
                         raise LLMProviderError("invalid arguments", retryable=False)
                     parsed.append((call, args))
                 messages.append({"role": "assistant", "content": text or "", "tool_calls": calls})
-                pending = None
-                missing = None
+                pending: dict[str, Any] | None = None
+                missing: dict[str, Any] | None = None
                 precomputed = {}
                 parallel = len(parsed) == 2 and all(
                     c["function"]["name"] == "delegate_task" and a.get("independent") is True
@@ -591,10 +591,12 @@ class AgentRunner:
                         or ("completed" if output.get("success", True) else "failed"),
                         success=output.get("success", True),
                     )
-                    if output.get("status") == "needs_input":
+                    if isinstance(output, dict) and output.get("status") == "needs_input":
                         missing = output
-                    if "pending_action" in output:
-                        pending = output["pending_action"]
+                    if isinstance(output, dict):
+                        candidate_pending = output.get("pending_action")
+                        if isinstance(candidate_pending, dict):
+                            pending = candidate_pending
                     message_output = output
                     if result_ref and isinstance(output, dict):
                         # Small inline results keep all data. Large results carry
@@ -679,9 +681,19 @@ class AgentRunner:
                     await event("needs_input", missing_fields=missing["missing_fields"])
                     # Only this tool call may supply the partial answer. Earlier
                     # assistant messages may belong to history or failed repairs.
-                    partial_answer = (missing.get("answer") or text or "").strip()
-                    follow_up = missing["question"].strip()
-                    answer = partial_answer or follow_up
+                    candidate_answer = missing.get("answer")
+                    partial_answer = (
+                        candidate_answer.strip()
+                        if isinstance(candidate_answer, str)
+                        else text.strip()
+                        if isinstance(text, str)
+                        else ""
+                    )
+                    candidate_question = missing.get("question")
+                    follow_up = (
+                        candidate_question.strip() if isinstance(candidate_question, str) else ""
+                    )
+                    answer = partial_answer or follow_up or "请补充信息或联系人工客服。"
                     if partial_answer and follow_up and follow_up not in partial_answer:
                         answer = f"{partial_answer}\n\n还需要补充：{follow_up}"
                     candidate = {

@@ -1,4 +1,5 @@
 """Schema and pairing regression for the separate agent comparison corpus."""
+
 import json
 
 import pytest
@@ -11,7 +12,11 @@ DATASET = DATA_DIR / "agent_comparison_50.jsonl"
 
 
 def test_comparison_corpus_is_well_formed():
-    tasks = [AgentTask.model_validate_json(line) for line in DATASET.read_text(encoding="utf-8").splitlines() if line.strip()]
+    tasks = [
+        AgentTask.model_validate_json(line)
+        for line in DATASET.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     assert len(tasks) == len({t.id for t in tasks}) == 50
     assert len([t for t in tasks if t.scenario == "multi_agent"]) == 30
     assert len([t for t in tasks if t.scenario == "multi_turn"]) == 15
@@ -30,10 +35,20 @@ def test_comparison_corpus_is_well_formed():
 
 def test_comparison_requires_same_ids_and_digest():
     def report(ids):
-        return {"corpus_digest": "same", "cases": [
-            {"id": i, "scenario": "multi_agent", "task_status": "passed",
-             "deterministic_status": "passed", "turns": []} for i in ids
-        ]}
+        return {
+            "corpus_digest": "same",
+            "cases": [
+                {
+                    "id": i,
+                    "scenario": "multi_agent",
+                    "task_status": "passed",
+                    "deterministic_status": "passed",
+                    "turns": [],
+                }
+                for i in ids
+            ],
+        }
+
     assert len(pair_results(report(["a"]), report(["a"]))) == 1
     with pytest.raises(ValueError):
         pair_results(report(["a"]), report(["b"]))

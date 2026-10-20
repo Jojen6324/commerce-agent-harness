@@ -7,6 +7,7 @@ Examples:
  python -m scripts.compare_agent_benchmark --split all --live
  python -m scripts.compare_agent_benchmark --split all   # offline plumbing smoke; NOT model quality
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,7 +27,9 @@ def summarize_variant(report: dict) -> dict:
     cases = report["cases"]
     calls = [call for case in cases for turn in case["turns"] for call in turn.get("calls", [])]
     turns = [turn for case in cases for turn in case["turns"]]
-    durations = [turn["wall_elapsed_ms"] for turn in turns if turn.get("wall_elapsed_ms") is not None]
+    durations = [
+        turn["wall_elapsed_ms"] for turn in turns if turn.get("wall_elapsed_ms") is not None
+    ]
     task_events = [
         event
         for event in report.get("monitoring", {}).get("events", [])
@@ -35,10 +38,7 @@ def summarize_variant(report: dict) -> dict:
     monitored_calls = sum(event.get("real_delegate_calls", 0) or 0 for event in task_events)
     expected = [event for event in task_events if event.get("delegation_expected")]
     response_turns = [
-        turn
-        for case in cases
-        for turn in case["turns"]
-        if isinstance(turn.get("response"), dict)
+        turn for case in cases for turn in case["turns"] if isinstance(turn.get("response"), dict)
     ]
     role_usage: dict[str, dict[str, int]] = {}
     required_experts = set()
@@ -93,8 +93,12 @@ def summarize_variant(report: dict) -> dict:
         )
         for key in totals:
             totals[key] = max(totals[key], values[key])
-    monitored_required = {role for event in task_events for role in event.get("required_experts", [])}
-    monitored_completed = {role for event in task_events for role in event.get("completed_experts", [])}
+    monitored_required = {
+        role for event in task_events for role in event.get("required_experts", [])
+    }
+    monitored_completed = {
+        role for event in task_events for role in event.get("completed_experts", [])
+    }
     monitored_blocked = {role for event in task_events for role in event.get("budget_blocked", [])}
     required_experts.update(monitored_required)
     completed_experts.update(monitored_completed)
@@ -172,15 +176,21 @@ def pair_results(single: dict, multi: dict, c_mode: dict | None = None) -> list[
             "multi": right[key]["task_status"],
             "single_deterministic": left[key]["deterministic_status"],
             "multi_deterministic": right[key]["deterministic_status"],
-            "single_safety_failures": sum(len(t.get("safety_failures", [])) for t in left[key]["turns"]),
-            "multi_safety_failures": sum(len(t.get("safety_failures", [])) for t in right[key]["turns"]),
+            "single_safety_failures": sum(
+                len(t.get("safety_failures", [])) for t in left[key]["turns"]
+            ),
+            "multi_safety_failures": sum(
+                len(t.get("safety_failures", [])) for t in right[key]["turns"]
+            ),
             "single_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in left[key]["turns"]],
             "multi_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in right[key]["turns"]],
             **(
                 {
                     "c": third[key]["task_status"],
                     "c_deterministic": third[key]["deterministic_status"],
-                    "c_turn_wall_elapsed_ms": [t.get("wall_elapsed_ms") for t in third[key]["turns"]],
+                    "c_turn_wall_elapsed_ms": [
+                        t.get("wall_elapsed_ms") for t in third[key]["turns"]
+                    ],
                 }
                 if third is not None
                 else {}
@@ -194,15 +204,39 @@ async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", choices=["development", "holdout", "all"], default="development")
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--live", action="store_true", help="Use configured AGNES; may incur cost or rate limits")
-    parser.add_argument("--provider", choices=["agnes", "deepseek"], default="agnes", help="Explicit live model provider")
-    parser.add_argument("--monitor", action="store_true", help="Stream per-turn duration, delegation mode/use, context, model, tool and validation progress to stderr")
-    parser.add_argument("--arms", nargs="+", choices=["A", "B", "C"], default=["A", "B", "C"], help="Run A (delegation off), B (model-directed delegation), C (required evidence preflight)")
+    parser.add_argument(
+        "--live", action="store_true", help="Use configured AGNES; may incur cost or rate limits"
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["agnes", "deepseek"],
+        default="agnes",
+        help="Explicit live model provider",
+    )
+    parser.add_argument(
+        "--monitor",
+        action="store_true",
+        help="Stream per-turn duration, delegation mode/use, context, model, tool and validation progress to stderr",
+    )
+    parser.add_argument(
+        "--arms",
+        nargs="+",
+        choices=["A", "B", "C"],
+        default=["A", "B", "C"],
+        help="Run A (delegation off), B (model-directed delegation), C (required evidence preflight)",
+    )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be positive")
-    options = dict(dataset_path=DATASET, live=args.live, split=args.split, limit=args.limit, monitor=args.monitor, provider=args.provider)
+    options = dict(
+        dataset_path=DATASET,
+        live=args.live,
+        split=args.split,
+        limit=args.limit,
+        monitor=args.monitor,
+        provider=args.provider,
+    )
     # Each evaluation gets the same tasks, model, 32K context and 80K run cap;
     # only the delegation policy changes. Fixtures are reinstalled per case.
     config = {
@@ -250,7 +284,16 @@ async def main() -> None:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({k: data[k] for k in ("split", "model_execution", "provider", "model", "thinking", "arms")}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                k: data[k]
+                for k in ("split", "model_execution", "provider", "model", "thinking", "arms")
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     print(f"Report: {args.output}")
 
 

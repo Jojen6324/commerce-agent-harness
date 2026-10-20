@@ -142,7 +142,9 @@ async def evaluate(
         raise ValueError("provider must be agnes or deepseek")
     results = []
     monitor_events = []
-    arm = arm_name or ("multi" if delegation_enabled else "single" if delegation_enabled is not None else "default")
+    arm = arm_name or (
+        "multi" if delegation_enabled else "single" if delegation_enabled is not None else "default"
+    )
     task_monitor_state = {}
 
     def log_progress(event, *, task_id=None, turn=None, **details):
@@ -189,7 +191,11 @@ async def evaluate(
                 body = response.json()
             except ValueError:
                 body = {"error": "non_json_api_response"}
-            return response.status_code, body, round((time.perf_counter() - request_started) * 1000, 2)
+            return (
+                response.status_code,
+                body,
+                round((time.perf_counter() - request_started) * 1000, 2),
+            )
 
         log_progress("turn_started", task_id=task_id, turn=turn)
         status_code = 0
@@ -209,7 +215,11 @@ async def evaluate(
                     except ValueError:
                         log_progress("stream_parse_error", task_id=task_id, turn=turn)
                         continue
-                    name = item.get("event", "stream_event") if isinstance(item, dict) else "stream_event"
+                    name = (
+                        item.get("event", "stream_event")
+                        if isinstance(item, dict)
+                        else "stream_event"
+                    )
                     if name == "answer" and isinstance(item.get("data"), dict):
                         final_body = item["data"]
                         continue
@@ -217,19 +227,55 @@ async def evaluate(
                         stream_error_type = item["error"]
                     if name not in ("started", "done"):
                         safe_fields = (
-                            "agent", "parent_run_id", "run_id", "tool", "tool_call_id",
-                            "elapsed_ms", "reason", "attempt", "reused", "compressed",
-                            "context_tokens", "context_limit_tokens", "reserve_tokens",
-                            "message_count", "tool_count", "stage", "step", "model",
-                            "finish_reason", "prompt_tokens", "completion_tokens", "total_tokens",
-                            "reserved_tokens_without_usage", "max_total_tokens", "requested_tokens",
-                            "projected_tokens", "model_calls", "model_call_limit", "tool_calls",
-                            "tool_call_limit", "budget_scope", "error_code", "status",
-                            "error", "required_experts", "completed_experts", "expert",
-                            "source", "child_run_id", "missing_fields", "delegate_calls",
-                            "required_experts_complete", "budget_blocked", "reasons", "allocation",
-                            "tool_calls_remaining", "delegation_calls_remaining",
-                            "model_calls_remaining_including_current", "tokens_remaining",
+                            "agent",
+                            "parent_run_id",
+                            "run_id",
+                            "tool",
+                            "tool_call_id",
+                            "elapsed_ms",
+                            "reason",
+                            "attempt",
+                            "reused",
+                            "compressed",
+                            "context_tokens",
+                            "context_limit_tokens",
+                            "reserve_tokens",
+                            "message_count",
+                            "tool_count",
+                            "stage",
+                            "step",
+                            "model",
+                            "finish_reason",
+                            "prompt_tokens",
+                            "completion_tokens",
+                            "total_tokens",
+                            "reserved_tokens_without_usage",
+                            "max_total_tokens",
+                            "requested_tokens",
+                            "projected_tokens",
+                            "model_calls",
+                            "model_call_limit",
+                            "tool_calls",
+                            "tool_call_limit",
+                            "budget_scope",
+                            "error_code",
+                            "status",
+                            "error",
+                            "required_experts",
+                            "completed_experts",
+                            "expert",
+                            "source",
+                            "child_run_id",
+                            "missing_fields",
+                            "delegate_calls",
+                            "required_experts_complete",
+                            "budget_blocked",
+                            "reasons",
+                            "allocation",
+                            "tool_calls_remaining",
+                            "delegation_calls_remaining",
+                            "model_calls_remaining_including_current",
+                            "tokens_remaining",
                             "steps_remaining_including_current",
                         )
                         details = {key: item[key] for key in safe_fields if key in item}
@@ -278,6 +324,7 @@ async def evaluate(
             failure=diagnostics.get("failure"),
         )
         return status_code, final_body, elapsed_ms
+
     with tempfile.TemporaryDirectory(prefix="agent-tasks-") as directory:
         settings = Settings(
             database_url=f"sqlite+aiosqlite:///{directory}/tasks.db",
@@ -364,9 +411,11 @@ async def evaluate(
                 base_url="http://task-eval",
             ) as client:
                 for task in selected:
-                    delegation_expected = bool(
-                        delegation_enabled and task.scenario == "multi_agent"
-                    ) if arm != "C" else False
+                    delegation_expected = (
+                        bool(delegation_enabled and task.scenario == "multi_agent")
+                        if arm != "C"
+                        else False
+                    )
                     task_monitor_state[task.id] = {
                         "delegation_call_ids": set(),
                         "specialist_agents": set(),
@@ -431,9 +480,15 @@ async def evaluate(
                         after = await snapshot(c.session_factory)
                         delegation_info = (body.get("diagnostics") or {}).get("delegation") or {}
                         state = task_monitor_state[task.id]
-                        state["required_experts"].update(delegation_info.get("required_experts", []))
-                        state["completed_experts"].update(delegation_info.get("completed_experts", []))
-                        state["budget_blocked_experts"].update(delegation_info.get("budget_blocked", []))
+                        state["required_experts"].update(
+                            delegation_info.get("required_experts", [])
+                        )
+                        state["completed_experts"].update(
+                            delegation_info.get("completed_experts", [])
+                        )
+                        state["budget_blocked_experts"].update(
+                            delegation_info.get("budget_blocked", [])
+                        )
                         state["delegate_calls"] += delegation_info.get("delegate_calls", 0) or 0
                         if monitor and delegation_info:
                             log_progress(
@@ -443,7 +498,9 @@ async def evaluate(
                                 required_experts=delegation_info.get("required_experts", []),
                                 completed_experts=delegation_info.get("completed_experts", []),
                                 delegate_calls=delegation_info.get("delegate_calls", 0),
-                                required_experts_complete=delegation_info.get("required_experts_complete", False),
+                                required_experts_complete=delegation_info.get(
+                                    "required_experts_complete", False
+                                ),
                                 budget_blocked=delegation_info.get("budget_blocked", []),
                             )
                         audit = copy.deepcopy(calls[start:])
@@ -516,7 +573,9 @@ async def evaluate(
                     specialist_agents = sorted(state["specialist_agents"])
                     if arm == "C":
                         delegation_expected = bool(state["required_experts"])
-                        actual_calls = max(state["delegate_calls"], state["delegate_dispatch_count"])
+                        actual_calls = max(
+                            state["delegate_calls"], state["delegate_dispatch_count"]
+                        )
                         delegation_used = actual_calls > 0 or bool(specialist_agents)
                         delegation_status = (
                             "required_complete"
@@ -562,9 +621,13 @@ async def evaluate(
     for case in results:
         case["response_digest"] = response_digest(case)
     executed = {r["id"] for r in results}
-    manifest = json.loads((DATA_DIR / "agent_task_splits.json").read_text()) if dataset_path is None else {
-        "method": "Independent synthetic benchmark: deterministic, case-isolated 80/20 development/holdout split."
-    }
+    manifest = (
+        json.loads((DATA_DIR / "agent_task_splits.json").read_text())
+        if dataset_path is None
+        else {
+            "method": "Independent synthetic benchmark: deterministic, case-isolated 80/20 development/holdout split."
+        }
+    )
     digest = (
         corpus_digest()
         if dataset_path is None
@@ -577,13 +640,15 @@ async def evaluate(
         "provider": provider if live else "offline",
         "delegation_enabled": delegation_enabled,
         "delegation_policy": delegation_policy,
-        "delegation_prompt_version": PROMPT_VERSION if delegation_policy == "required_when_eligible" else None,
+        "delegation_prompt_version": PROMPT_VERSION
+        if delegation_policy == "required_when_eligible"
+        else None,
         "arm": arm,
         "agent_context_limit_tokens": min(settings.agent_context_tokens, 32_000),
         "agent_total_budget_tokens": settings.agent_total_tokens,
-        "model": (
-            settings.agnes_model if live and provider == "agnes" else settings.deepseek_model
-        ) if live else "offline",
+        "model": (settings.agnes_model if live and provider == "agnes" else settings.deepseek_model)
+        if live
+        else "offline",
         "thinking": settings.deepseek_thinking if live and provider == "deepseek" else None,
         "selected_split": split,
         "corpus": corpus_summary(all_tasks),
@@ -591,7 +656,11 @@ async def evaluate(
         "unrun_count": len(all_tasks) - len(executed),
         "grouping_method": manifest["method"],
         "scope": "Derived tasks and turns are correlated members of source families, not independent new samples. Semantic review is pending, never silently treated as passed.",
-        "monitoring": {"enabled": monitor, "event_count": len(monitor_events), "events": monitor_events},
+        "monitoring": {
+            "enabled": monitor,
+            "event_count": len(monitor_events),
+            "events": monitor_events,
+        },
         **summarize(results, all_tasks),
         "cases": results,
     }

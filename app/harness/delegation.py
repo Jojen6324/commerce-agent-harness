@@ -21,6 +21,11 @@ delegation_event_sink: ContextVar[Callable[[dict[str, Any]], Awaitable[None]] | 
 delegation_include_observations: ContextVar[bool] = ContextVar(
     "delegation_include_observations", default=False
 )
+# Only ChatService can seed these observations after user/session scoping.
+# DelegateInput.context remains data supplied to the model, never authority.
+delegation_observations: ContextVar[tuple[dict[str, Any], ...]] = ContextVar(
+    "delegation_observations", default=()
+)
 
 
 class ExpertCompletion(BaseModel):
@@ -95,6 +100,12 @@ class DelegationService:
                     finalize_on_tool_limit=True,
                     prompt=specialist_prompt(args.agent, allowance),
                 )
+                run_kwargs["initial_observations"] = [
+                    observation
+                    for observation in delegation_observations.get()
+                    if observation.get("name") in spec.tools
+                    and observation.get("output", {}).get("success")
+                ]
             result = await self.runner.run(
                 args.goal,
                 context,
@@ -125,7 +136,7 @@ class DelegationService:
         raw_status = result.get("status", "failed")
         if raw_status == "budget_exhausted":
             status = "budget_blocked"
-        elif raw_status == "completed" and (facts or chunks):
+        elif raw_status == "completed" and (chunks if args.agent == "knowledge" else facts):
             status = "completed"
         elif raw_status in ("failed", "denied"):
             status = raw_status
@@ -134,7 +145,7 @@ class DelegationService:
         missing = []
         if status == "budget_blocked":
             missing.append("delegation_budget")
-        elif not facts and not chunks:
+        elif not (chunks if args.agent == "knowledge" else facts):
             missing.append("evidence")
         evidence_refs = list(chunks)
         evidence_refs.extend(f["tool"] for f in facts if f["tool"] not in evidence_refs)

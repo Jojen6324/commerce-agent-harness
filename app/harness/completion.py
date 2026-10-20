@@ -6,8 +6,10 @@ Repairs stay within the runner budget and cannot repeat an unchanged issue.
 
 import re
 
+from app.harness.requirements import request_requirements
 
-def completion_issue(answer: str, *, main=True, observations=()):
+
+def completion_issue(answer: str, *, main=True, observations=(), query=""):
     if not any(character.isalnum() for character in answer):
         return "empty_answer"
     handoff = any(
@@ -26,21 +28,22 @@ def completion_issue(answer: str, *, main=True, observations=()):
     )
     if main and not handoff and (claimed_handoff or unfinished_offer):
         return "missing_handoff_receipt"
-    if main and (
-        re.search(r"确认后(?:我|将为|会为|将执行|将提交).{0,20}(提交|执行|取消|退款|退货)", answer)
-        or re.search(
-            r"(?:是否|请问是否|请|回复)[“\"\s]*(?:确认提交|确认取消|确认执行|继续[？?])", answer
-        )
-        or re.search(
-            r"正在(?:为您|帮您|为你|帮你)?(?:办理|处理)?(?:申请|取消|退款|退货|提交)",
+    requirements = request_requirements(query)
+    unexecuted_action_claim = re.search(
+        r"(?:正在(?:为您|帮您|为你|帮你)?(?:办理|处理)?|"
+        r"(?:马上|这就|即将|我来|我将)(?:为您|帮您|为你|帮你)?(?:办理|处理)?)"
+        r"(?:申请|取消|退款|退货|提交)",
+        answer,
+    ) or re.search(r"即将.{0,30}(取消|退款|退货|提交).{0,40}(确认|是否)", answer, re.S)
+    approval_language = (
+        re.search(
+            r"确认后(?:我|将为|会为|将执行|将提交).{0,20}(提交|执行|取消|退款|退货)",
             answer,
         )
         or re.search(
-            r"(?:马上|这就|即将|我来|我将)(?:为您|帮您|为你|帮你)?"
-            r"(?:办理|处理)?(?:申请|取消|退款|退货|提交)",
+            r"(?:是否|请问是否|请|回复)[“\"\s]*(?:确认提交|确认取消|确认执行|继续[？?])",
             answer,
         )
-        or re.search(r"即将.{0,30}(取消|退款|退货|提交).{0,40}(确认|是否)", answer, re.S)
         or (
             re.search(r"(?:我|为您|为你|现在).{0,20}(?:生成|准备).{0,15}(?:提案|待确认)", answer)
             and not re.search(
@@ -48,6 +51,14 @@ def completion_issue(answer: str, *, main=True, observations=()):
                 r"有了.{0,24}(?:才能|才可|就能|再)",
                 answer,
             )
+        )
+    )
+    if main and (
+        unexecuted_action_claim
+        or (
+            not requirements.proposals_forbidden
+            and (requirements.action_requested or not query)
+            and approval_language
         )
     ):
         return "missing_action_proposal"
@@ -75,23 +86,13 @@ def missing_input_issue(missing_fields):
     return None
 
 
-def policy_evidence_issue(query: str, observations=()):
+def policy_evidence_issue(query: str, observations=(), *, requirements=None):
     """Require a source lookup before answering a policy-style question.
 
     This is a completion guard, not an intent router: it never chooses a tool.
     It only asks the existing bounded repair turn to retrieve policy evidence.
     """
-    policy_topic = re.search(
-        r"退款|退货|退换|退钱|原路|运费|包邮|优惠券|新客券|领券|保修|质保|"
-        r"发货|预售|工作时间|客服时间|质量问题|破损|错发|签收|售后",
-        query,
-    )
-    policy_question = re.search(
-        r"吗|呢[？?]?$|怎么|如何|哪里|在哪|什么时候|何时|多久|几天|是否|能不能|可不可以|"
-        r"能否|规则|政策|时效|条件|流程|多少|地址|哪儿",
-        query,
-    )
-    if not policy_topic or not policy_question:
+    if not (requirements or request_requirements(query)).policy:
         return None
 
     def has_grounding(observation):
@@ -124,12 +125,16 @@ def policy_evidence_issue(query: str, observations=()):
     return "policy_without_evidence"
 
 
-REPAIR_GUIDANCE = """你的上一条回复尚未形成可交付结果：{issue}。
-不要只承诺稍后查询或用文字确认代替持久提案。需要操作且业务参数齐全时，调用对应业务工具；
-写工具在未确认时只生成pending_action，不执行写入，后端会等待用户确认。不要用ask_user索要提交批准。
-确实缺少订单号、原因等业务信息时继续补问；如果用户同时询问通用政策，应先检索并回答政策，再补问执行所需信息。
-政策问题若尚无成功的知识、优惠券或受信只读查询结果，先检索证据；没有适用来源时明确说明未找到，不要用常识作答。
-缺少执行业务所需字段，不妨碍先查通用规则或服务能力。不要用再次索要订单号代替查证，
-也不要承诺补齐字段后一定能提供当前工具尚未证明可提供的信息。
-用户明确要求人工时使用可用入队能力取得真实回执，无需先有订单号。简单回答可直接给出答案，不要只输出省略号。
-若缺能力或证据，请明确说明限制。不要编造参数、票据、提案或操作结果。"""
+def repair_guidance(issue):
+    """Only repair the observed defect; never imply unrelated write authority."""
+    guidance = {
+        "empty_answer": "交付完整答案；简单问题可以直接回答，不必调用工具。",
+        "unfinished_progress": "不要停留在稍后查询的承诺；现在查证并回答，缺少必要信息才补问。",
+        "missing_handoff_receipt": "用户要求人工时，取得真实入队回执后再说明状态；无法入队则如实说明，不编造工单。",
+        "missing_action_proposal": "若用户确实要求办理且参数齐全，调用对应业务工具生成待确认提案；不得用文字批准或ask_user代替服务器确认。若只是咨询，删除办理承诺并回答问题，不创建提案。",
+        "policy_without_evidence": "尚缺政策原始证据。现在通过现有只读能力查证规则、范围和例外，再带原始引用回答；订单状态不能替代规则。不要申请、取消或生成业务提案来修复证据问题。",
+    }
+    items = [
+        guidance.get(part, "依据真实工具结果补齐该缺项，不得编造。") for part in issue.split("；")
+    ]
+    return f"上一条回复尚未交付，待修复：{issue}。\n" + "\n".join(items)

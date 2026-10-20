@@ -13,6 +13,7 @@ from app.core.exceptions import AppError, InvalidRequestError, ToolPermissionErr
 from app.core.ids import new_id
 from app.core.request_scope import request_session
 from app.harness.budget import current_budget
+from app.harness.requirements import request_requirements
 from app.repositories.models import ActionRow
 from app.schemas.chat import ActionProposal
 from app.tools.permissions import WRITE_RISKS, assert_permitted
@@ -77,6 +78,15 @@ class ToolExecutor:
         tool = self.registry.get(name)
         parsed = tool.parse(arguments)
         args = parsed.model_dump()
+        if (
+            tool.risk in WRITE_RISKS
+            and not confirmed
+            and context.user_messages
+            and request_requirements(context.user_messages[-1]).proposals_forbidden
+        ):
+            raise InvalidRequestError(
+                f"invalid arguments for {name}: 用户本轮只咨询或禁止操作，不能创建待确认提案；请只查询和解释。"
+            )
         # Model-provided identity is never authoritative.
         if "user_id" in args:
             args["user_id"] = context.user_id

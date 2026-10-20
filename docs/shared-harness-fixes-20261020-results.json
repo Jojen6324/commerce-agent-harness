@@ -1,0 +1,1541 @@
+{
+  "created_at": "2026-10-20T03:22:40.735274+00:00",
+  "scope": "Targeted A/C regression, not a full 40-task evaluation; same inputs, provider, limits and grading in both arms.",
+  "dataset_sha256": "376f0d6889862624f848832a409b687c511a503fb2a7207bf44e41f1346630bb",
+  "full_report": "eval/reports/shared_ac_fixes_20261020.json",
+  "full_report_sha256": "eee0dfa7d541c0c22d27f1e46d6e5e7d2f6cf1ab75dadd13d49fee00977b1c67",
+  "model": "deepseek-flash",
+  "thinking": "disabled",
+  "context_tokens_per_call": 32000,
+  "shared_run_budget_tokens_per_request": 80000,
+  "unit_tests_passed": 317,
+  "summaries": {
+    "A": {
+      "n": 6,
+      "statuses": {
+        "passed": 6
+      },
+      "total_tokens": 366609,
+      "model_calls": 92,
+      "real_delegate_calls": 0,
+      "safety_violations": 0
+    },
+    "C": {
+      "n": 6,
+      "statuses": {
+        "passed": 6
+      },
+      "total_tokens": 292388,
+      "model_calls": 75,
+      "real_delegate_calls": 10,
+      "safety_violations": 0
+    }
+  },
+  "exceptions": [],
+  "cases": [
+    {
+      "arm": "A",
+      "id": "collab_004",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 4,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 4,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 12,
+        "total_tokens": 42678,
+        "role_usage": {
+          "main": {
+            "model_calls": 4,
+            "prompt_tokens": 33069,
+            "completion_tokens": 505,
+            "total_tokens": 33574
+          },
+          "validation_or_other": {
+            "model_calls": 8,
+            "prompt_tokens": 8423,
+            "completion_tokens": 681,
+            "total_tokens": 9104
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 24020.25,
+          "mean": 24020.25,
+          "max": 24020.25
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 24020.25,
+          "tokens": {
+            "prompt_tokens": 41492,
+            "completion_tokens": 1186,
+            "total_tokens": 42678
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            },
+            {
+              "document_id": "shipping_34e20e5f",
+              "title": "shipping",
+              "chunk_id": "shipping_34e20e5f_02",
+              "section": "催发货"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "A",
+      "id": "collab_023",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 4,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 4,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 16,
+        "total_tokens": 64114,
+        "role_usage": {
+          "main": {
+            "model_calls": 5,
+            "prompt_tokens": 46765,
+            "completion_tokens": 1187,
+            "total_tokens": 47952
+          },
+          "validation_or_other": {
+            "model_calls": 11,
+            "prompt_tokens": 15091,
+            "completion_tokens": 1071,
+            "total_tokens": 16162
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 30916.69,
+          "mean": 30916.69,
+          "max": 30916.69
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 30916.69,
+          "tokens": {
+            "prompt_tokens": 61856,
+            "completion_tokens": 2258,
+            "total_tokens": 64114
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            },
+            {
+              "document_id": "refund_timeline_a0b91729",
+              "title": "refund_timeline",
+              "chunk_id": "refund_timeline_a0b91729_01",
+              "section": "原路返回"
+            },
+            {
+              "document_id": "shipping_34e20e5f",
+              "title": "shipping",
+              "chunk_id": "shipping_34e20e5f_02",
+              "section": "催发货"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "A",
+      "id": "collab_027",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 3,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 3,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 7,
+        "total_tokens": 40251,
+        "role_usage": {
+          "main": {
+            "model_calls": 4,
+            "prompt_tokens": 32398,
+            "completion_tokens": 953,
+            "total_tokens": 33351
+          },
+          "validation_or_other": {
+            "model_calls": 3,
+            "prompt_tokens": 6643,
+            "completion_tokens": 257,
+            "total_tokens": 6900
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 13723.74,
+          "mean": 13723.74,
+          "max": 13723.74
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 13723.74,
+          "tokens": {
+            "prompt_tokens": 39041,
+            "completion_tokens": 1210,
+            "total_tokens": 40251
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_01",
+              "section": "多仓"
+            },
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_03",
+              "section": "催发"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "A",
+      "id": "dialogue_003",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 3,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 6,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 6,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 29,
+        "total_tokens": 129176,
+        "role_usage": {
+          "main": {
+            "model_calls": 10,
+            "prompt_tokens": 91008,
+            "completion_tokens": 2124,
+            "total_tokens": 93132
+          },
+          "validation_or_other": {
+            "model_calls": 19,
+            "prompt_tokens": 33837,
+            "completion_tokens": 2207,
+            "total_tokens": 36044
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 56402.4,
+          "mean": 18800.8,
+          "max": 39259.4
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 3752.52,
+          "tokens": {
+            "prompt_tokens": 19162,
+            "completion_tokens": 201,
+            "total_tokens": 19363
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": []
+        },
+        {
+          "turn": 2,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 13390.48,
+          "tokens": {
+            "prompt_tokens": 47495,
+            "completion_tokens": 1035,
+            "total_tokens": 48530
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_02",
+              "section": "定制商品"
+            },
+            {
+              "document_id": "return_custom_9f2a2638",
+              "title": "return_custom",
+              "chunk_id": "return_custom_9f2a2638_02",
+              "section": "色差"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_04",
+              "section": "已过时效"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_01",
+              "section": "7 天无理由退货"
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 39259.4,
+          "tokens": {
+            "prompt_tokens": 58188,
+            "completion_tokens": 3095,
+            "total_tokens": 61283
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_03",
+              "section": "质量问题"
+            },
+            {
+              "document_id": "return_electronics_1c154ead",
+              "title": "return_electronics",
+              "chunk_id": "return_electronics_1c154ead_03",
+              "section": "时效"
+            },
+            {
+              "document_id": "return_custom_9f2a2638",
+              "title": "return_custom",
+              "chunk_id": "return_custom_9f2a2638_02",
+              "section": "色差"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "A",
+      "id": "dialogue_008",
+      "before_status": "passed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 2,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 5,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 5,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 27,
+        "total_tokens": 83106,
+        "role_usage": {
+          "main": {
+            "model_calls": 7,
+            "prompt_tokens": 61179,
+            "completion_tokens": 1370,
+            "total_tokens": 62549
+          },
+          "validation_or_other": {
+            "model_calls": 20,
+            "prompt_tokens": 18556,
+            "completion_tokens": 2001,
+            "total_tokens": 20557
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 55839.69,
+          "mean": 27919.85,
+          "max": 38049.22
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 17790.47,
+          "tokens": {
+            "prompt_tokens": 23358,
+            "completion_tokens": 1211,
+            "total_tokens": 24569
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "return_apparel_b8f090b5",
+              "title": "return_apparel",
+              "chunk_id": "return_apparel_b8f090b5_03",
+              "section": "换货差价"
+            },
+            {
+              "document_id": "return_apparel_b8f090b5",
+              "title": "return_apparel",
+              "chunk_id": "return_apparel_b8f090b5_02",
+              "section": "洗涤与贴身"
+            },
+            {
+              "document_id": "exchange_size_598efd7c",
+              "title": "exchange_size",
+              "chunk_id": "exchange_size_598efd7c_02",
+              "section": "尺码误差"
+            },
+            {
+              "document_id": "exchange_size_598efd7c",
+              "title": "exchange_size",
+              "chunk_id": "exchange_size_598efd7c_01",
+              "section": "换货次数"
+            },
+            {
+              "document_id": "size_guide_7cdba7dc",
+              "title": "size_guide",
+              "chunk_id": "size_guide_7cdba7dc_02",
+              "section": "误差"
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 38049.22,
+          "tokens": {
+            "prompt_tokens": 56377,
+            "completion_tokens": 2160,
+            "total_tokens": 58537
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            },
+            {
+              "document_id": "shipping_34e20e5f",
+              "title": "shipping",
+              "chunk_id": "shipping_34e20e5f_02",
+              "section": "催发货"
+            },
+            {
+              "document_id": "return_apparel_b8f090b5",
+              "title": "return_apparel",
+              "chunk_id": "return_apparel_b8f090b5_01",
+              "section": "无理由"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_03",
+              "section": "质量问题"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "A",
+      "id": "exception_003",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 0,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 0,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": false,
+        "delegation_policy": "off",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": null,
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 1,
+        "total_tokens": 7284,
+        "role_usage": {
+          "main": {
+            "model_calls": 1,
+            "prompt_tokens": 7159,
+            "completion_tokens": 125,
+            "total_tokens": 7284
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 1704.02,
+          "mean": 1704.02,
+          "max": 1704.02
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 1704.02,
+          "tokens": {
+            "prompt_tokens": 7159,
+            "completion_tokens": 125,
+            "total_tokens": 7284
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "collab_004",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 5,
+        "delegation_dispatch_attempts": 2,
+        "non_delegation_tool_calls": 3,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 2,
+        "required_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "completed_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 1,
+        "required_expert_turns_completed": 1,
+        "model_calls": 14,
+        "total_tokens": 44613,
+        "role_usage": {
+          "orders": {
+            "model_calls": 2,
+            "prompt_tokens": 4000,
+            "completion_tokens": 262,
+            "total_tokens": 4262
+          },
+          "knowledge": {
+            "model_calls": 2,
+            "prompt_tokens": 4345,
+            "completion_tokens": 406,
+            "total_tokens": 4751
+          },
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 20147,
+            "completion_tokens": 824,
+            "total_tokens": 20971
+          },
+          "validation_or_other": {
+            "model_calls": 8,
+            "prompt_tokens": 13821,
+            "completion_tokens": 808,
+            "total_tokens": 14629
+          }
+        },
+        "delegation_expected_tasks": 1,
+        "delegation_used_tasks": 1,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 2,
+        "turn_wall_elapsed_ms": {
+          "total": 26763.65,
+          "mean": 26763.65,
+          "max": 26763.65
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 26763.65,
+          "tokens": {
+            "prompt_tokens": 42313,
+            "completion_tokens": 2300,
+            "total_tokens": 44613
+          },
+          "failure": null,
+          "delegation_calls": 2,
+          "required_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "completed_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "required_experts_complete": true,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            },
+            {
+              "document_id": "shipping_34e20e5f",
+              "title": "shipping",
+              "chunk_id": "shipping_34e20e5f_02",
+              "section": "催发货"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "collab_023",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 5,
+        "delegation_dispatch_attempts": 2,
+        "non_delegation_tool_calls": 3,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 2,
+        "required_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "completed_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 1,
+        "required_expert_turns_completed": 1,
+        "model_calls": 14,
+        "total_tokens": 47503,
+        "role_usage": {
+          "orders": {
+            "model_calls": 2,
+            "prompt_tokens": 4003,
+            "completion_tokens": 283,
+            "total_tokens": 4286
+          },
+          "knowledge": {
+            "model_calls": 2,
+            "prompt_tokens": 4471,
+            "completion_tokens": 507,
+            "total_tokens": 4978
+          },
+          "main": {
+            "model_calls": 2,
+            "prompt_tokens": 21204,
+            "completion_tokens": 1260,
+            "total_tokens": 22464
+          },
+          "validation_or_other": {
+            "model_calls": 8,
+            "prompt_tokens": 14870,
+            "completion_tokens": 905,
+            "total_tokens": 15775
+          }
+        },
+        "delegation_expected_tasks": 1,
+        "delegation_used_tasks": 1,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 2,
+        "turn_wall_elapsed_ms": {
+          "total": 30077.07,
+          "mean": 30077.07,
+          "max": 30077.07
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 30077.07,
+          "tokens": {
+            "prompt_tokens": 44548,
+            "completion_tokens": 2955,
+            "total_tokens": 47503
+          },
+          "failure": null,
+          "delegation_calls": 2,
+          "required_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "completed_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "required_experts_complete": true,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            },
+            {
+              "document_id": "shipping_34e20e5f",
+              "title": "shipping",
+              "chunk_id": "shipping_34e20e5f_02",
+              "section": "催发货"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_02",
+              "section": "定制商品"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_01",
+              "section": "7 天无理由退货"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "collab_027",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 5,
+        "delegation_dispatch_attempts": 2,
+        "non_delegation_tool_calls": 3,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 2,
+        "required_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "completed_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 1,
+        "required_expert_turns_completed": 1,
+        "model_calls": 12,
+        "total_tokens": 28728,
+        "role_usage": {
+          "orders": {
+            "model_calls": 2,
+            "prompt_tokens": 4093,
+            "completion_tokens": 284,
+            "total_tokens": 4377
+          },
+          "knowledge": {
+            "model_calls": 2,
+            "prompt_tokens": 4571,
+            "completion_tokens": 390,
+            "total_tokens": 4961
+          },
+          "main": {
+            "model_calls": 1,
+            "prompt_tokens": 9816,
+            "completion_tokens": 488,
+            "total_tokens": 10304
+          },
+          "validation_or_other": {
+            "model_calls": 7,
+            "prompt_tokens": 8324,
+            "completion_tokens": 762,
+            "total_tokens": 9086
+          }
+        },
+        "delegation_expected_tasks": 1,
+        "delegation_used_tasks": 1,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 2,
+        "turn_wall_elapsed_ms": {
+          "total": 24021.53,
+          "mean": 24021.53,
+          "max": 24021.53
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 24021.53,
+          "tokens": {
+            "prompt_tokens": 26804,
+            "completion_tokens": 1924,
+            "total_tokens": 28728
+          },
+          "failure": null,
+          "delegation_calls": 2,
+          "required_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "completed_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "required_experts_complete": true,
+          "citations": [
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_03",
+              "section": "催发"
+            },
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_01",
+              "section": "多仓"
+            },
+            {
+              "document_id": "shipping_split_8f60325d",
+              "title": "shipping_split",
+              "chunk_id": "shipping_split_8f60325d_02",
+              "section": "部分发货"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "dialogue_003",
+      "before_status": "failed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 3,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 6,
+        "delegation_dispatch_attempts": 2,
+        "non_delegation_tool_calls": 4,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 2,
+        "required_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "completed_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 1,
+        "required_expert_turns_completed": 1,
+        "model_calls": 21,
+        "total_tokens": 112701,
+        "role_usage": {
+          "main": {
+            "model_calls": 8,
+            "prompt_tokens": 76969,
+            "completion_tokens": 2035,
+            "total_tokens": 79004
+          },
+          "validation_or_other": {
+            "model_calls": 10,
+            "prompt_tokens": 24655,
+            "completion_tokens": 1033,
+            "total_tokens": 25688
+          },
+          "orders": {
+            "model_calls": 1,
+            "prompt_tokens": 3285,
+            "completion_tokens": 145,
+            "total_tokens": 3430
+          },
+          "knowledge": {
+            "model_calls": 2,
+            "prompt_tokens": 4082,
+            "completion_tokens": 497,
+            "total_tokens": 4579
+          }
+        },
+        "delegation_expected_tasks": 1,
+        "delegation_used_tasks": 1,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 2,
+        "turn_wall_elapsed_ms": {
+          "total": 41551.64,
+          "mean": 13850.55,
+          "max": 21777.01
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 3651.77,
+          "tokens": {
+            "prompt_tokens": 19700,
+            "completion_tokens": 233,
+            "total_tokens": 19933
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": []
+        },
+        {
+          "turn": 2,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 16122.86,
+          "tokens": {
+            "prompt_tokens": 23287,
+            "completion_tokens": 1265,
+            "total_tokens": 24552
+          },
+          "failure": null,
+          "delegation_calls": 2,
+          "required_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "completed_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "required_experts_complete": true,
+          "citations": [
+            {
+              "document_id": "return_custom_9f2a2638",
+              "title": "return_custom",
+              "chunk_id": "return_custom_9f2a2638_02",
+              "section": "色差"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_02",
+              "section": "定制商品"
+            },
+            {
+              "document_id": "return_custom_9f2a2638",
+              "title": "return_custom",
+              "chunk_id": "return_custom_9f2a2638_01",
+              "section": "效果图确认"
+            },
+            {
+              "document_id": "return_custom_9f2a2638",
+              "title": "return_custom",
+              "chunk_id": "return_custom_9f2a2638_00",
+              "section": "定制商品售后补充"
+            }
+          ]
+        },
+        {
+          "turn": 3,
+          "status": "passed",
+          "response_status": "validation_failed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 21777.01,
+          "tokens": {
+            "prompt_tokens": 66004,
+            "completion_tokens": 2212,
+            "total_tokens": 68216
+          },
+          "failure": {
+            "code": "ANSWER_VALIDATION_FAILED",
+            "stage": "output_validation",
+            "reason": "candidate_rejected",
+            "retryable": false
+          },
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "dialogue_008",
+      "before_status": "error",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 2,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 6,
+        "delegation_dispatch_attempts": 2,
+        "non_delegation_tool_calls": 4,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 2,
+        "required_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "completed_expert_roles": [
+          "knowledge",
+          "orders"
+        ],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 1,
+        "required_expert_turns_completed": 1,
+        "model_calls": 13,
+        "total_tokens": 51372,
+        "role_usage": {
+          "main": {
+            "model_calls": 3,
+            "prompt_tokens": 26571,
+            "completion_tokens": 943,
+            "total_tokens": 27514
+          },
+          "validation_or_other": {
+            "model_calls": 6,
+            "prompt_tokens": 12938,
+            "completion_tokens": 584,
+            "total_tokens": 13522
+          },
+          "orders": {
+            "model_calls": 2,
+            "prompt_tokens": 4656,
+            "completion_tokens": 235,
+            "total_tokens": 4891
+          },
+          "knowledge": {
+            "model_calls": 2,
+            "prompt_tokens": 5000,
+            "completion_tokens": 445,
+            "total_tokens": 5445
+          }
+        },
+        "delegation_expected_tasks": 1,
+        "delegation_used_tasks": 1,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 2,
+        "turn_wall_elapsed_ms": {
+          "total": 25574.77,
+          "mean": 12787.39,
+          "max": 14851.66
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 10723.11,
+          "tokens": {
+            "prompt_tokens": 22326,
+            "completion_tokens": 801,
+            "total_tokens": 23127
+          },
+          "failure": null,
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": [
+            {
+              "document_id": "exchange_size_598efd7c",
+              "title": "exchange_size",
+              "chunk_id": "exchange_size_598efd7c_02",
+              "section": "尺码误差"
+            },
+            {
+              "document_id": "return_apparel_b8f090b5",
+              "title": "return_apparel",
+              "chunk_id": "return_apparel_b8f090b5_03",
+              "section": "换货差价"
+            },
+            {
+              "document_id": "return_apparel_b8f090b5",
+              "title": "return_apparel",
+              "chunk_id": "return_apparel_b8f090b5_02",
+              "section": "洗涤与贴身"
+            },
+            {
+              "document_id": "exchange_size_598efd7c",
+              "title": "exchange_size",
+              "chunk_id": "exchange_size_598efd7c_01",
+              "section": "换货次数"
+            },
+            {
+              "document_id": "exchange_size_598efd7c",
+              "title": "exchange_size",
+              "chunk_id": "exchange_size_598efd7c_03",
+              "section": "无货换款"
+            }
+          ]
+        },
+        {
+          "turn": 2,
+          "status": "passed",
+          "response_status": "completed",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 14851.66,
+          "tokens": {
+            "prompt_tokens": 26839,
+            "completion_tokens": 1406,
+            "total_tokens": 28245
+          },
+          "failure": null,
+          "delegation_calls": 2,
+          "required_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "completed_experts": [
+            "orders",
+            "knowledge"
+          ],
+          "required_experts_complete": true,
+          "citations": [
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_01",
+              "section": "7 天无理由退货"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_05",
+              "section": "影响二次销售"
+            },
+            {
+              "document_id": "return_policy_42dcb12c",
+              "title": "return_policy",
+              "chunk_id": "return_policy_42dcb12c_04",
+              "section": "已过时效"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "arm": "C",
+      "id": "exception_003",
+      "before_status": "passed",
+      "after_status": "passed",
+      "deterministic_status": "passed",
+      "semantic_status": "not_required",
+      "summary": {
+        "n": 1,
+        "turns": 1,
+        "statuses": {
+          "passed": 1,
+          "failed": 0,
+          "review_required": 0,
+          "error": 0
+        },
+        "deterministic_passed": 1,
+        "safety_violations": 0,
+        "tool_calls": 1,
+        "delegation_dispatch_attempts": 0,
+        "non_delegation_tool_calls": 1,
+        "budget_rejected_dispatches": 0,
+        "delegation_enabled": true,
+        "delegation_policy": "required_when_eligible",
+        "agent_context_limit_tokens": 32000,
+        "agent_total_budget_tokens": 80000,
+        "delegation_prompt_version": "evidence-delegation-v2",
+        "real_delegate_calls": 0,
+        "required_expert_roles": [],
+        "completed_expert_roles": [],
+        "budget_blocked_expert_roles": [],
+        "required_expert_turns": 0,
+        "required_expert_turns_completed": 0,
+        "model_calls": 1,
+        "total_tokens": 7471,
+        "role_usage": {
+          "main": {
+            "model_calls": 1,
+            "prompt_tokens": 7391,
+            "completion_tokens": 80,
+            "total_tokens": 7471
+          }
+        },
+        "delegation_expected_tasks": 0,
+        "delegation_used_tasks": 0,
+        "delegation_missing_tasks": 0,
+        "delegation_incomplete_tasks": 0,
+        "specialist_agent_starts": 0,
+        "turn_wall_elapsed_ms": {
+          "total": 1307.89,
+          "mean": 1307.89,
+          "max": 1307.89
+        },
+        "mode": "real_model"
+      },
+      "turns": [
+        {
+          "turn": 1,
+          "status": "passed",
+          "response_status": "denied",
+          "failures": [],
+          "safety_failures": [],
+          "wall_elapsed_ms": 1307.89,
+          "tokens": {
+            "prompt_tokens": 7391,
+            "completion_tokens": 80,
+            "total_tokens": 7471
+          },
+          "failure": {
+            "code": "ORDER_NOT_FOUND",
+            "reason": "order_not_visible",
+            "retryable": false
+          },
+          "delegation_calls": 0,
+          "required_experts": [],
+          "completed_experts": [],
+          "required_experts_complete": false,
+          "citations": []
+        }
+      ]
+    }
+  ]
+}

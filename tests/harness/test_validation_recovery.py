@@ -215,6 +215,33 @@ def test_address_queries_require_actual_evidence_even_without_question_words(que
 
 
 @pytest.mark.parametrize(
+    "query",
+    [
+        "ORD10003目前发货了吗？",
+        "ORD10002是否签收？",
+        "ORD10001已经申请退款了吗？",
+        "ORD10003里的T恤目前库存多少？它已付款是否就已发货？",
+    ],
+)
+def test_transaction_status_questions_do_not_require_policy_evidence(query):
+    assert policy_evidence_issue(query) is None
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "未发货的订单还能取消吗？",
+        "包邮券能抵偏远费吗？",
+        "换货要补差价吗？",
+        "客服几点上班？",
+        "ORD10001有运单号，是不是能确定卖家拆成了两个包裹？",
+    ],
+)
+def test_policy_and_eligibility_questions_still_require_evidence(query):
+    assert policy_evidence_issue(query) == "policy_without_evidence"
+
+
+@pytest.mark.parametrize(
     "answer",
     [
         "我来帮您核实情况。请说明订单问题，是未收到货还是退款未到账？",
@@ -240,6 +267,38 @@ def test_real_unexecuted_action_promises_still_require_a_proposal(answer):
     from app.harness.completion import completion_issue
 
     assert completion_issue(answer) == "missing_action_proposal"
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "ORD10003目前发货了吗？不满意配送进度的话还能取消吗？暂时不要操作。",
+        "查ORD10002的定制杯，质量问题需要走怎样的退货取件流程？",
+        "ORD10001已经申请退款了吗？",
+    ],
+)
+def test_advice_and_status_queries_do_not_require_action_proposals(query):
+    from app.harness.completion import completion_issue
+
+    assert completion_issue("请问是否确认提交退货？", query=query) is None
+
+
+def test_explicit_write_request_still_requires_a_persisted_proposal():
+    from app.harness.completion import completion_issue
+
+    assert completion_issue("我来帮您申请退款。", query="帮我申请ORD10002的退款") == (
+        "missing_action_proposal"
+    )
+    assert (
+        completion_issue("我来帮您申请退款。", query="ORD10002的情况先给建议，暂时不要操作。")
+        == "missing_action_proposal"
+    )
+
+
+def test_how_to_apply_question_is_not_an_explicit_write_request():
+    from app.harness.completion import completion_issue
+
+    assert completion_issue("请问是否确认提交退货？", query="我想了解如何申请退款") is None
 
 
 def test_externalization_retains_policy_body_scope_limits_and_order_dates():

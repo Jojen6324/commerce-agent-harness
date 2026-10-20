@@ -20,8 +20,10 @@ from app.harness.delegation import (
     DelegationService,
     delegation_event_sink,
     delegation_include_observations,
+    delegation_observations,
 )
 from app.harness.delegation_policy import DelegationMode, DelegationPolicy
+from app.harness.evidence import confirmed_item_observations
 from app.harness.executor import ToolExecutor
 from app.harness.runner import AgentRunner, AgentSpec
 from app.harness.validation import AnswerValidator
@@ -134,7 +136,9 @@ class ChatService:
         run_id = None
         run_events = []
         result = {}
-        preflight_observations = []
+        preflight_observations = confirmed_item_observations(
+            facts, request.message, context.user_id
+        )
         delegation_context = {}
         delegation_attempts = []
 
@@ -225,6 +229,9 @@ class ChatService:
                             )
                             try:
                                 include_token = delegation_include_observations.set(True)
+                                evidence_token = delegation_observations.set(
+                                    tuple(preflight_observations)
+                                )
                                 try:
                                     with budget.delegation_share(
                                         len(decision.experts) - index
@@ -257,6 +264,7 @@ class ChatService:
                                             self.spec,
                                         )
                                 finally:
+                                    delegation_observations.reset(evidence_token)
                                     delegation_include_observations.reset(include_token)
                                 attempt.update(
                                     status=output.get("status", "incomplete"),
@@ -275,6 +283,8 @@ class ChatService:
                                     summary=output.get("summary", "")[:600],
                                 )
                                 for observation in output.get("observations", []):
+                                    if observation in preflight_observations:
+                                        continue
                                     preflight_observations.append(
                                         {
                                             **observation,
@@ -349,6 +359,8 @@ class ChatService:
                 result["events"] = list(run_events)
             await self.store.record(result, context)
             for observation in result.get("observations", []):
+                if observation.get("source") == "confirmed_session_fact":
+                    continue
                 args = observation.get("arguments", {})
                 if "order_id" in args:
                     facts["last_order"] = {

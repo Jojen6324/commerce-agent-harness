@@ -168,6 +168,13 @@ class AgentRunner:
         observations: list[dict[str, Any]] = list(initial_observations or [])
         seen: dict[str, int] = {}
         call_ids: set[str] = set()
+        policy_queries = {
+            " ".join(str(item.get("arguments", {}).get("query", "")).split()).casefold()
+            for item in observations
+            if item.get("name") == "search_knowledge"
+            and item.get("output", {}).get("success")
+            and item.get("arguments", {}).get("query")
+        }
         repairs = 0
         repaired_issues: set[str] = set()
         skill_recovery_attempts = 0
@@ -299,7 +306,7 @@ class AgentRunner:
                     await event("compression")
                 provider = getattr(self.llm, "provider", self.llm)
                 if isinstance(provider, OfflineLLMProvider):
-                    calls, text = self._offline(query, observations, history or [])
+                    calls, text = self._offline(query, observations, history or [], spec=spec)
                 else:
                     model_started = time.perf_counter()
                     await event("model_started", stage="agent", step=_step + 1)
@@ -423,12 +430,49 @@ class AgentRunner:
                     )
                     began = time.perf_counter()
                     recover_unknown_skill = False
-                    try:
-                        output = (
-                            precomputed[call["id"]]
-                            if call["id"] in precomputed
-                            else await self.executor.execute(name, args, context, spec)
+                    policy_query = " ".join(str(args.get("query", "")).split()).casefold()
+                    duplicate_policy_query = (
+                        spec.name == "policy"
+                        and name == "search_knowledge"
+                        and policy_query in policy_queries
+                    )
+                    policy_search_limit = (
+                        spec.name == "policy"
+                        and name == "search_knowledge"
+                        and len(policy_queries) >= 3
+                    )
+                    output = None
+                    if duplicate_policy_query or policy_search_limit:
+                        output = {
+                            "success": False,
+                            "status": "deduplicated"
+                            if duplicate_policy_query
+                            else "search_limit_reached",
+                            "error_code": "DUPLICATE_POLICY_QUERY"
+                            if duplicate_policy_query
+                            else "POLICY_SEARCH_LIMIT",
+                            "error": "该 query 已查过，请基于未覆盖条件提出不同 query。"
+                            if duplicate_policy_query
+                            else "政策专家的三次不同检索额度已用完，请根据已有证据安全结束。",
+                            "retryable": False,
+                        }
+                        await event(
+                            "policy_search_deduplicated"
+                            if duplicate_policy_query
+                            else "policy_search_limit",
+                            tool=name,
+                            tool_call_id=call["id"],
                         )
+                    else:
+                        if spec.name == "policy" and name == "search_knowledge":
+                            policy_queries.add(policy_query)
+                    try:
+                        if output is None:
+                            output = (
+                                precomputed[call["id"]]
+                                if call["id"] in precomputed
+                                else await self.executor.execute(name, args, context, spec)
+                            )
                     except ToolPermissionError:
                         return {
                             "answer": "权限不足，无法继续此操作。",
@@ -696,7 +740,61 @@ class AgentRunner:
         finally:
             active_run_id.reset(active_token)
 
-    def _offline(self, query, observations, history):
+    def _offline(self, query, observations, history, *, spec=None):
+        if (
+            spec is not None
+            and spec.name == "policy"
+            and observations
+            and any(item.get("name") == "search_knowledge" for item in observations)
+        ):
+            chunks_by_id = {}
+            for item in observations:
+                output = item.get("output", {})
+                if output.get("success") is False:
+                    continue
+                data = output.get("output", output)
+                for chunk in data.get("chunks", []):
+                    chunks_by_id.setdefault(chunk.get("chunk_id"), chunk)
+            if chunks_by_id:
+                findings = [
+                    {
+                        "claim": f"{chunk.get('title', '政策证据')}：{chunk.get('content', '')[:500]}",
+                        "evidence_refs": [ref],
+                        "applicability": [
+                            value
+                            for value in (
+                                chunk.get("section"),
+                                chunk.get("metadata", {}).get("applicable_category"),
+                            )
+                            if value
+                        ],
+                        "exceptions": [
+                            value
+                            for key, value in chunk.get("metadata", {}).items()
+                            if "exception" in key.casefold() and value
+                        ],
+                    }
+                    for ref, chunk in chunks_by_id.items()
+                ]
+                return [], json.dumps(
+                    {
+                        "status": "sufficient",
+                        "findings": findings,
+                        "missing_information": [],
+                        "evidence_refs": list(chunks_by_id),
+                    },
+                    ensure_ascii=False,
+                )
+            if any(item.get("name") == "search_knowledge" for item in observations):
+                return [], json.dumps(
+                    {
+                        "status": "insufficient",
+                        "findings": [],
+                        "missing_information": ["policy_evidence"],
+                        "evidence_refs": [],
+                    },
+                    ensure_ascii=False,
+                )
         if observations:
             result = observations[-1]
             out = result["output"]

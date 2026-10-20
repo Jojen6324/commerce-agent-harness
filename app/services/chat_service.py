@@ -270,6 +270,9 @@ class ChatService:
                                     missing_fields=output.get("missing_fields", []),
                                     evidence_refs=output.get("evidence_refs", []),
                                     child_run_id=output.get("child_run_id"),
+                                    findings=output.get("findings", []),
+                                    missing_information=output.get("missing_information", []),
+                                    policy_result_status=output.get("policy_result_status"),
                                 )
                                 attempt.update(
                                     fact_refs=[
@@ -316,6 +319,9 @@ class ChatService:
                                     "child_run_id",
                                     "fact_refs",
                                     "summary",
+                                    "findings",
+                                    "missing_information",
+                                    "policy_result_status",
                                 )
                                 if key in attempt
                             }

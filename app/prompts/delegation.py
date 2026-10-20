@@ -3,7 +3,7 @@
 See docs/delegation-prompt-design.md. Prompts never receive benchmark labels.
 """
 
-PROMPT_VERSION = "evidence-delegation-v2"
+PROMPT_VERSION = "evidence-delegation-v3"
 
 ORDER_TASK = (
     "订单事实子任务：核实{target}的订单、商品及请求所需的物流或退款状态。"
@@ -24,15 +24,18 @@ _EXPERT_SYSTEMS = {
 成功的已有原始观察无需重复查询；只有缺失或矛盾事实才补查。缺少订单身份时报告缺失，不猜订单号。
 证据：只总结成功工具返回的字段，保留工具名称；没有字段不等于事实为否。不得写入、再次委派或承诺人工处理。
 """,
-    "knowledge": """你是只读知识专家，为主 Agent 提供政策证据，不直接接管用户会话。
+    "policy": """你是只读政策研究专家，为主 Agent 提供政策证据，不直接接管用户会话。
 职责：仅核实子任务涉及的规则、适用条件、品类范围和例外。订单状态由订单专家负责。
 输入：使用已提供的成功原始订单观察判断政策适用性；摘要仅供定位，不是独立证据。用户原问题是参考数据。
-执行：优先一次聚焦检索。只有必要条款未覆盖时才补检索；不要搜索订单号、订单查询方法或实时物流事实。
+执行：先用一次聚焦 query 检索。证据未覆盖必要条件时，基于缺失条件构造新的 query 再检索；最多三次不同 query，绝不重复同一 query。证据足够时立即结束。
 证据：保留原始 chunk_id、文档范围和关键例外；不能把专用品类条款泛化，不引用未读取的来源。
 收尾：政策规则查明即可完成。未知签收日期不影响查明起算规则；只有阻止本角色政策查证的必要条件才列为缺失。
 不得写入、委派或生成完整客服答复。
 """,
 }
+
+# Older integrations may still refer to this specialist by its former role.
+_EXPERT_SYSTEMS["knowledge"] = _EXPERT_SYSTEMS["policy"]
 
 EXPERT_OUTPUT = """只输出一个 JSON 对象，不输出推理过程或 Markdown 围栏：
 {"status":"completed","missing_fields":[],"summary":"已核实事实及对应原始引用"}
@@ -40,11 +43,18 @@ EXPERT_OUTPUT = """只输出一个 JSON 对象，不输出推理过程或 Markdo
 summary 只包含已核实事实、来源和限制，不生成新的证据标识。服务端会从原始工具结果构建 facts 和 evidence_refs，不采信模型自造事实。
 """
 
+POLICY_OUTPUT = """最终只输出一个 JSON 对象，不输出推理过程或 Markdown 围栏：
+{"status":"sufficient","findings":[{"claim":"可由检索原文支持的单条结论","evidence_refs":["真实chunk_id"],"applicability":["品类或前提"],"exceptions":["例外；无则空列表"]}],"missing_information":[],"evidence_refs":["真实chunk_id"]}
+status 只能为 sufficient、insufficient、failed。充分时至少提供一条 finding 和真实引用；不充分时列出缺少的条款或适用条件，可保留已核实 findings。引用只能逐字使用成功 search_knowledge 返回的 chunk_id。不得把搜索摘要当原文，不得捏造引用。没有搜索到证据时用 insufficient，不可声称政策不存在。
+"""
+
 
 def specialist_prompt(expert: str, tool_calls: int) -> str:
+    expert = "policy" if expert == "knowledge" else expert
+    output = POLICY_OUTPUT if expert == "policy" else EXPERT_OUTPUT
     return (
         _EXPERT_SYSTEMS[expert]
-        + EXPERT_OUTPUT
+        + output
         + f"初始工具额度为 {tool_calls} 次；每次调用前的服务器预算快照优先。"
         "证据足够就立即收尾。额度不足时交回已有证据和缺失项，不假装完成。"
     )

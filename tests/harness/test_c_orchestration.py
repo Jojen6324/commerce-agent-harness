@@ -51,8 +51,8 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
         role = (
             "orders"
             if "你是只读订单专家" in system
-            else "knowledge"
-            if "你是只读知识专家" in system
+            else "policy"
+            if "你是只读政策研究专家" in system
             else "main"
         )
         roles[role] += 1
@@ -72,16 +72,42 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
                 ),
                 usage=TokenUsage(total_tokens=100),
             )
-        if role == "knowledge":
+        if role == "policy":
             names = {tool["function"]["name"] for tool in kwargs["tools"]}
             assert "answer_question" not in names
+            assert names <= {"search_knowledge", "read_artifact"}
             if roles[role] == 1:
                 return native(
                     "search_knowledge", {"query": "耳机 七天无理由 签收次日起算"}, "policy"
                 )
+            tool_results = [
+                json.loads(message["content"])
+                for message in messages
+                if message.get("role") == "tool"
+            ]
+            chunks = [
+                chunk
+                for result in tool_results
+                for chunk in result.get("output", {}).get("chunks", [])
+            ]
+            refs = [chunks[0]["chunk_id"]] if chunks else []
             return LLMResponse(
                 json.dumps(
-                    {"status": "completed", "missing_fields": [], "summary": "已查到退货起算规则。"}
+                    {
+                        "status": "sufficient" if refs else "insufficient",
+                        "findings": [
+                            {
+                                "claim": "已查到退货起算规则。",
+                                "evidence_refs": refs,
+                                "applicability": ["耳机"],
+                                "exceptions": [],
+                            }
+                        ]
+                        if refs
+                        else [],
+                        "missing_information": [] if refs else ["policy_source"],
+                        "evidence_refs": refs,
+                    }
                 ),
                 usage=TokenUsage(total_tokens=100),
             )
@@ -114,10 +140,10 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
             ("orders", "get_order"),
             ("orders", "track_shipment"),
             ("main", "delegate_task"),
-            ("knowledge", "search_knowledge"),
+            ("policy", "search_knowledge"),
             ("main", "ask_user"),
         ]
-        policy_context = "\n".join(m["content"] for m in prompts["knowledge"])
+        policy_context = "\n".join(m["content"] for m in prompts["policy"])
         main_context = "\n".join(m["content"] for m in prompts["main"])
         assert "verified_observations" in policy_context and "shipped" in policy_context
         assert "fact_refs" in main_context and "child_run_id" in main_context

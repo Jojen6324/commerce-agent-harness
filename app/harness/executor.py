@@ -5,7 +5,7 @@ import hashlib
 import json
 import time
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select, update
 
 from app.core.enums import ToolRisk
@@ -33,9 +33,14 @@ class AskInput(BaseModel):
 class DelegateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     independent: bool = Field(default=False, description="仅当任务与其他委派无数据依赖时为true")
-    agent: str = Field(pattern="^(knowledge|orders)$")
+    agent: str = Field(pattern="^(policy|knowledge|orders)$")
     goal: str = Field(min_length=1, max_length=2000)
     context: str = Field(default="", max_length=4000)
+
+    @field_validator("agent", mode="before")
+    @classmethod
+    def normalize_legacy_knowledge_role(cls, value):
+        return "policy" if value == "knowledge" else value
 
 
 class ToolExecutor:
@@ -295,7 +300,7 @@ class ToolExecutor:
                 AskInput.model_json_schema(),
             ),
             "delegate_task": (
-                "委派独立只读调查给knowledge或orders专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。",
+                "委派独立只读调查给policy或orders专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。",
                 DelegateInput.model_json_schema(),
             ),
             "load_skill": (

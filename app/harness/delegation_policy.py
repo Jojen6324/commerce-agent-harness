@@ -54,11 +54,7 @@ class DelegationPolicy:
         if self.mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE:
             eligible = eligible and needs.identified_order
         experts = (
-            (
-                ("knowledge", "orders")
-                if self.mode is DelegationMode.AUTO
-                else ("orders", "knowledge")
-            )
+            (("policy", "orders") if self.mode is DelegationMode.AUTO else ("orders", "policy"))
             if eligible
             else ()
         )
@@ -74,6 +70,8 @@ class DelegationPolicy:
             identifiers = ORDER_ID.findall(request)
             target = "、".join(identifiers) or "上下文中已确认的订单"
             return ORDER_TASK.format(target=target)
+        if expert not in ("policy", "knowledge"):
+            raise ValueError(f"unsupported expert: {expert}")
         clauses = re.split(r"[，,；;。？?]|并且|以及|同时|然后|并|再", request)
         policy_clauses = [clause for clause in clauses if request_requirements(clause).policy]
         topic = ORDER_ID.sub("该订单", "；".join(policy_clauses) or request)

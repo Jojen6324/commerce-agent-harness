@@ -12,8 +12,8 @@ def test_required_policy_selects_only_evidence_roles_needed_by_request():
     simple = policy.decide("你好")
 
     assert order.experts == ()
-    assert cross_domain.experts == ("orders", "knowledge")
-    assert adjacent_order_id.experts == ("orders", "knowledge")
+    assert cross_domain.experts == ("orders", "policy")
+    assert adjacent_order_id.experts == ("orders", "policy")
     assert simple.experts == ()
 
 
@@ -25,12 +25,12 @@ def test_policy_uses_history_and_confirmed_facts_for_anaphoric_follow_up():
         confirmed_facts={"last_order": {"order_id": "ORD10001"}},
     )
 
-    assert decision.experts == ("orders", "knowledge")
+    assert decision.experts == ("orders", "policy")
 
 
 def test_auto_only_selects_independent_cross_domain_work_and_off_selects_none():
     query = "查 ORD10001 的签收状态，并核实七天无理由期限从哪天起算"
-    assert DelegationPolicy("auto").decide(query).experts == ("knowledge", "orders")
+    assert DelegationPolicy("auto").decide(query).experts == ("policy", "orders")
     assert DelegationPolicy("auto").decide("查 ORD10001 的物流").experts == ()
     assert DelegationPolicy("off").decide(query).experts == ()
 
@@ -46,7 +46,7 @@ def test_c_skips_simple_queries_and_missing_identity_without_dataset_labels():
         assert policy.decide(query).experts == ()
     assert policy.decide("核实 ORD778899 的商品，破损的退货政策怎么规定").experts == (
         "orders",
-        "knowledge",
+        "policy",
     )
 
 
@@ -67,7 +67,7 @@ def test_expert_context_remains_valid_json_when_history_and_facts_are_large():
 def test_expert_goals_are_subtasks_instead_of_copies_of_parent_question():
     query = "核实ORD778899是否签收，并说明七天无理由从哪日起算"
     order_goal = DelegationPolicy.goal_for_expert("orders", query)
-    policy_goal = DelegationPolicy.goal_for_expert("knowledge", query)
+    policy_goal = DelegationPolicy.goal_for_expert("policy", query)
     assert "ORD778899" in order_goal and "七天无理由" not in order_goal
     assert "七天无理由" in policy_goal and "ORD778899" not in policy_goal
     assert query not in order_goal and query not in policy_goal

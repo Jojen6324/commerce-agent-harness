@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from dataclasses import replace
+from contextvars import ContextVar
 
 from app.config.settings import Settings
 from app.core.exceptions import (
@@ -25,9 +25,11 @@ from app.harness.delegation import (
 from app.harness.delegation_policy import DelegationMode, DelegationPolicy
 from app.harness.evidence import confirmed_item_observations
 from app.harness.executor import ToolExecutor
-from app.harness.runner import AgentRunner, AgentSpec
-from app.harness.validation import AnswerValidator
+from app.harness.runner import AgentRunner, AgentSpec, active_run_id
+from app.harness.validation import AnswerValidator, FaithfulnessVerdict
+from app.prompts.faithfulness import FAITHFULNESS_AGENT_PROMPT
 from app.providers.fake import OfflineLLMProvider
+from app.providers.json_parser import parse_model
 from app.repositories.runtime import RuntimeStore
 from app.repositories.session_repository import SessionRepository
 from app.retrieval.evidence import cited_refs
@@ -38,6 +40,10 @@ from app.services.knowledge import KnowledgeService
 from app.tools.base import ToolContext
 from app.tools.factory import build_tool_registry
 from app.tools.knowledge_service import EvidenceTool
+
+validation_runtime_context: ContextVar[dict | None] = ContextVar(
+    "validation_runtime_context", default=None
+)
 
 
 class ChatService:
@@ -89,7 +95,9 @@ class ChatService:
                 "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
             )
         self.validator = AnswerValidator(
-            self.provider, tool_contracts=self.executor.schemas(self.spec)
+            self.provider,
+            tool_contracts=self.executor.schemas(self.spec),
+            verifier=self._verify_faithfulness,
         )
         self.runner.output_validator = self.validator.validate
         self._locks: dict[str, asyncio.Lock] = {}
@@ -129,9 +137,12 @@ class ChatService:
             max_models=self._settings.agent_model_calls,
             max_tools=self._settings.max_tool_calls,
             max_tokens=self._settings.agent_total_tokens,
+            max_delegations=self._settings.agent_max_delegations,
         )
         facts = await self.store.facts(context)
         token = current_budget.set(budget)
+        validation_state = {"context": context, "facts": facts, "root_run_id": None}
+        validation_token = validation_runtime_context.set(validation_state)
         run_id = None
         run_events = []
         result = {}
@@ -145,6 +156,8 @@ class ChatService:
             nonlocal run_id
             if event.get("parent_run_id") is None:
                 run_id = event.get("run_id", run_id)
+                if run_id:
+                    validation_state["root_run_id"] = run_id
             run_events.append(event)
             if emit:
                 await emit(event)
@@ -346,9 +359,7 @@ class ChatService:
                     result = await self.runner.run(
                         request.message,
                         context,
-                        replace(self.spec, tools=self.spec.tools - {"delegate_task"})
-                        if self.delegation_mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE
-                        else self.spec,
+                        self.spec,
                         history=history,
                         summary=summary,
                         facts=facts,
@@ -357,7 +368,9 @@ class ChatService:
                         emit=record_event,
                     )
             if not request.confirm_action_id and not result.get("_output_validated"):
-                result = await self.validator.validate(request.message, result)
+                result = await self.validator.validate(
+                    request.message, result, allow_correction=False
+                )
             if run_events:
                 # Persist preflight and child-agent progress with the main run
                 # record as well as the specialists' individual run records.
@@ -569,6 +582,7 @@ class ChatService:
             )
         finally:
             delegation_event_sink.reset(event_token)
+            validation_runtime_context.reset(validation_token)
             current_budget.reset(token)
         response.latency.total_ms = (time.perf_counter() - started) * 1000
         response.diagnostics.setdefault("model_calls", budget.models)
@@ -588,6 +602,116 @@ class ChatService:
             )
             await db.commit()
         return response
+
+    async def _verify_faithfulness(
+        self,
+        *,
+        query,
+        answer,
+        observations,
+        chunks,
+        tool_facts,
+        known_refs,
+        tool_contracts,
+    ):
+        runtime = validation_runtime_context.get()
+        if runtime is None:
+            raise LLMProviderError("faithfulness request context is unavailable", retryable=False)
+        context = runtime["context"]
+        root_run_id = active_run_id.get() or runtime.get("root_run_id")
+        if not root_run_id:
+            raise LLMProviderError("faithfulness root run is unavailable", retryable=False)
+
+        observed_results = []
+        for observation in observations:
+            output = observation.get("output", {})
+            data = output.get("output", output)
+            observed_results.append(
+                {
+                    "name": observation.get("name"),
+                    "arguments": observation.get("arguments", {}),
+                    "call_id": observation.get("call_id"),
+                    "success": output.get("success", True),
+                    "artifact_ref": observation.get("artifact_ref") or output.get("artifact_ref"),
+                    "result": {
+                        key: value
+                        for key, value in data.items()
+                        if key not in ("chunks", "answer", "summary", "validation")
+                    },
+                }
+            )
+        evidence_input = {
+            "original_user_question": query,
+            "candidate_answer": answer,
+            "raw_observations": observed_results,
+            "business_tool_results": tool_facts,
+            "policy_evidence": [chunk.model_dump(mode="json") for chunk in chunks],
+            "trusted_session_facts": runtime.get("facts", {}),
+            "available_tools": tool_contracts,
+            "allowed_evidence_refs": sorted(ref for ref in known_refs if ref),
+        }
+        spec = AgentSpec(
+            "faithfulness",
+            frozenset({"read_artifact"}),
+            prompt=FAITHFULNESS_AGENT_PROMPT,
+            max_steps=3,
+        )
+        emit = delegation_event_sink.get()
+        parent_token = None
+        if active_run_id.get() is None:
+            parent_token = active_run_id.set(root_run_id)
+        try:
+            child = await self.runner.run(
+                "只审核 faithfulness_input 中的候选答复，并输出规定的 JSON 裁定。",
+                context,
+                spec,
+                initial_context={"faithfulness_input": evidence_input},
+                emit=emit,
+            )
+            if child.get("status") != "completed":
+                failure = child.get("failure") or {}
+                raise LLMProviderError(
+                    failure.get("reason", "faithfulness agent did not complete"),
+                    retryable=failure.get("retryable", True),
+                )
+            verdict = parse_model(child.get("answer", ""), FaithfulnessVerdict)
+            child.setdefault("events", []).append(
+                {
+                    "event": "faithfulness_verdict",
+                    "run_id": child.get("run_id"),
+                    "parent_run_id": root_run_id,
+                    "verdict": verdict.verdict,
+                    "issues": verdict.issues,
+                    "evidence_refs": verdict.evidence_refs,
+                }
+            )
+            if self.store and child.get("run_id"):
+                await self.store.record(child, context, parent_run_id=root_run_id)
+            return verdict
+        except Exception as exc:
+            # Preserve an explicit failed child trace even when its output does
+            # not satisfy the verdict schema.
+            if "child" in locals() and self.store and child.get("run_id"):
+                if child.get("status") == "completed":
+                    child["status"] = "failed"
+                    child["failure"] = {
+                        "code": "FAITHFULNESS_VERDICT_INVALID",
+                        "reason": type(exc).__name__,
+                        "retryable": False,
+                    }
+                child.setdefault("events", []).append(
+                    {
+                        "event": "faithfulness_error",
+                        "run_id": child.get("run_id"),
+                        "parent_run_id": root_run_id,
+                        "reason": type(exc).__name__,
+                    }
+                )
+                await self.store.record(child, context, parent_run_id=root_run_id)
+            raise
+        finally:
+            if parent_token is not None:
+                active_run_id.reset(parent_token)
 
     async def _confirm(self, request, context):
         return await self.executor.confirm(request.confirm_action_id, context, self.spec)

@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     agent_context_tokens: int = 32_000
     agent_total_tokens: int = 80_000
     agent_model_calls: int = 24
+    agent_max_delegations: int = 4
     agent_deadline_seconds: float = 300
     agent_tool_timeout: float = 30
     agent_knowledge_timeout: float = 180

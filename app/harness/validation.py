@@ -1,14 +1,33 @@
 """Deterministic checks first, then bounded evidence/tool-based semantic check."""
 
+import hashlib
 import json
 import re
+from collections.abc import Awaitable, Callable
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.agents.nodes.faithfulness import self_correct_answer, validation_attempt
+from app.core.exceptions import LLMOutputError, LLMProviderError
 from app.guardrails.hallucination import FaithfulnessChecker
+from app.harness.budget import BudgetExceeded
 from app.harness.receipts import support_receipt
 from app.providers.fake import OfflineLLMProvider
 from app.retrieval.evidence import cited_refs
 from app.schemas.retrieval import RetrievedChunk
+
+
+class FaithfulnessVerdict(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    verdict: Literal["pass", "fail", "insufficient_evidence"]
+    issues: list[str] = Field(default_factory=list, max_length=20)
+    evidence_refs: list[str] = Field(default_factory=list, max_length=30)
+    correction_guidance: str = Field(default="", max_length=1200)
+
+
+Verifier = Callable[..., Awaitable[FaithfulnessVerdict]]
 
 
 def asserted_phrase(answer, phrase):
@@ -27,8 +46,9 @@ def asserted_phrase(answer, phrase):
 
 
 class AnswerValidator:
-    def __init__(self, llm, *, tool_contracts=None):
+    def __init__(self, llm, *, tool_contracts=None, verifier: Verifier | None = None):
         self.llm = llm
+        self.verifier = verifier
         self.tool_contracts = [
             {
                 "name": item["function"]["name"],
@@ -97,6 +117,15 @@ class AnswerValidator:
             set(chunks)
             | {o["name"] for o in observations}
             | {o.get("call_id", "") for o in observations}
+            | {
+                ref
+                for observation in observations
+                for ref in (
+                    observation.get("artifact_ref"),
+                    observation.get("output", {}).get("artifact_ref"),
+                )
+                if ref
+            }
         )
         cited = cited_refs(answer)
         unknown = cited - known_refs
@@ -173,6 +202,101 @@ class AnswerValidator:
                 {"event": "output_validation", **validation},
             ]
             return value
+
+        if self.verifier is not None:
+            try:
+                verdict = await self.verifier(
+                    query=query,
+                    answer=answer,
+                    observations=observations,
+                    chunks=list(chunks.values()),
+                    tool_facts=tool_facts,
+                    known_refs=known_refs,
+                    tool_contracts=self.tool_contracts,
+                )
+            except (BudgetExceeded, TimeoutError, LLMProviderError, LLMOutputError) as exc:
+                failure = {
+                    "code": getattr(
+                        getattr(exc, "error_code", None), "value", "VALIDATION_UNAVAILABLE"
+                    ),
+                    "reason": getattr(exc, "message", str(exc)) or type(exc).__name__,
+                    "retryable": getattr(exc, "retryable", True),
+                    "stage": "faithfulness_agent",
+                }
+                return finish(
+                    {
+                        **result,
+                        "answer": "答案校验服务暂不可用，本轮无法提供已核验结论。请稍后重试。",
+                        "status": "failed",
+                        "failure": failure,
+                    },
+                    "unavailable",
+                )
+            invalid_refs = set(verdict.evidence_refs) - known_refs
+            if invalid_refs:
+                verdict = verdict.model_copy(
+                    update={
+                        "verdict": "fail",
+                        "issues": [
+                            *verdict.issues,
+                            "verifier_returned_unknown_evidence_reference",
+                        ],
+                        "correction_guidance": "仅使用输入中可验证的证据引用重新核对；不得编造来源。",
+                    }
+                )
+            elif (
+                verdict.verdict == "pass"
+                and any(o.get("name") != "ask_user" for o in observations)
+                and not verdict.evidence_refs
+            ):
+                verdict = verdict.model_copy(
+                    update={
+                        "verdict": "fail",
+                        "issues": [*verdict.issues, "missing_evidence_references"],
+                        "correction_guidance": "给每项事实标注输入中真实存在的 chunk_id、工具名或调用引用。",
+                    }
+                )
+            audit.append(
+                {
+                    "stage": "faithfulness_agent",
+                    "candidate_sha256": hashlib.sha256(answer.encode()).hexdigest(),
+                    "verdict": verdict.model_dump(mode="json"),
+                    "unknown_references": sorted(invalid_refs),
+                }
+            )
+            if verdict.verdict == "pass":
+                selected = set(verdict.evidence_refs) & set(chunks)
+                missing_refs = selected - cited
+                if missing_refs:
+                    result = {
+                        **result,
+                        "answer": answer
+                        + "\n\n"
+                        + " ".join(f"[{ref}]" for ref in sorted(missing_refs)),
+                    }
+                return finish(result, "passed")
+            safe_answer = (
+                "现有证据不足，暂时无法给出可靠答复。请补充信息或转人工。"
+                if verdict.verdict == "insufficient_evidence"
+                else "候选答复未通过证据校验，本轮未发送未核实内容。"
+            )
+            failure = {
+                "code": "ANSWER_VALIDATION_FAILED",
+                "stage": "output_validation",
+                "reason": verdict.verdict,
+                "issues": verdict.issues,
+                "correction_guidance": verdict.correction_guidance,
+                "retryable": False,
+            }
+            return finish(
+                {
+                    **result,
+                    "answer": safe_answer,
+                    "status": "validation_failed",
+                    "failure": failure,
+                },
+                verdict.verdict,
+            )
 
         judged = await checker.check(
             query=query, answer=answer, chunks=list(chunks.values()), tool_results_text=text

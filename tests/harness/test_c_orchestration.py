@@ -111,7 +111,7 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
                 ),
                 usage=TokenUsage(total_tokens=100),
             )
-        assert "delegate_task" not in {tool["function"]["name"] for tool in kwargs["tools"]}
+        assert "delegate_task" in {tool["function"]["name"] for tool in kwargs["tools"]}
         return native(
             "ask_user",
             {"question": "请提供实际签收日期。", "missing_fields": ["delivered_at"]},

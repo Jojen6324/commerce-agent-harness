@@ -563,6 +563,7 @@ class AgentRunner:
                     result_ref = None
                     if getattr(self.executor, "artifacts", None):
                         result_ref = await self.executor.artifacts.put(output, context)
+                        observations[-1]["artifact_ref"] = result_ref
                     await event(
                         "tool_failed"
                         if recover_unknown_skill

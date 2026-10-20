@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.core.exceptions import LLMProviderError
-from app.harness.runner import active_run_id
+from app.harness.agentic_core import active_run_id
 from app.harness.validation import (
     AnswerValidator,
     FaithfulnessVerdict,

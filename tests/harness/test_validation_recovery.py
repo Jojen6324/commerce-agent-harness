@@ -302,7 +302,7 @@ def test_how_to_apply_question_is_not_an_explicit_write_request():
 
 
 def test_externalization_retains_policy_body_scope_limits_and_order_dates():
-    from app.harness.context import artifact_digest
+    from app.harness.context_manager import artifact_digest
 
     source = chunk().model_dump()
     result = artifact_digest(
@@ -328,7 +328,7 @@ def test_externalization_retains_policy_body_scope_limits_and_order_dates():
 
 
 def test_digest_omits_only_whole_passages_and_reports_missing_evidence():
-    from app.harness.context import artifact_digest
+    from app.harness.context_manager import artifact_digest
 
     passages = [
         {"chunk_id": "long", "content": "原始证据" * 5000},
@@ -343,7 +343,7 @@ def test_digest_omits_only_whole_passages_and_reports_missing_evidence():
 @pytest.mark.asyncio
 async def test_failed_output_returns_to_main_agent_with_tools_for_missing_evidence():
     from app.config.settings import Settings
-    from app.harness.runner import AgentRunner, AgentSpec
+    from app.harness.agentic_core import AgentSpec, BoundedRole
     from app.tools.base import ToolContext
 
     llm = SimpleNamespace(
@@ -377,7 +377,7 @@ async def test_failed_output_returns_to_main_agent_with_tools_for_missing_eviden
             }
         ),
     )
-    runner = AgentRunner(llm, executor, Settings())
+    runner = BoundedRole(llm, executor, Settings())
 
     async def validate(query, candidate, *, allow_correction):
         assert not allow_correction

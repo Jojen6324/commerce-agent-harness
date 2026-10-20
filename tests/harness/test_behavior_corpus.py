@@ -1,6 +1,6 @@
 import sys
 
-from app.harness.runner import AgentRunner
+from app.providers.offline_business import offline_decision
 from app.schemas.chat import ChatMessage
 from eval.behavior import cases
 
@@ -16,10 +16,9 @@ def test_original_intent_corpus_becomes_behavior_cases():
 
 
 def test_offline_greeting_does_not_hide_cancellation_and_multiturn_order():
-    runner = AgentRunner(None, None, None)
-    calls, _ = runner._offline("你好，我想取消订单 ORD10003", [], [])
+    calls, _ = offline_decision("你好，我想取消订单 ORD10003", [], [])
     assert calls[0]["function"]["name"] == "cancel_order"
-    calls, _ = runner._offline(
+    calls, _ = offline_decision(
         "这笔订单的物流呢", [], [ChatMessage(role="user", content="订单 ORD10002")]
     )
     assert calls[0]["function"]["name"] == "track_shipment"

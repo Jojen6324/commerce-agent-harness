@@ -53,9 +53,12 @@ def asserted_phrase(answer, phrase):
 
 
 class AnswerValidator:
-    def __init__(self, llm, *, tool_contracts=None, verifier: Verifier | None = None):
+    def __init__(
+        self, llm, *, tool_contracts=None, verifier: Verifier | None = None, semantic_enabled=True
+    ):
         self.llm = llm
         self.verifier = verifier
+        self.semantic_enabled = semantic_enabled
         self.tool_contracts = [
             {
                 "name": item["function"]["name"],
@@ -151,6 +154,20 @@ class AnswerValidator:
                 "unverified_refund_completion",
                 "当前记录不能证明退款已到账；申请提交与退款完成是不同状态。",
             )
+        approval_claim = any(
+            asserted_phrase(answer, phrase)
+            for phrase in ("审批已通过", "审核已通过", "已获批准", "审批通过了")
+        )
+        approval_states = {"approved", "refunded", "completed"}
+        approved = any(
+            d["result"].get("status") in approval_states
+            or any(r.get("status") in approval_states for r in d["result"].get("refunds", []))
+            for d in tool_facts
+        )
+        if approval_claim and not approved:
+            return reject(
+                "unverified_approval", "当前记录只能证明申请或查询状态，不能证明审批已通过。"
+            )
         # A requested/pending action can never support a completion claim.
         if unknown or (pending and completion_claim):
             result["events"].append(
@@ -186,6 +203,16 @@ class AnswerValidator:
             return result
         if isinstance(provider, OfflineLLMProvider):
             return result
+        if not self.semantic_enabled:
+            return {
+                **result,
+                "validation": {
+                    "status": "passed",
+                    "review_type": "deterministic",
+                    "facts_verified": False,
+                    "attempts": [],
+                },
+            }
         checker = FaithfulnessChecker(self.llm)
         text = (
             "实际调用结果（订单状态与执行结果只能由这里证明）：\n"

@@ -2,7 +2,7 @@
 
 The optional ``rewriter`` and ``self_rag`` parameters are accepted for callers
 of the legacy graph API, but are intentionally not invoked. Query planning and
-additional retrieval turns belong to the AgentRunner loop.
+additional retrieval turns belong to the BoundedRole loop.
 """
 
 from __future__ import annotations

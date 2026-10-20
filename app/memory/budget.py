@@ -9,10 +9,13 @@ from app.schemas.retrieval import RetrievedChunk
 
 
 def estimate_tokens(text: str) -> int:
-    """DeepSeek tokenizer is not public; CJK-heavy heuristic: ~1 token / 1.5 chars."""
+    """Conservative ASCII/CJK estimate adapted from evoagent.context_manager."""
+    import math
+
     if not text:
         return 0
-    return max(1, int(len(text) / 1.5))
+    ascii_chars = sum(ord(c) < 128 for c in text)
+    return max(1, math.ceil(ascii_chars / 3.2 + len(text) - ascii_chars + 4))
 
 
 def messages_tokens(messages: list[ChatMessage]) -> int:

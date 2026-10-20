@@ -7,7 +7,7 @@ import pytest
 
 from app.config.settings import Settings
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
-from app.harness.context import ContextBuilder
+from app.harness.context_manager import ContextBuilder
 from app.harness.validation import AnswerValidator
 from app.providers.base import LLMResponse
 from app.providers.fake import OfflineLLMProvider

@@ -29,6 +29,7 @@ class ToolContext(BaseModel):
     idempotency_key: str | None = None
     # Populated by ChatService from authenticated user turns, never tool args.
     user_messages: list[str] = Field(default_factory=list)
+    proposals_forbidden: bool = False
 
 
 class BaseTool(Protocol):

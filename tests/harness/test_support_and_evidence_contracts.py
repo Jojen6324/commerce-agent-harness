@@ -8,7 +8,7 @@ from pydantic import SecretStr
 from sqlalchemy import select
 
 from app.config.settings import Settings
-from app.harness.context import ContextBuilder
+from app.harness.context_manager import ContextBuilder
 from app.main import create_app
 from app.providers.base import LLMResponse
 from app.providers.fake import OfflineLLMProvider
@@ -103,15 +103,7 @@ async def test_durable_support_inbox_permissions_dedup_claim_and_resolve(tmp_pat
             generate=AsyncMock(
                 side_effect=[
                     native("escalate_to_human", {"reason": "用户要求人工审核退款"}),
-                    LLMResponse(
-                        '{"verdict":"pass","issues":[],"evidence_refs":[],'
-                        '"correction_guidance":"","evidence_checked":false}'
-                    ),
                     native("escalate_to_human", {"reason": "用户要求人工审核退款"}),
-                    LLMResponse(
-                        '{"verdict":"pass","issues":[],"evidence_refs":[],'
-                        '"correction_guidance":"","evidence_checked":false}'
-                    ),
                 ]
             )
         )
@@ -128,7 +120,7 @@ async def test_durable_support_inbox_permissions_dedup_claim_and_resolve(tmp_pat
             assert created.status_code == 200
             body = created.json()
             assert "待人工受理" in body["answer"] and "尚未接通" in body["answer"]
-            assert body["diagnostics"]["validation"]["review_type"] == "critic"
+            assert not any(e.get("agent") == "critic" for e in body["events"])
             assert body["pending_action"] is None
             async with c.session_factory() as db:
                 tickets = list((await db.scalars(select(SupportTicketRow))).all())
@@ -225,7 +217,7 @@ def test_inline_result_cannot_be_replaced_with_a_null_artifact_reference():
         {"role": "assistant", "content": "", "tool_calls": [{"id": "c1"}]},
         {"role": "tool", "tool_call_id": "c1", "content": content},
     ]
-    prepared, _ = ContextBuilder(4000).build(messages, [])
+    prepared, _ = ContextBuilder(2800).build(messages, [])
     assert prepared[-1]["content"] == content
     wrapped = {
         **json.loads(content),
@@ -234,7 +226,7 @@ def test_inline_result_cannot_be_replaced_with_a_null_artifact_reference():
         "evidence_refs": ["return_01"],
     }
     messages[-1]["content"] = json.dumps(wrapped, ensure_ascii=False)
-    prepared, changed = ContextBuilder(4000).build(messages, [])
+    prepared, changed = ContextBuilder(2800).build(messages, [])
     assert changed
     result = json.loads(prepared[-1]["content"])
     assert result["artifact_ref"] == "art_real" and result["evidence_refs"] == ["return_01"]

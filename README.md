@@ -1,3 +1,5 @@
+> 当前重构分支采用 Main 按需委派 Shopping / Order / AfterSales。运行底座、迁移说明及验证状态见 [业务 Agent 架构](docs/business-agent-architecture.md) 与 [迁移清单](docs/business-agent-migration.md)。旧 Policy 强制预检已删除，Critic 默认关闭。
+
 
 
 <h1 align="center">Adaptive RAG · 电商客服工作流</h1>

@@ -72,7 +72,7 @@ def test_comparison_pairs_only_single_agent_a_and_policy_required_b():
     paired = pair_results(report("passed"), report("failed"))
     assert paired[0]["A"] == "passed"
     assert paired[0]["B"] == "failed"
-    assert ARM_CONFIG == {"A": (False, "off"), "B": (True, "required_when_eligible")}
+    assert ARM_CONFIG == {"A": (False, "off"), "B": (True, "auto")}
 
 
 def test_b_summary_derives_required_policy_usage_without_monitor_stream():
@@ -98,7 +98,7 @@ def test_b_summary_derives_required_policy_usage_without_monitor_stream():
             "safety_violation_count": 0,
         },
         "delegation_enabled": True,
-        "delegation_policy": "required_when_eligible",
+        "delegation_policy": "auto",
         "agent_context_limit_tokens": 32_000,
         "agent_total_budget_tokens": 80_000,
         "delegation_prompt_version": "test",
@@ -124,7 +124,7 @@ async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation(
         split="development",
         limit=1,
         delegation_enabled=True,
-        delegation_policy="required_when_eligible",
+        delegation_policy="auto",
         monitor=True,
     )
     case = report["cases"][0]
@@ -138,5 +138,5 @@ async def test_monitor_records_turn_wall_time_and_expected_vs_actual_delegation(
     assert report["agent_total_budget_tokens"] == 80_000
     assert case["turns"][0]["wall_elapsed_ms"] >= 0
     assert len(task_events) == 1
-    assert task_events[0]["delegation_expected"] is True
-    assert task_events[0]["delegation_status"] in ("required_complete", "required_incomplete")
+    assert task_events[0]["delegation_expected"] is False
+    assert task_events[0]["delegation_status"] == "not_expected"

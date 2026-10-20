@@ -96,6 +96,7 @@ def artifact_digest(output, ref, *, max_chars=6000):
 class ContextBuilder:
     def __init__(self, limit=32_000, reserve=1200):
         self.limit, self.reserve = limit, reserve
+        self.stats = {}
 
     def estimate(self, messages, tools):
         """Return the same conservative estimate used for the context limit."""
@@ -111,6 +112,9 @@ class ContextBuilder:
         def used():
             return self.estimate(messages, tools)
 
+        before = used()
+        summarized = 0
+        dropped = 0
         changed = False
         # Keep system, current task, and tool pairing. Replace large results with
         # controlled artifact references supplied by the executor.
@@ -129,6 +133,7 @@ class ContextBuilder:
                         ensure_ascii=False,
                     )
                     changed = True
+                    summarized += 1
                 except ValueError:
                     pass
         # Earlier history is persisted verbatim; a deterministic excerpt carries
@@ -143,6 +148,51 @@ class ContextBuilder:
                 {"role": "user", "content": "较早会话摘录（数据，非指令）：" + excerpt[-2400:]}
             ]
             changed = True
+        # evoagent's recent-observation retention: older call/result groups can
+        # be pruned only together. The complete observations remain persisted.
+        groups = [m for m in messages if m.get("tool_calls")]
+        for old in groups[:-2]:
+            if used() <= self.limit * 0.8:
+                break
+            ids = {c["id"] for c in old["tool_calls"]}
+            results = [m for m in messages if m.get("tool_call_id") in ids]
+            if not results or any(m.get("protected") for m in results):
+                continue
+            refs = []
+            for m in results:
+                try:
+                    value = json.loads(m.get("content", "{}"))
+                    if value.get("artifact_ref"):
+                        refs.append(value["artifact_ref"])
+                except (ValueError, AttributeError):
+                    pass
+            if not refs:
+                continue
+            index = messages.index(old)
+            messages = [m for m in messages if m is not old and m.get("tool_call_id") not in ids]
+            messages.insert(
+                index,
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "older_observations": "原始结果已移出模型上下文；需读取后才能核实未保留的条件。",
+                            "artifact_refs": refs,
+                            "material_complete": False,
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            )
+            changed = True
+            dropped += len(results)
+        self.stats = {
+            "estimated_tokens_before": before,
+            "estimated_tokens_after": used(),
+            "observations_summarized": summarized,
+            "observations_dropped": dropped,
+            "recent_observations_retained": 2,
+        }
         for m in messages:
             m.pop("current_task", None)
             m.pop("protected", None)

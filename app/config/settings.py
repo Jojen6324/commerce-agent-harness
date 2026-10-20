@@ -34,10 +34,14 @@ class Settings(BaseSettings):
     agent_deadline_seconds: float = 300
     agent_tool_timeout: float = 30
     agent_knowledge_timeout: float = 180
+    agent_critic_enabled: bool = False
+    agent_specialist_steps: int = 6
+    agent_specialist_tokens: int = 48000
+    agent_specialist_model_calls: int = 8
+    agent_specialist_tool_calls: int = 6
+    agent_live_state_ttl_seconds: int = 30
     agent_delegation_enabled: bool = True
-    agent_delegation_policy: Literal["off", "auto", "required_when_eligible"] = (
-        "required_when_eligible"
-    )
+    agent_delegation_policy: Literal["off", "auto"] = "auto"
     agent_delegation_main_reserve_tokens: int = 16_000
     agent_delegation_main_reserve_model_calls: int = 2
     agent_delegation_main_reserve_tool_calls: int = 2

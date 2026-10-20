@@ -130,6 +130,15 @@ class ArtifactRow(Base):
     content_json: Mapped[str] = mapped_column(Text)
 
 
+class CheckpointRow(Base):
+    __tablename__ = "harness_checkpoints"
+    run_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    node: Mapped[str] = mapped_column(String(32), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    payload_json: Mapped[str] = mapped_column(Text)
+
+
 class RunRow(Base):
     __tablename__ = "harness_runs"
     run_id: Mapped[str] = mapped_column(String(64), primary_key=True)

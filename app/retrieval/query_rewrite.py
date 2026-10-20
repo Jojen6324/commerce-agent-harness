@@ -1,7 +1,7 @@
 """Legacy standalone query rewriter; not used by production retrieval tools.
 
 At runtime, a follow-up query is now an explicit tool call planned by the
-calling AgentRunner agent, so it is visible to the shared budget and trace.
+calling BoundedRole agent, so it is visible to the shared budget and trace.
 """
 
 from __future__ import annotations

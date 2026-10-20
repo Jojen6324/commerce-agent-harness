@@ -5,7 +5,7 @@ import hashlib
 import json
 import time
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, update
 
 from app.core.enums import ToolRisk
@@ -33,14 +33,9 @@ class AskInput(BaseModel):
 class DelegateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     independent: bool = Field(default=False, description="仅当任务与其他委派无数据依赖时为true")
-    agent: str = Field(pattern="^(policy|knowledge|orders)$")
+    agent: str = Field(pattern="^(shopping|order|aftersales)$")
     goal: str = Field(min_length=1, max_length=2000)
     context: str = Field(default="", max_length=4000)
-
-    @field_validator("agent", mode="before")
-    @classmethod
-    def normalize_legacy_knowledge_role(cls, value):
-        return "policy" if value == "knowledge" else value
 
 
 class ToolExecutor:
@@ -51,6 +46,30 @@ class ToolExecutor:
         self.artifacts = None
 
     async def execute(self, name, arguments, context, spec, *, confirmed=False, transaction=None):
+        from app.harness.observability import span
+        from app.harness.telemetry import current_ledger
+
+        ledger = current_ledger.get()
+        started = time.perf_counter()
+        success = False
+        try:
+            with span("tool.call", role=spec.name, tool=name, trace_id=context.trace_id):
+                output = await self._execute(
+                    name, arguments, context, spec, confirmed=confirmed, transaction=transaction
+                )
+                success = isinstance(output, dict) and output.get("success", True) is not False
+                return output
+        finally:
+            if ledger:
+                ledger.record(
+                    "tool",
+                    elapsed_ms=(time.perf_counter() - started) * 1000,
+                    success=success,
+                    tool=name,
+                    agent=spec.name,
+                )
+
+    async def _execute(self, name, arguments, context, spec, *, confirmed=False, transaction=None):
         budget = current_budget.get()
         if budget:
             if name == "delegate_task":
@@ -88,8 +107,7 @@ class ToolExecutor:
         parsed = tool.parse(arguments)
         args = parsed.model_dump()
         if name == "escalate_to_human" and not (
-            context.user_messages
-            and explicitly_requests_human_handoff(context.user_messages[-1])
+            context.user_messages and explicitly_requests_human_handoff(context.user_messages[-1])
         ):
             raise InvalidRequestError(
                 "用户尚未明确要求转人工；先说明人工服务选项并询问是否需要，不要创建工单。"
@@ -97,8 +115,13 @@ class ToolExecutor:
         if (
             tool.risk in WRITE_RISKS
             and not confirmed
-            and context.user_messages
-            and request_requirements(context.user_messages[-1]).proposals_forbidden
+            and (
+                context.proposals_forbidden
+                or (
+                    context.user_messages
+                    and request_requirements(context.user_messages[-1]).proposals_forbidden
+                )
+            )
         ):
             raise InvalidRequestError(
                 f"invalid arguments for {name}: 用户本轮只咨询或禁止操作，不能创建待确认提案；请只查询和解释。"
@@ -162,6 +185,28 @@ class ToolExecutor:
                     "create_return_request": "提交退货申请",
                     "create_refund_request": "提交退款申请",
                 }
+                existing_pending = await db.scalar(
+                    select(ActionRow).where(
+                        ActionRow.user_id == context.user_id,
+                        ActionRow.session_id == context.session_id,
+                        ActionRow.status == "pending",
+                        ActionRow.expires_epoch >= int(time.time()),
+                    )
+                )
+                if existing_pending:
+                    if (
+                        existing_pending.tool_name == name
+                        and json.loads(existing_pending.arguments_json) == args
+                    ):
+                        return {
+                            "pending_action": json.loads(existing_pending.proposal_json),
+                            "status": "awaiting_confirmation",
+                        }
+                    raise InvalidRequestError(
+                        "idempotency key reused with different payload"
+                        if context.idempotency_key
+                        else "已有待确认方案，请先确认或取消该方案，不创建重复申请。"
+                    )
                 action = ActionProposal(
                     action_id=new_id("act_"),
                     tool_name=name,
@@ -306,9 +351,10 @@ class ToolExecutor:
 
         skill_names = [skill["name"] for skill in load_skills()]
         delegate_description = (
-            "委派独立的只读订单事实调查给 Orders 专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。"
-            if spec.delegate_agents == ("orders",)
-            else "委派独立只读调查给 policy 或 orders 专家。一次只提供目标和必要上下文；不能设置身份、写入或再次委派。"
+            "按完整业务责任委派 shopping（购物）、order（订单配送取消）、aftersales（退货退款）。"
+            "简单任务直接处理。有依赖的任务顺序执行；独立只读任务可标 independent 并行。"
+            "只提供本次目标和必要上下文，不复制完整历史。专家不能继续委派。"
+            "pending_confirmation 需 Main 交付已保存的待确认方案，不表示操作完成。"
         )
         extras = {
             "ask_user": (

@@ -16,17 +16,15 @@ from app.core.exceptions import (
 )
 from app.core.ids import new_id
 from app.guardrails.injection import detect_prompt_injection
+from app.harness.agentic_core import AgentSpec, BoundedRole, active_run_id
 from app.harness.budget import BudgetedProvider, BudgetExceeded, RunBudget, current_budget
+from app.harness.business_roles import BusinessMode
 from app.harness.delegation import (
     DelegationService,
     delegation_event_sink,
-    delegation_include_observations,
-    delegation_observations,
 )
-from app.harness.delegation_policy import DelegationMode, DelegationPolicy
 from app.harness.evidence import confirmed_item_observations
 from app.harness.executor import ToolExecutor
-from app.harness.runner import AgentRunner, AgentSpec, active_run_id
 from app.harness.validation import AnswerValidator, FaithfulnessVerdict
 from app.prompts.faithfulness import CRITIC_AGENT_PROMPT
 from app.providers.fake import OfflineLLMProvider
@@ -75,43 +73,38 @@ class ChatService:
             settings.agent_tool_timeout,
             settings.agent_knowledge_timeout,
         )
-        self.runner = AgentRunner(self.provider, self.executor, settings)
-        self.store = RuntimeStore(session_factory)
+        self.runner = BoundedRole(self.provider, self.executor, settings)
+        self.store = RuntimeStore(session_factory, live_ttl=settings.agent_live_state_ttl_seconds)
         self.executor.artifacts = self.store
+        from app.harness.business_roles import MAIN_PROMPT
+
         self.spec = AgentSpec(
             "main",
-            frozenset([*self.registry.names(), "load_skill", "read_artifact", "ask_user"]),
+            frozenset([*self.registry.names(), "read_artifact", "ask_user"]),
             max_steps=settings.max_agent_steps,
+            prompt=MAIN_PROMPT,
         )
         self.delegation_mode = (
-            DelegationMode(settings.agent_delegation_policy)
-            if settings.agent_delegation_enabled
-            else DelegationMode.OFF
+            BusinessMode.AUTO
+            if (settings.agent_delegation_enabled and settings.agent_delegation_policy != "off")
+            else BusinessMode.OFF
         )
-        self.delegation_policy = DelegationPolicy(self.delegation_mode)
-        self.delegation_enabled = self.delegation_mode is not DelegationMode.OFF
-        self.main_spec = self.spec
+        self.delegation_enabled = self.delegation_mode is not BusinessMode.OFF
         if self.delegation_enabled:
             self.executor.delegate = DelegationService(self.runner, self.executor, self.store)
             self.spec = AgentSpec(
-                "main", self.spec.tools | {"delegate_task"}, max_steps=settings.max_agent_steps
+                "main",
+                self.spec.tools | {"delegate_task"},
+                prompt=MAIN_PROMPT,
+                max_steps=settings.max_agent_steps,
+                delegate_agents=("shopping", "order", "aftersales"),
             )
-            # Required mode runs Policy Agent for retrieval work. Main Agent
-            # can optionally delegate only order facts to the Orders specialist.
-            self.main_spec = (
-                AgentSpec(
-                    "main",
-                    self.spec.tools,
-                    max_steps=settings.max_agent_steps,
-                    delegate_agents=("orders",),
-                )
-                if self.delegation_mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE
-                else self.spec
-            )
+        self.main_spec = self.spec
         self.validator = AnswerValidator(
             self.provider,
             tool_contracts=self.executor.schemas(self.main_spec),
-            verifier=self._verify_faithfulness,
+            verifier=self._verify_faithfulness if settings.agent_critic_enabled else None,
+            semantic_enabled=settings.agent_critic_enabled,
         )
         self.runner.output_validator = self.validator.validate
         self._locks: dict[str, asyncio.Lock] = {}
@@ -154,6 +147,16 @@ class ChatService:
             max_delegations=self._settings.agent_max_delegations,
         )
         facts = await self.store.facts(context)
+        from app.harness.business_case import BusinessCases
+        from app.harness.telemetry import ExecutionLedger, current_ledger
+
+        cases = BusinessCases(self._settings.agent_live_state_ttl_seconds)
+        facts = cases.prepare(facts, request.message)
+        context = context.model_copy(
+            update={"proposals_forbidden": facts["active_case"].get("proposals_forbidden", False)}
+        )
+        ledger = ExecutionLedger(trace_id=trace_id)
+        ledger_token = current_ledger.set(ledger)
         token = current_budget.set(budget)
         run_id = new_id("run_")
         active_root_token = active_run_id.set(run_id)
@@ -161,11 +164,6 @@ class ChatService:
         validation_token = validation_runtime_context.set(validation_state)
         run_events = []
         result = {}
-        preflight_observations = confirmed_item_observations(
-            facts, request.message, context.user_id
-        )
-        delegation_context = {}
-        delegation_attempts = []
 
         async def record_event(event):
             nonlocal run_id
@@ -180,7 +178,37 @@ class ChatService:
                     validation_state["root_run_id"] = run_id
             run_events.append(event)
             if emit:
-                await emit(event)
+                safe_keys = {
+                    "event",
+                    "run_id",
+                    "parent_run_id",
+                    "trace_id",
+                    "session_id",
+                    "agent",
+                    "expert",
+                    "child_run_id",
+                    "tool",
+                    "tool_call_id",
+                    "elapsed_ms",
+                    "status",
+                    "error_code",
+                    "model",
+                    "prompt_tokens",
+                    "completion_tokens",
+                    "total_tokens",
+                    "step",
+                    "stage",
+                    "reason",
+                    "source",
+                    "compressed",
+                    "context_tokens",
+                    "context_limit_tokens",
+                    "tool_calls_remaining",
+                    "tokens_remaining",
+                    "model_calls_remaining_including_current",
+                    "steps_remaining_including_current",
+                }
+                await emit({k: v for k, v in event.items() if k in safe_keys})
 
         event_token = delegation_event_sink.set(record_event)
         try:
@@ -227,171 +255,16 @@ class ChatService:
                             "status": result["status"],
                         }
                     )
+            elif facts.get("_case_cancelled"):
+                await self.store.cancel_pending(context)
+                result = {
+                    "run_id": run_id,
+                    "status": "completed",
+                    "events": [],
+                    "observations": [],
+                    "answer": "已停止本次任务，尚未确认的方案已撤销。已执行的操作不会因此撤回。",
+                }
             else:
-                if self.delegation_mode is DelegationMode.REQUIRED_WHEN_ELIGIBLE:
-                    decision = self.delegation_policy.decide(
-                        request.message, history=history, confirmed_facts=facts
-                    )
-                    await record_event(
-                        {
-                            "event": "delegation_plan",
-                            "mode": decision.mode.value,
-                            "required_experts": list(decision.experts),
-                            "reasons": list(decision.reasons),
-                        }
-                    )
-                    delegation_context = {
-                        "mode": decision.mode.value,
-                        "required_experts": list(decision.experts),
-                        "reasons": list(decision.reasons),
-                        "experts": {},
-                    }
-                    if decision.experts:
-                        budget.protected_tokens = min(
-                            max(0, self._settings.agent_delegation_main_reserve_tokens),
-                            max(0, budget.max_tokens - budget.usage.total_tokens),
-                        )
-                        budget.protected_models = min(
-                            max(0, self._settings.agent_delegation_main_reserve_model_calls),
-                            budget.max_models,
-                        )
-                        budget.protected_tools = min(
-                            max(0, self._settings.agent_delegation_main_reserve_tool_calls),
-                            budget.max_tools,
-                        )
-                    try:
-                        for index, expert in enumerate(decision.experts):
-                            attempt = {
-                                "expert": expert,
-                                "status": "started",
-                                "missing_fields": [],
-                                "evidence_refs": [],
-                                "child_run_id": None,
-                            }
-                            await record_event(
-                                {
-                                    "event": "delegation_started",
-                                    "source": "policy_preflight",
-                                    "expert": expert,
-                                    "tool": "delegate_task",
-                                }
-                            )
-                            try:
-                                include_token = delegation_include_observations.set(True)
-                                evidence_token = delegation_observations.set(
-                                    tuple(preflight_observations)
-                                )
-                                try:
-                                    with budget.delegation_share(
-                                        len(decision.experts) - index
-                                    ) as allocation:
-                                        await record_event(
-                                            {
-                                                "event": "delegation_allocation",
-                                                "expert": expert,
-                                                "allocation": allocation,
-                                                "source": "policy_preflight",
-                                            }
-                                        )
-                                        output = await self.executor.execute(
-                                            "delegate_task",
-                                            {
-                                                "agent": expert,
-                                                "goal": DelegationPolicy.goal_for_expert(
-                                                    expert, request.message
-                                                ),
-                                                "context": DelegationPolicy.context_for_expert(
-                                                    request.message,
-                                                    history,
-                                                    {
-                                                        **facts,
-                                                        "verified_observations": preflight_observations,
-                                                    },
-                                                ),
-                                            },
-                                            context,
-                                            self.spec,
-                                        )
-                                finally:
-                                    delegation_observations.reset(evidence_token)
-                                    delegation_include_observations.reset(include_token)
-                                attempt.update(
-                                    status=output.get("status", "incomplete"),
-                                    missing_fields=output.get("missing_fields", []),
-                                    evidence_refs=output.get("evidence_refs", []),
-                                    child_run_id=output.get("child_run_id"),
-                                    findings=output.get("findings", []),
-                                    missing_information=output.get("missing_information", []),
-                                    policy_result_status=output.get("policy_result_status"),
-                                )
-                                attempt.update(
-                                    fact_refs=[
-                                        {
-                                            "tool": fact["tool"],
-                                            "arguments": fact.get("arguments", {}),
-                                        }
-                                        for fact in output.get("facts", [])
-                                    ],
-                                    summary=output.get("summary", "")[:600],
-                                )
-                                for observation in output.get("observations", []):
-                                    if observation in preflight_observations:
-                                        continue
-                                    preflight_observations.append(
-                                        {
-                                            **observation,
-                                            "delegated_by": expert,
-                                            "child_run_id": output.get("child_run_id"),
-                                        }
-                                    )
-                            except BudgetExceeded as exc:
-                                attempt.update(
-                                    status="budget_blocked",
-                                    missing_fields=["delegation_budget"],
-                                    budget_scope=exc.details.get("budget_scope", "run_budget"),
-                                )
-                            except Exception as exc:
-                                # Fail closed on the specialist attempt. The main
-                                # agent still receives its original tools and can
-                                # answer from available evidence or ask a question.
-                                attempt.update(
-                                    status="failed",
-                                    missing_fields=["expert_execution"],
-                                    failure=type(exc).__name__,
-                                )
-                            delegation_attempts.append(attempt)
-                            delegation_context["experts"][expert] = {
-                                key: attempt[key]
-                                for key in (
-                                    "status",
-                                    "missing_fields",
-                                    "evidence_refs",
-                                    "child_run_id",
-                                    "fact_refs",
-                                    "summary",
-                                    "findings",
-                                    "missing_information",
-                                    "policy_result_status",
-                                )
-                                if key in attempt
-                            }
-                            await record_event(
-                                {
-                                    "event": "delegation_result",
-                                    "source": "policy_preflight",
-                                    "expert": expert,
-                                    "status": attempt["status"],
-                                    "child_run_id": attempt.get("child_run_id"),
-                                    "missing_fields": attempt["missing_fields"],
-                                    "budget_scope": attempt.get("budget_scope"),
-                                }
-                            )
-                    finally:
-                        # Child work cannot consume the protected main-agent
-                        # continuation budget. The shared task cap is unchanged.
-                        budget.protected_tokens = 0
-                        budget.protected_models = 0
-                        budget.protected_tools = 0
                 async with asyncio.timeout(self._settings.agent_deadline_seconds):
                     result = await self.runner.run(
                         request.message,
@@ -399,9 +272,10 @@ class ChatService:
                         self.main_spec,
                         history=history,
                         summary=summary,
-                        facts=facts,
-                        initial_observations=preflight_observations,
-                        initial_context=delegation_context,
+                        facts=cases.model_facts(facts),
+                        initial_observations=confirmed_item_observations(
+                            facts, request.message, context.user_id
+                        ),
                         emit=record_event,
                         run_id=run_id,
                     )
@@ -474,6 +348,7 @@ class ChatService:
                         or result.get("run_id"),
                         "source_trace_id": trace_id,
                     }
+            facts = cases.update(facts, request.message, result)
             await self.store.save_facts(context, facts)
             pending = (
                 ActionProposal.model_validate(result["pending_action"])
@@ -513,10 +388,10 @@ class ChatService:
                         section=c.get("section"),
                     )
             role_usage = {}
-            for event in run_events:
-                if event.get("event") not in ("model_started", "model_completed"):
+            for call in ledger.calls:
+                if call["kind"] not in {"model", "model_reservation"}:
                     continue
-                role = event.get("agent", "unknown")
+                role = call["role"]
                 usage = role_usage.setdefault(
                     role,
                     {
@@ -526,11 +401,11 @@ class ChatService:
                         "total_tokens": 0,
                     },
                 )
-                if event.get("event") == "model_started":
+                if call["kind"] == "model_reservation":
                     usage["model_calls"] += 1
                 else:
                     for field in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                        usage[field] += event.get(field, 0) or 0
+                        usage[field] += call.get(field, 0) or 0
             attributed_calls = sum(item["model_calls"] for item in role_usage.values())
             unattributed_calls = max(0, budget.models - attributed_calls)
             attributed_tokens = sum(item["total_tokens"] for item in role_usage.values())
@@ -550,35 +425,32 @@ class ChatService:
                     ),
                     "total_tokens": unattributed_tokens,
                 }
-            in_run_child_ids = {
-                (o.get("output") or {}).get("child_run_id")
-                for o in result.get("observations", [])
-                if o.get("name") == "delegate_task" and (o.get("output") or {}).get("child_run_id")
-            }
-            successful_preflight_ids = {
-                item.get("child_run_id") for item in delegation_attempts if item.get("child_run_id")
-            }
+            delegation_results = [
+                o for o in result.get("observations", []) if o.get("name") == "delegate_task"
+            ]
             delegation_diagnostics = {
                 "mode": self.delegation_mode.value,
-                "required_experts": list(delegation_context.get("required_experts", [])),
-                "completed_experts": [
-                    item["expert"]
-                    for item in delegation_attempts
-                    if item.get("status") == "completed"
-                ],
-                "attempts": delegation_attempts,
-                "budget_blocked": [
-                    item["expert"]
-                    for item in delegation_attempts
-                    if item.get("status") == "budget_blocked"
-                ],
-                "delegate_calls": max(
-                    sum(event.get("event") == "delegation_dispatched" for event in run_events),
-                    len(successful_preflight_ids | in_run_child_ids),
+                "required_experts": [],
+                "completed_experts": sorted(
+                    {
+                        o["arguments"]["agent"]
+                        for o in delegation_results
+                        if o["output"].get("status") == "completed"
+                    }
                 ),
-                "required_experts_complete": bool(delegation_context.get("required_experts"))
-                and all(item.get("status") == "completed" for item in delegation_attempts)
-                and len(delegation_attempts) == len(delegation_context.get("required_experts", [])),
+                "attempts": [
+                    {
+                        "expert": o["arguments"].get("agent"),
+                        "status": o["output"].get("status"),
+                        "child_run_id": o["output"].get("child_run_id"),
+                    }
+                    for o in delegation_results
+                ],
+                "budget_blocked": [],
+                "delegate_calls": sum(
+                    e.get("event") == "delegation_dispatched" for e in run_events
+                ),
+                "required_experts_complete": False,
             }
             response = ChatResponse(
                 answer=result["answer"],
@@ -698,6 +570,9 @@ class ChatService:
             validation_runtime_context.reset(validation_token)
             active_run_id.reset(active_root_token)
             current_budget.reset(token)
+            current_ledger.reset(ledger_token)
+        response.diagnostics["execution_ledger"] = ledger.summary()
+        response.diagnostics["business_case"] = facts.get("active_case")
         response.latency.total_ms = (time.perf_counter() - started) * 1000
         response.diagnostics.setdefault("model_calls", budget.models)
         response.diagnostics.setdefault("tool_calls", budget.tools)

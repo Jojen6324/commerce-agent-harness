@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.config.settings import Settings
+from app.harness.agentic_core import SYSTEM, AgentSpec, BoundedRole
 from app.harness.budget import RunBudget, current_budget
-from app.harness.runner import SYSTEM, AgentRunner, AgentSpec
 from app.prompts.evidence_rules import EVIDENCE_RULES
 from app.providers.base import LLMResponse
 from app.tools.base import ToolContext
@@ -43,7 +43,7 @@ async def test_tool_result_pairing_and_no_classifier():
         schemas=lambda _: [],
         execute=AsyncMock(return_value={"success": True, "output": {"status": "paid"}}),
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "订单状态", context(), AgentSpec("main", frozenset(["get_order"]))
     )
     assert result["answer"] == "已查询"
@@ -66,7 +66,7 @@ async def test_truncated_or_malformed_calls_never_execute():
     ]:
         llm = SimpleNamespace(generate=AsyncMock(return_value=response))
         executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
-        result = await AgentRunner(llm, executor, Settings()).run(
+        result = await BoundedRole(llm, executor, Settings()).run(
             "取消", context(), AgentSpec("main", frozenset())
         )
         assert result["status"] == "failed"
@@ -86,7 +86,7 @@ async def test_repeated_calls_stop_without_progress():
     executor = SimpleNamespace(
         schemas=lambda _: [], execute=AsyncMock(return_value={"success": True, "output": {}})
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "查询", context(), AgentSpec("main", frozenset(["get_order"]))
     )
     assert result["status"] == "budget_exhausted"
@@ -110,7 +110,7 @@ async def test_tool_budget_stop_keeps_budget_details_without_duplicate_event_fie
     )
     token = current_budget.set(RunBudget(deadline=time.monotonic() + 60, max_tools=0))
     try:
-        result = await AgentRunner(llm, executor, Settings()).run(
+        result = await BoundedRole(llm, executor, Settings()).run(
             "查询", context(), AgentSpec("main", frozenset(["get_order"]))
         )
     finally:
@@ -149,7 +149,7 @@ async def test_parameter_error_can_be_corrected_with_matched_result():
             ]
         ),
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "查询", context(), AgentSpec("main", frozenset(["get_order"]))
     )
     assert result["status"] == "completed" and executor.execute.await_count == 2
@@ -180,7 +180,7 @@ async def test_explicit_clarification_stops_before_business_tool():
             }
         ),
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "帮我退货", context(), AgentSpec("main", frozenset(["ask_user"]))
     )
     assert result["status"] == "needs_input" and result["answer"] == "请提供订单号"
@@ -215,7 +215,7 @@ async def test_structured_missing_input_keeps_answer_and_skips_prose_completion_
         ),
     )
 
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "查询订单", context(), AgentSpec("main", frozenset(["ask_user"]))
     )
 
@@ -258,7 +258,7 @@ async def test_missing_input_never_revives_history_or_rejected_answer():
             }
         ),
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "查询订单",
         context(),
         AgentSpec("main", frozenset(["ask_user"])),
@@ -283,7 +283,7 @@ async def test_clarification_delivers_only_explicit_current_partial_answer():
             )
         )
     )
-    result = await AgentRunner(
+    result = await BoundedRole(
         llm, ToolExecutor(SimpleNamespace(all=lambda: []), None), Settings()
     ).run(
         "查询订单",
@@ -322,7 +322,7 @@ async def test_externalized_specialist_result_keeps_summary_facts_and_evidence()
     executor = SimpleNamespace(
         schemas=lambda _: [], execute=AsyncMock(return_value=output), artifacts=artifacts
     )
-    result = await AgentRunner(llm, executor, Settings()).run(
+    result = await BoundedRole(llm, executor, Settings()).run(
         "核对", context(), AgentSpec("main", frozenset(["delegate_task"]))
     )
     assert result["status"] == "completed"
@@ -337,7 +337,7 @@ async def test_externalized_specialist_result_keeps_summary_facts_and_evidence()
 @pytest.mark.asyncio
 async def test_large_artifact_read_is_compacted_with_original_reference_and_no_copy():
     from app.config.settings import Settings
-    from app.harness.runner import AgentRunner, AgentSpec
+    from app.harness.agentic_core import AgentSpec, BoundedRole
 
     llm = SimpleNamespace(
         generate=AsyncMock(
@@ -357,7 +357,7 @@ async def test_large_artifact_read_is_compacted_with_original_reference_and_no_c
         execute=AsyncMock(return_value={"payload": "x" * 18_000}),
         artifacts=artifacts,
     )
-    result = await AgentRunner(llm, executor, Settings(agent_context_tokens=6000)).run(
+    result = await BoundedRole(llm, executor, Settings(agent_context_tokens=6000)).run(
         "检查原始证据",
         context(),
         AgentSpec("faithfulness", frozenset({"read_artifact"}), max_steps=2),
@@ -389,7 +389,7 @@ async def test_preloaded_expert_observations_reach_main_prompt_and_result():
         return LLMResponse("订单已签收。")
 
     executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
-    result = await AgentRunner(SimpleNamespace(generate=generate), executor, Settings()).run(
+    result = await BoundedRole(SimpleNamespace(generate=generate), executor, Settings()).run(
         "查询 ORD10001 当前状态",
         context(),
         AgentSpec("main", frozenset()),
@@ -421,7 +421,7 @@ async def test_bounded_expert_finalizes_existing_observations_without_another_to
     budget = RunBudget(time.monotonic() + 60, max_tools=2, protected_tools=1, tools=1)
     token = current_budget.set(budget)
     try:
-        result = await AgentRunner(llm, executor, Settings()).run(
+        result = await BoundedRole(llm, executor, Settings()).run(
             "核实签收",
             context(),
             AgentSpec("orders", frozenset({"get_order"}), finalize_on_tool_limit=True),
@@ -460,7 +460,7 @@ async def test_every_model_call_receives_current_remaining_shared_budget():
     executor = SimpleNamespace(schemas=lambda _: [], execute=execute)
     token = current_budget.set(budget)
     try:
-        result = await AgentRunner(BudgetedProvider(model), executor, Settings()).run(
+        result = await BoundedRole(BudgetedProvider(model), executor, Settings()).run(
             "查询订单", context(), AgentSpec("main", frozenset({"get_order"}))
         )
     finally:

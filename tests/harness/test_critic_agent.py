@@ -10,10 +10,10 @@ import pytest
 from app.config.settings import Settings
 from app.core.enums import ToolRisk
 from app.core.exceptions import InvalidRequestError, LLMOutputError, ToolPermissionError
+from app.harness.agentic_core import AgentSpec, BoundedRole, active_run_id
 from app.harness.budget import BudgetedProvider, RunBudget, current_budget
 from app.harness.executor import ToolExecutor
 from app.harness.receipts import support_receipt
-from app.harness.runner import AgentRunner, AgentSpec, active_run_id
 from app.harness.validation import AnswerValidator, FaithfulnessVerdict
 from app.prompts.faithfulness import CRITIC_AGENT_PROMPT
 from app.providers.base import LLMResponse
@@ -84,7 +84,7 @@ async def review(responses, material=None, *, error=None, budget=None):
     )
     executor = ToolExecutor(ToolRegistry(), None)
     executor.artifacts = store
-    runner = AgentRunner(BudgetedProvider(provider), executor, Settings())
+    runner = BoundedRole(BudgetedProvider(provider), executor, Settings())
     service = SimpleNamespace(runner=runner, store=store)
     root_token = active_run_id.set("root")
     runtime_token = validation_runtime_context.set(
@@ -283,7 +283,9 @@ async def test_server_rendered_handoff_receipt_still_runs_critic():
 @pytest.mark.asyncio
 async def test_saved_handoff_receipt_uses_the_normal_main_delivery_gate():
     provider = SimpleNamespace(
-        generate=AsyncMock(return_value=native("escalate_to_human", {"reason": "人工服务"}, "handoff"))
+        generate=AsyncMock(
+            return_value=native("escalate_to_human", {"reason": "人工服务"}, "handoff")
+        )
     )
     receipt = {
         "ticket_id": "T-1",
@@ -297,7 +299,7 @@ async def test_saved_handoff_receipt_uses_the_normal_main_delivery_gate():
         schemas=lambda _: [{"type": "function", "function": {"name": "escalate_to_human"}}],
         execute=AsyncMock(return_value={"success": True, "output": receipt}),
     )
-    runner = AgentRunner(provider, executor, Settings())
+    runner = BoundedRole(provider, executor, Settings())
     runner.output_validator = AsyncMock(
         side_effect=lambda query, candidate, **kwargs: {
             **candidate,
@@ -317,9 +319,7 @@ async def test_tool_executor_blocks_unrequested_human_ticket_before_dispatch():
         name="escalate_to_human",
         risk=ToolRisk.EXTERNAL,
         parse=lambda args: SimpleNamespace(model_dump=lambda: args),
-        run=AsyncMock(
-            return_value=SimpleNamespace(model_dump=lambda mode: {"success": True})
-        ),
+        run=AsyncMock(return_value=SimpleNamespace(model_dump=lambda mode: {"success": True})),
     )
     executor = ToolExecutor(SimpleNamespace(get=lambda _: tool), None)
     spec = AgentSpec("main", frozenset({"escalate_to_human"}))
@@ -375,7 +375,7 @@ async def test_only_current_feedback_once_correction_once_recheck_then_stop():
     provider = SimpleNamespace(
         generate=AsyncMock(side_effect=[LLMResponse("候选一"), LLMResponse("候选二")])
     )
-    runner = AgentRunner(provider, SimpleNamespace(schemas=lambda _: []), Settings())
+    runner = BoundedRole(provider, SimpleNamespace(schemas=lambda _: []), Settings())
     runner.output_validator = AsyncMock(side_effect=lambda q, c, **kw: rejected(c))
     result = await runner.run(
         "回答两个问题", context(), AgentSpec("main", frozenset(), max_steps=8)
@@ -395,7 +395,7 @@ async def test_unchanged_answer_and_evidence_reuse_verdict_without_second_review
     provider = SimpleNamespace(
         generate=AsyncMock(side_effect=[LLMResponse("同一答复"), LLMResponse("同一答复")])
     )
-    runner = AgentRunner(provider, SimpleNamespace(schemas=lambda _: []), Settings())
+    runner = BoundedRole(provider, SimpleNamespace(schemas=lambda _: []), Settings())
     runner.output_validator = AsyncMock(side_effect=lambda q, c, **kw: rejected(c))
     result = await runner.run("答两个问题", context(), AgentSpec("main", frozenset()))
     assert result["status"] == "validation_failed" and runner.output_validator.await_count == 1
@@ -406,7 +406,7 @@ async def test_unchanged_answer_and_evidence_reuse_verdict_without_second_review
 @pytest.mark.asyncio
 async def test_no_remaining_main_step_converges_without_extra_model_call():
     provider = SimpleNamespace(generate=AsyncMock(return_value=LLMResponse("候选答复")))
-    runner = AgentRunner(provider, SimpleNamespace(schemas=lambda _: []), Settings())
+    runner = BoundedRole(provider, SimpleNamespace(schemas=lambda _: []), Settings())
     runner.output_validator = AsyncMock(side_effect=lambda q, c, **kw: rejected(c))
     result = await runner.run("问题", context(), AgentSpec("main", frozenset(), max_steps=1))
     assert result["status"] == "validation_failed"
@@ -429,7 +429,7 @@ async def test_main_repair_uses_executor_role_permissions_to_prevent_repeated_wr
             ]
         )
     )
-    runner = AgentRunner(provider, executor, Settings())
+    runner = BoundedRole(provider, executor, Settings())
     runner.output_validator = AsyncMock(side_effect=lambda q, c, **kw: rejected(c))
     result = await runner.run("只查状态", context(), AgentSpec("main", frozenset({"cancel_order"})))
     assert result["status"] == "denied"
@@ -504,7 +504,7 @@ async def test_changed_evidence_allows_recheck_but_duplicate_snapshot_does_not()
                 }
             ),
         )
-        runner = AgentRunner(provider, executor, Settings())
+        runner = BoundedRole(provider, executor, Settings())
         runner.output_validator = AsyncMock(side_effect=lambda q, c, **kw: rejected(c))
         result = await runner.run(
             "查询",
@@ -554,7 +554,7 @@ async def test_last_main_repair_step_closes_lookups_but_can_deliver_answer():
     provider = SimpleNamespace(
         generate=AsyncMock(side_effect=[LLMResponse("候选一"), LLMResponse("修正版")])
     )
-    runner = AgentRunner(provider, SimpleNamespace(registry=registry, schemas=schemas), Settings())
+    runner = BoundedRole(provider, SimpleNamespace(registry=registry, schemas=schemas), Settings())
     runner.output_validator = AsyncMock(
         side_effect=[
             rejected({"answer": "候选一"}),

@@ -6,11 +6,10 @@ import pytest
 from sqlalchemy import func, select
 
 from app.config.settings import Settings
+from app.harness.agentic_core import AgentSpec, BoundedRole
 from app.harness.completion import policy_evidence_issue, repair_guidance
-from app.harness.delegation_policy import DelegationPolicy
 from app.harness.evidence import confirmed_item_observations
 from app.harness.requirements import explicitly_requests_human_handoff, request_requirements
-from app.harness.runner import AgentRunner, AgentSpec
 from app.providers.base import LLMResponse
 from app.repositories.models import ActionRow, OrderRow
 from app.schemas.chat import ChatRequest
@@ -41,8 +40,6 @@ def test_runner_and_delegation_share_evidence_requirements(query, policy):
     needs = request_requirements(query)
     assert needs.policy is policy
     assert bool(policy_evidence_issue(query)) is policy
-    expected = ("policy",) if policy else ()
-    assert DelegationPolicy("required_when_eligible").decide(query).experts == expected
 
 
 def test_repair_feedback_only_addresses_the_missing_policy_source():
@@ -134,7 +131,7 @@ def native(name, arguments, call_id):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["off", "required_when_eligible"])
+@pytest.mark.parametrize("mode", ["off", "auto"])
 async def test_advice_only_requests_block_proposals_in_a_and_c(tmp_path, mode):
     c = await build_container(
         Settings(
@@ -168,7 +165,7 @@ async def test_advice_only_requests_block_proposals_in_a_and_c(tmp_path, mode):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["off", "required_when_eligible"])
+@pytest.mark.parametrize("mode", ["off", "auto"])
 async def test_item_evidence_is_reused_without_replacing_stored_live_snapshot(tmp_path, mode):
     c = await build_container(
         Settings(
@@ -226,7 +223,7 @@ async def test_completion_and_output_corrections_share_one_retry_allowance():
             ]
         )
     )
-    runner = AgentRunner(llm, SimpleNamespace(schemas=lambda _: []), Settings())
+    runner = BoundedRole(llm, SimpleNamespace(schemas=lambda _: []), Settings())
     runner.output_validator = AsyncMock(
         return_value={
             "answer": "没有通过核验",

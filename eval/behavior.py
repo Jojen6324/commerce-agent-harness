@@ -110,8 +110,34 @@ def resource_summary(results):
             for role, values in (diagnostics.get("role_usage") or {}).items():
                 for field in ("model_calls", "prompt_tokens", "completion_tokens", "total_tokens"):
                     roles[role][field] += values.get(field, 0) or 0
+    turns = [t for r in results for t in r.get("turns", [])]
+    repeated = 0
+    for turn in turns:
+        fingerprints = [
+            json.dumps([c.get("name"), c.get("arguments")], sort_keys=True, default=str)
+            for c in turn.get("calls", [])
+        ]
+        repeated += len(fingerprints) - len(set(fingerprints))
+    elapsed = sorted(t.get("wall_elapsed_ms", 0) for t in turns)
     return {
         **dict(totals),
+        "repeated_tool_requests": repeated,
+        "budget_exhausted_turns": sum(
+            (t.get("response") or {}).get("status") == "budget_exhausted" for t in turns
+        ),
+        "false_completion_rejections": sum(
+            (t.get("response", {}).get("diagnostics", {}).get("failure") or {}).get("reason")
+            in {
+                "unverified_refund_completion",
+                "unverified_action_completion",
+                "unknown_citation_or_action_claim",
+            }
+            for t in turns
+        ),
+        "latency_p50_ms": elapsed[len(elapsed) // 2] if elapsed else None,
+        "latency_p95_ms": elapsed[min(len(elapsed) - 1, int(len(elapsed) * 0.95))]
+        if elapsed
+        else None,
         "wall_elapsed_ms": round(totals["wall_elapsed_ms"], 2),
         "by_role": {role: dict(values) for role, values in sorted(roles.items())},
         "monetary_cost": None,
@@ -145,8 +171,11 @@ def summarize(results, corpus=None):
                 "orders_agent_tasks": sum(
                     bool(r.get("delegation", {}).get("orders_agent_called")) for r in rows
                 ),
-                "policy_agent_tasks": sum(
-                    bool(r.get("delegation", {}).get("policy_agent_called")) for r in rows
+                "shopping_agent_tasks": sum(
+                    bool(r.get("delegation", {}).get("shopping_agent_called")) for r in rows
+                ),
+                "aftersales_agent_tasks": sum(
+                    bool(r.get("delegation", {}).get("aftersales_agent_called")) for r in rows
                 ),
                 "delegate_calls": sum(
                     r.get("delegation", {}).get("delegate_calls", 0) or 0 for r in rows
@@ -279,9 +308,9 @@ async def evaluate(
                 if call_id:
                     state["delegation_call_ids"].add(call_id)
             if event == "agent_started" and details.get("agent") in (
-                "orders",
-                "policy",
-                "knowledge",
+                "shopping",
+                "order",
+                "aftersales",
             ):
                 state["specialist_agents"].add(details["agent"])
             if event == "delegation_plan":
@@ -453,6 +482,7 @@ async def evaluate(
             qdrant_url="",
             mcp_remote_url="",
             rate_limit_per_minute=max(60, sum(len(t.turns) for t in selected) * 2),
+            agent_critic_enabled=False,
         )
         if not live:
             settings = settings.model_copy(
@@ -607,9 +637,9 @@ async def evaluate(
                         state = task_monitor_state[task.id]
                         for event in body.get("events", []):
                             if event.get("event") == "agent_started" and event.get("agent") in (
-                                "orders",
-                                "policy",
-                                "knowledge",
+                                "shopping",
+                                "order",
+                                "aftersales",
                             ):
                                 state["specialist_agents"].add(event["agent"])
                             if event.get("event") == "delegation_dispatched":
@@ -718,33 +748,22 @@ async def evaluate(
                     results[-1]["quality"] = quality_summary([results[-1]])
                     state = task_monitor_state[task.id]
                     specialist_agents = sorted(state["specialist_agents"])
-                    if delegation_policy == "required_when_eligible":
-                        delegation_expected = bool(state["required_experts"])
-                        actual_calls = max(
-                            state["delegate_calls"], state["delegate_dispatch_count"]
-                        )
-                        delegation_used = actual_calls > 0 or bool(specialist_agents)
-                        delegation_status = (
-                            "required_complete"
-                            if delegation_expected
-                            and state["required_experts"] <= state["completed_experts"]
-                            else "required_incomplete"
-                            if delegation_expected
-                            else "not_required"
-                        )
-                    else:
-                        delegation_expected = False
-                        delegation_used = bool(state["delegation_call_ids"] or specialist_agents)
-                        delegation_status = "used" if delegation_used else "not_expected"
-                    actual_delegate_calls = (
-                        max(state["delegate_calls"], state["delegate_dispatch_count"])
-                        if delegation_policy == "required_when_eligible"
-                        else state["delegate_calls"] or len(state["delegation_call_ids"])
+                    delegation_expected = (
+                        False  # Optional business delegation, never a benchmark requirement.
                     )
+                    actual_delegate_calls = max(
+                        state["delegate_calls"],
+                        state["delegate_dispatch_count"],
+                        len(state["delegation_call_ids"]),
+                    )
+                    delegation_used = actual_delegate_calls > 0 or bool(specialist_agents)
+                    delegation_status = "used" if delegation_used else "not_expected"
                     results[-1]["delegation"] = {
                         "specialist_agents": specialist_agents,
-                        "orders_agent_called": "orders" in specialist_agents,
-                        "policy_agent_called": "policy" in specialist_agents,
+                        "orders_agent_called": "order" in specialist_agents,
+                        "shopping_agent_called": "shopping" in specialist_agents,
+                        "aftersales_agent_called": "aftersales" in specialist_agents,
+                        "policy_agent_called": False,
                         "required_experts": sorted(state["required_experts"]),
                         "completed_experts": sorted(state["completed_experts"]),
                         "budget_blocked_experts": sorted(state["budget_blocked_experts"]),
@@ -763,11 +782,7 @@ async def evaluate(
                         required_experts=sorted(state["required_experts"]),
                         completed_experts=sorted(state["completed_experts"]),
                         budget_blocked=sorted(state["budget_blocked_experts"]),
-                        real_delegate_calls=(
-                            max(state["delegate_calls"], state["delegate_dispatch_count"])
-                            if delegation_policy == "required_when_eligible"
-                            else state["delegate_calls"]
-                        ),
+                        real_delegate_calls=actual_delegate_calls,
                     )
         finally:
             await c.aclose()
@@ -800,9 +815,7 @@ async def evaluate(
         "provider": provider if live else "offline",
         "delegation_enabled": delegation_enabled,
         "delegation_policy": delegation_policy,
-        "delegation_prompt_version": PROMPT_VERSION
-        if delegation_policy == "required_when_eligible"
-        else None,
+        "delegation_prompt_version": PROMPT_VERSION if delegation_enabled else None,
         "arm": arm,
         "agent_context_limit_tokens": min(settings.agent_context_tokens, 32_000),
         "agent_total_budget_tokens": settings.agent_total_tokens,

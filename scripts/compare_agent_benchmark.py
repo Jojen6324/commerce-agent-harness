@@ -23,7 +23,7 @@ DATASET = DATA_DIR / "agent_comparison_50.jsonl"
 DEFAULT_OUTPUT = Path("eval/reports/agent_comparison_50_ab.json")
 ARM_CONFIG = {
     "A": (False, "off"),
-    "B": (True, "required_when_eligible"),
+    "B": (True, "auto"),
 }
 
 
@@ -131,7 +131,7 @@ def summarize_variant(report: dict) -> dict:
     required_turns = max(
         required_turns,
         sum(bool(event.get("delegation_expected")) for event in task_events)
-        if report.get("delegation_policy") == "required_when_eligible"
+        if report.get("delegation_policy") == "auto"
         else 0,
     )
     completed_required_turns = max(

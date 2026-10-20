@@ -12,10 +12,10 @@ from app.config.settings import Settings
 from app.core.enums import RetrievalStrategy, ToolRisk
 from app.core.exceptions import LLMProviderError
 from app.guardrails.hallucination import FaithfulnessResult
+from app.harness.agentic_core import AgentSpec, BoundedRole
 from app.harness.budget import RunBudget, current_budget
 from app.harness.completion import policy_evidence_issue
 from app.harness.executor import ToolExecutor
-from app.harness.runner import AgentRunner, AgentSpec
 from app.harness.validation import AnswerValidator
 from app.providers.base import LLMResponse
 from app.repositories.models import ActionRow, OrderRow, RunRow
@@ -99,7 +99,7 @@ async def test_verbal_approval_repaired_into_persisted_action_and_replayed_once(
 async def test_repeated_unfinished_promise_fails_after_one_repair():
     model = SimpleNamespace(generate=AsyncMock(return_value=LLMResponse("我查一下相关政策条款。")))
     executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
-    result = await AgentRunner(model, executor, Settings()).run(
+    result = await BoundedRole(model, executor, Settings()).run(
         "退货政策",
         ToolContext(user_id="u", session_id="s", trace_id="t"),
         AgentSpec("main", frozenset()),
@@ -114,7 +114,7 @@ async def test_lookup_facts_not_replaced_by_spurious_repair():
         generate=AsyncMock(return_value=LLMResponse("订单还没发货。如需政策，我可以帮您查一下。"))
     )
     executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
-    result = await AgentRunner(model, executor, Settings()).run(
+    result = await BoundedRole(model, executor, Settings()).run(
         "订单状态",
         ToolContext(user_id="u", session_id="s", trace_id="t"),
         AgentSpec("main", frozenset()),
@@ -483,7 +483,7 @@ async def test_empty_final_answer_gets_one_repair_without_forcing_tools():
         generate=AsyncMock(side_effect=[LLMResponse("..."), LLMResponse("你好")])
     )
     executor = SimpleNamespace(schemas=lambda _: [], execute=AsyncMock())
-    result = await AgentRunner(model, executor, Settings()).run(
+    result = await BoundedRole(model, executor, Settings()).run(
         "你好",
         ToolContext(user_id="u", session_id="s", trace_id="t"),
         AgentSpec("main", frozenset()),
@@ -509,7 +509,7 @@ async def test_handoff_promise_requires_receipt_and_accepts_successful_queue_res
             return_value={"success": True, "output": {"queue": "human", "ticket_id": "T-1"}}
         ),
     )
-    result = await AgentRunner(model, executor, Settings()).run(
+    result = await BoundedRole(model, executor, Settings()).run(
         "人工审核退款",
         ToolContext(user_id="u", session_id="s", trace_id="t"),
         AgentSpec("main", frozenset(["escalate_to_human"])),

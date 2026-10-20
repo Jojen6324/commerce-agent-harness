@@ -126,9 +126,26 @@ def paired_comparison(a_report, b_report, comparison_ids):
 
 
 async def evaluate_frozen_partition(
-    *, live=False, provider="agnes", monitor=False, container_factory=None
+    *,
+    live=False,
+    provider="agnes",
+    monitor=False,
+    container_factory=None,
+    task_ids=None,
+    limit=None,
 ):
     frozen = load_frozen_partition()
+    selected_ids = list(frozen["development_ids"])
+    if task_ids is not None:
+        if not set(task_ids) <= set(selected_ids):
+            raise ValueError("Only frozen development tasks are allowed; Holdout is excluded")
+        selected_ids = [task_id for task_id in selected_ids if task_id in task_ids]
+    if limit is not None:
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        selected_ids = selected_ids[:limit]
+    if not selected_ids:
+        raise ValueError("No development tasks selected")
     common = {
         "live": live,
         "split": "development",
@@ -143,16 +160,16 @@ async def evaluate_frozen_partition(
 
     a_report = await evaluate(
         **common,
-        task_ids=frozen["comparison_ids"],
+        task_ids=selected_ids,
         delegation_enabled=False,
         delegation_policy="off",
         arm_name="A",
     )
     b_report = await evaluate(
         **common,
-        task_ids=frozen["development_ids"],
+        task_ids=selected_ids,
         delegation_enabled=True,
-        delegation_policy="required_when_eligible",
+        delegation_policy="auto",
         arm_name="B",
     )
     return {
@@ -163,14 +180,17 @@ async def evaluate_frozen_partition(
         "selection": {
             "partition_manifest_sha256": frozen["partition_digest"],
             "corpus_digest": frozen["corpus_digest"],
-            "development_tasks": len(frozen["development_ids"]),
-            "ab_comparison_tasks": len(frozen["comparison_ids"]),
-            "b_only_tasks": 69,
+            "development_tasks": len(selected_ids),
+            "ab_comparison_tasks": len(selected_ids),
+            "b_only_tasks": 0,
+            "selected_task_ids": selected_ids,
+            "historical_baseline_commit": "94052bc",
+            "critic_enabled": False,
             "holdout_tasks_excluded": 31,
             "holdout_executed": False,
         },
         "arms": {"A": a_report, "B": b_report},
-        "paired_comparison": paired_comparison(a_report, b_report, frozen["comparison_ids"]),
+        "paired_comparison": paired_comparison(a_report, b_report, selected_ids),
     }
 
 
@@ -179,9 +199,17 @@ def main():
     parser.add_argument("--llm", action="store_true", help="Use the configured live provider")
     parser.add_argument("--provider", choices=("agnes", "deepseek", "qwen1"), default="agnes")
     parser.add_argument("--monitor", action="store_true", help="Print live run events")
+    parser.add_argument("--limit", type=int)
+    parser.add_argument("--task-id", action="append", dest="task_ids")
     args = parser.parse_args()
     report = asyncio.run(
-        evaluate_frozen_partition(live=args.llm, provider=args.provider, monitor=args.monitor)
+        evaluate_frozen_partition(
+            live=args.llm,
+            provider=args.provider,
+            monitor=args.monitor,
+            task_ids=args.task_ids,
+            limit=args.limit,
+        )
     )
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")

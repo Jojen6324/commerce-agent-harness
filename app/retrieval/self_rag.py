@@ -2,7 +2,7 @@
 
 Reflection is implemented as structured LLM JSON, not special tokens,
 so it stays schema-validated and testable. Production retrieval must use the
-pure ``retrieval_node`` and let AgentRunner make any follow-up query explicit.
+pure ``retrieval_node`` and let BoundedRole make any follow-up query explicit.
 """
 
 from __future__ import annotations

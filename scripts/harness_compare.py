@@ -31,7 +31,7 @@ async def main():
     settings = settings.model_copy(
         update={
             "agent_delegation_enabled": args.variant == "B",
-            "agent_delegation_policy": "required_when_eligible" if args.variant == "B" else "off",
+            "agent_delegation_policy": "auto" if args.variant == "B" else "off",
         }
     )
     c = await build_container(settings, seed=True)

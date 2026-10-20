@@ -1,7 +1,7 @@
 """Knowledge retrieval and the legacy explicit policy-answer adapter.
 
 The production ``search_knowledge`` operation is deliberately retrieval-only:
-the caller (an AgentRunner agent) decides whether to issue another query.  The
+the caller (an BoundedRole agent) decides whether to issue another query.  The
 older ``answer_question`` method remains as an explicit compatibility helper,
 but is not registered as a runtime tool.
 """

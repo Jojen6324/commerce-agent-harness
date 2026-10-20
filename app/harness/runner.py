@@ -635,40 +635,6 @@ class AgentRunner:
                     if delivered is not None:
                         return delivered
                     continue
-                if (
-                    len(observations) == 1
-                    and len(parsed) == 1
-                    and observations[0]["name"] == "answer_question"
-                ):
-                    data = observations[0]["output"].get("output", {})
-                    if data.get("degraded"):
-                        await event("error", reason=data.get("degradation_reason"))
-                        return {
-                            "answer": data["answer"],
-                            "observations": observations,
-                            "events": events,
-                            "run_id": run_id,
-                            "status": "failed",
-                            "failure": data.get("failure")
-                            or {
-                                "code": "VALIDATION_UNAVAILABLE",
-                                "reason": data.get("degradation_reason"),
-                                "retryable": True,
-                            },
-                        }
-                    if (
-                        data.get("answer")
-                        and data.get("validated")
-                        and data.get("answered_question") == query
-                    ):
-                        await event("validation", reused=True)
-                        return {
-                            "answer": data["answer"],
-                            "observations": observations,
-                            "events": events,
-                            "run_id": run_id,
-                            "status": "completed",
-                        }
             raise BudgetExceeded("steps")
         except (BudgetExceeded, TimeoutError) as exc:
             budget = current_budget.get()
@@ -772,7 +738,7 @@ class AgentRunner:
             args = {"order_id": order.group().upper()}
         else:
             name, args = (
-                "answer_question",
+                "search_knowledge",
                 {"query": query, "complex": any(w in query for w in ("但", "定制", "同时"))},
             )
         return [

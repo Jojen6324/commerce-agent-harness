@@ -36,6 +36,7 @@ async def test_c_executes_both_experts_with_six_tools_and_passes_verified_order_
         agent_delegation_policy="required_when_eligible",
     )
     c = await build_container(settings, seed=True)
+    assert "answer_question" not in c.chat_service.spec.tools
     roles = Counter()
     prompts = {}
     dispatches = []

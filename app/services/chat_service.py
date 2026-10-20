@@ -37,7 +37,7 @@ from app.schemas.retrieval import Citation
 from app.services.knowledge import KnowledgeService
 from app.tools.base import ToolContext
 from app.tools.factory import build_tool_registry
-from app.tools.knowledge_service import EvidenceTool, PolicyAnswerTool
+from app.tools.knowledge_service import EvidenceTool
 
 
 class ChatService:
@@ -62,7 +62,6 @@ class ChatService:
         )
         self.knowledge = KnowledgeService(retriever, reranker, self.provider, settings)
         self.registry.register(EvidenceTool(self.knowledge))
-        self.registry.register(PolicyAnswerTool(self.knowledge))
         self.executor = ToolExecutor(
             self.registry,
             session_factory,

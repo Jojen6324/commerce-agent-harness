@@ -38,7 +38,7 @@ class DelegationService:
     def __init__(self, runner, executor, store):
         self.runner, self.executor, self.store = runner, executor, store
         self.gate = asyncio.Semaphore(2)
-        knowledge = frozenset(["search_knowledge", "answer_question", "read_artifact"])
+        knowledge = frozenset(["search_knowledge", "read_artifact"])
         orders = frozenset(
             t.name
             for t in executor.registry.all()
@@ -75,7 +75,7 @@ class DelegationService:
                 run_kwargs["emit"] = emit
             spec = self.specs[args.agent]
             if delegation_include_observations.get():
-                tools = spec.tools - {"answer_question"}
+                tools = spec.tools
                 if args.agent == "orders":
                     tools = tools & {
                         "get_order",

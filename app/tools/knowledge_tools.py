@@ -42,7 +42,7 @@ class SearchKnowledgeTool(Tool):
         "何时不用：查真实订单/物流/库存/退款单；券码与叠用优先 get_coupon；有 sku 的保修摘要优先 get_warranty；客服营业时间优先 mcp_store_hours；仓库截单优先 mcp_warehouse_cutoff。"
         "优先：结构化券规则 → get_coupon；有 sku 的保修 → get_warranty；其余政策 → 本工具。"
         "参数 query：1–200 字检索问句，如「7天无理由退货是否含定制」，不要填 ORD1001。"
-        "返回 chunks[{chunk_id, title, content}]，content 已截断，只作政策依据，不能当成某笔订单的事实。"
+        "返回完整 chunks，含 document_id、标题、版本、适用类别、条件、例外和 chunk_id；不能当成某笔订单的事实。"
     )
     risk = ToolRisk.READ
     input_model = KnowledgeSearchInput
@@ -57,7 +57,7 @@ class SearchKnowledgeTool(Tool):
             success=True,
             output={
                 "chunks": [
-                    {"chunk_id": c.chunk_id, "title": c.title, "content": c.content[:400]}
+                    c.model_dump(mode="json")
                     for c in chunks
                 ]
             },

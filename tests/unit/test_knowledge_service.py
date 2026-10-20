@@ -6,6 +6,8 @@ from app.config.settings import Settings
 from app.providers.fake import OfflineLLMProvider
 from app.schemas.retrieval import RetrievedChunk
 from app.services.knowledge import KnowledgeService
+from app.tools.base import ToolContext
+from app.tools.knowledge_service import EvidenceTool
 
 
 @pytest.mark.asyncio
@@ -63,3 +65,46 @@ async def test_rewritten_search_does_not_replace_original_question(monkeypatch):
     assert captured == [original]
     assert result.output["answered_question"] == original
     service.retrieve_evidence.assert_awaited_once_with("无理由退货 7天 普通T恤", complex=False)
+
+
+@pytest.mark.asyncio
+async def test_production_search_is_single_pass_pure_retrieval_with_complete_sources():
+    chunk = RetrievedChunk(
+        chunk_id="policy-7d-2",
+        document_id="returns-v3",
+        title="退换货政策",
+        content="耳机在未拆封时可以申请七天无理由退货；已激活设备除外。",
+        score=0.91,
+        category="return_policy",
+        section="耳机",
+        policy_version="v3",
+        metadata={"applicable_category": "耳机", "exception": "已激活设备"},
+    )
+    retriever = AsyncMock()
+    retriever.retrieve.return_value = [chunk]
+    reranker = AsyncMock()
+    reranker.rerank.return_value = [chunk]
+    llm = AsyncMock()
+    service = KnowledgeService(
+        retriever, reranker, llm, Settings(app_env="testing")
+    )
+
+    result = await EvidenceTool(service).run(
+        {"query": "耳机七天无理由，激活后是否例外", "complex": True},
+        ToolContext(user_id="u1", session_id="s1", trace_id="t1"),
+    )
+
+    assert result.success
+    assert result.output["rewritten_queries"] == ["耳机七天无理由，激活后是否例外"]
+    assert len(result.output["chunks"]) == 1
+    saved = result.output["chunks"][0]
+    assert saved["document_id"] == "returns-v3"
+    assert saved["policy_version"] == "v3"
+    assert saved["section"] == "耳机"
+    assert saved["metadata"]["exception"] == "已激活设备"
+    retriever.retrieve.assert_awaited_once_with(
+        "耳机七天无理由，激活后是否例外",
+        top_k=Settings(app_env="testing").retrieval_top_k_complex,
+    )
+    reranker.rerank.assert_awaited_once()
+    llm.generate.assert_not_awaited()

@@ -1,4 +1,4 @@
-"""Full evidence and validated policy answer tools (read-only)."""
+"""Retrieval-only knowledge tool plus a non-registered compatibility adapter."""
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,12 @@ class KnowledgeInput(BaseModel):
 
 class EvidenceTool(Tool):
     name = "search_knowledge"
-    description = "完整政策检索：改写、BM25/BGE、RRF、精排、按需多轮自纠错。返回原文、来源、版本和chunk_id；不代表订单事实。只读。"
+    description = (
+        "只读政策证据检索：对本次 query 执行 BM25/BGE 混合召回、RRF 融合和 Cross-Encoder 重排，"
+        "返回完整原文及 document_id、chunk_id、标题、版本、品类、条件和例外。"
+        "一次调用只检索一次，不改写 query、不判断充分性、不生成答案；若缺少条件，请由 Agent 自行构造新 query 再调用。"
+        "空结果仅表示未匹配，不能据此认定政策不存在；政策证据不代表订单事实。"
+    )
     input_model = KnowledgeInput
 
     def __init__(self, service):
@@ -28,6 +33,8 @@ class EvidenceTool(Tool):
 
 
 class PolicyAnswerTool(EvidenceTool):
+    """Compatibility tool for explicit callers; never registered in ChatService."""
+
     name = "answer_question"
     description = "纯政策问答的完整RAG：检索、精排、多轮补检索、生成及忠实度自纠错。返回已校验答案和原始证据；只读。"
 

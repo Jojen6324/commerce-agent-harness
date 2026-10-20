@@ -1,7 +1,8 @@
-"""Self-RAG style retrieve → grade → optionally hop again.
+"""Legacy Self-RAG helper, retained for offline compatibility tests only.
 
 Reflection is implemented as structured LLM JSON, not special tokens,
-so it stays schema-validated and testable.
+so it stays schema-validated and testable. Production retrieval must use the
+pure ``retrieval_node`` and let AgentRunner make any follow-up query explicit.
 """
 
 from __future__ import annotations

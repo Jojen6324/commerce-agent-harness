@@ -1,4 +1,10 @@
-"""One complete RAG pipeline shared by agents and policy answers."""
+"""Knowledge retrieval and the legacy explicit policy-answer adapter.
+
+The production ``search_knowledge`` operation is deliberately retrieval-only:
+the caller (an AgentRunner agent) decides whether to issue another query.  The
+older ``answer_question`` method remains as an explicit compatibility helper,
+but is not registered as a runtime tool.
+"""
 
 from typing import cast
 
@@ -9,8 +15,6 @@ from app.agents.state import AgentState
 from app.config.settings import Settings
 from app.core.enums import RetrievalStrategy
 from app.guardrails.hallucination import FaithfulnessChecker
-from app.retrieval.query_rewrite import QueryRewriter
-from app.retrieval.self_rag import SelfRAGLoop
 
 
 class KnowledgeService:
@@ -20,20 +24,18 @@ class KnowledgeService:
 
     async def retrieve_evidence(self, query: str, *, complex: bool = False) -> dict:
         strategy = RetrievalStrategy.MULTI if complex else RetrievalStrategy.SINGLE
-        rewriter = QueryRewriter(self.llm)
-        loop = SelfRAGLoop(self.retriever, self.reranker, rewriter, self.llm, self.settings)
         result = await retrieval_node(
             {"user_query": query, "strategy": strategy},
             retriever=self.retriever,
             reranker=self.reranker,
-            rewriter=rewriter,
-            self_rag=loop,
             settings=self.settings,
         )
         return {
             "chunks": [c.model_dump(mode="json") for c in result["retrieved_chunks"]],
             "strategy": strategy.value,
-            "rewritten_queries": result["rewritten_queries"],
+            # Kept for response compatibility. Rewrites are now explicit Agent
+            # tool calls, never hidden inside retrieval.
+            "rewritten_queries": [query],
         }
 
     async def answer_question(

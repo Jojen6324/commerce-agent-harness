@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
+from app.prompts.delegation import ORDER_TASK, POLICY_TASK
+
 
 class DelegationMode(StrEnum):
     OFF = "off"
@@ -186,18 +188,17 @@ class DelegationPolicy:
     @staticmethod
     def goal_for_expert(expert: str, request: str) -> str:
         if expert == "orders":
-            scope = (
-                "仅查证本请求必需的订单、商品、物流或退款状态。"
-                "优先一次查询能覆盖多个字段的工具；不要查政策、不要回答政策问题。"
-                "无需遍历所有订单工具，已取得所需事实就结束。"
-            )
-        else:
-            scope = (
-                "仅查证本请求涉及的政策、适用范围和例外。订单事实见所附已核实观察；"
-                "不要在知识库搜索订单号、订单状态查询方法或物流事实。"
-                "优先一次聚焦检索；证据足够即结束，不生成面向用户的完整答复。"
-            )
-        return scope + "\n用户请求（用于确定范围，不扩大职责）：" + request
+            identifiers = DelegationPolicy._ORDER_ID.findall(request)
+            target = "、".join(identifiers) or "上下文中已确认的订单"
+            return ORDER_TASK.format(target=target)
+        clauses = re.split(r"[，,；;。？?]|并且|以及|同时|然后|并|再", request)
+        policy_clauses = [
+            clause
+            for clause in clauses
+            if any(term in clause for term in DelegationPolicy._KNOWLEDGE_TERMS)
+        ]
+        topic = DelegationPolicy._ORDER_ID.sub("该订单", "；".join(policy_clauses) or request)
+        return POLICY_TASK.format(topic=topic[:1400])
 
     @staticmethod
     def _has_order_facts(facts: dict[str, Any]) -> bool:
@@ -229,6 +230,7 @@ class DelegationPolicy:
         observations = scoped_facts.pop("verified_observations", [])
         observations = [o for o in observations if o.get("output", {}).get("success")]
         data = {
+            "user_request": request[:1600],
             "recent_history": prior,
             "confirmed_facts": scoped_facts,
             "verified_observations": observations,

@@ -19,6 +19,7 @@ from pydantic import SecretStr
 
 from app.config.settings import Settings
 from app.main import create_app
+from app.prompts.delegation import PROMPT_VERSION
 from app.services.container import build_container
 from eval.task_fixtures import install_fixture, matches, snapshot
 from eval.task_grading import grade_turn
@@ -576,6 +577,7 @@ async def evaluate(
         "provider": provider if live else "offline",
         "delegation_enabled": delegation_enabled,
         "delegation_policy": delegation_policy,
+        "delegation_prompt_version": PROMPT_VERSION if delegation_policy == "required_when_eligible" else None,
         "arm": arm,
         "agent_context_limit_tokens": min(settings.agent_context_tokens, 32_000),
         "agent_total_budget_tokens": settings.agent_total_tokens,

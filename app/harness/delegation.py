@@ -12,6 +12,7 @@ from app.core.enums import ToolRisk
 from app.core.exceptions import LLMOutputError
 from app.harness.budget import current_budget
 from app.harness.runner import AgentSpec, active_run_id
+from app.prompts.delegation import specialist_prompt
 from app.providers.json_parser import parse_model
 
 delegation_event_sink: ContextVar[Callable[[dict[str, Any]], Awaitable[None]] | None] = ContextVar(
@@ -92,12 +93,7 @@ class DelegationService:
                     tools=frozenset(tools),
                     max_steps=4,
                     finalize_on_tool_limit=True,
-                    prompt=spec.prompt + "只返回职责内的已核实事实、证据引用和缺失字段；"
-                    "不回答整个用户问题，不为其他角色寻找证据。证据充足立即结束。"
-                    f"本次最多可用{allowance}次工具调用，不需要为了给出建议而补查保修等其他主题。"
-                    '结束时只返回JSON：{"status":"completed",'
-                    '"missing_fields":["尚未核实的必要字段"],"summary":"已核实事实及引用"}。'
-                    "只要必要条件未查清就使用incomplete，保留缺失字段；已查明则missing_fields为空。",
+                    prompt=specialist_prompt(args.agent, allowance),
                 )
             result = await self.runner.run(
                 args.goal,

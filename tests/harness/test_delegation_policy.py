@@ -62,3 +62,12 @@ def test_expert_context_remains_valid_json_when_history_and_facts_are_large():
     assert len(context) <= 3900
     assert decoded["omitted_context"] is True
     assert decoded["confirmed_facts"]["last_order"]["order_id"] == "ORD778899"
+
+
+def test_expert_goals_are_subtasks_instead_of_copies_of_parent_question():
+    query = "核实ORD778899是否签收，并说明七天无理由从哪日起算"
+    order_goal = DelegationPolicy.goal_for_expert("orders", query)
+    policy_goal = DelegationPolicy.goal_for_expert("knowledge", query)
+    assert "ORD778899" in order_goal and "七天无理由" not in order_goal
+    assert "七天无理由" in policy_goal and "ORD778899" not in policy_goal
+    assert query not in order_goal and query not in policy_goal

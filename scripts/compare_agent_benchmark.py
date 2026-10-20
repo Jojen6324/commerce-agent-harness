@@ -123,6 +123,7 @@ def summarize_variant(report: dict) -> dict:
         "delegation_policy": report.get("delegation_policy"),
         "agent_context_limit_tokens": report.get("agent_context_limit_tokens"),
         "agent_total_budget_tokens": report.get("agent_total_budget_tokens"),
+        "delegation_prompt_version": report.get("delegation_prompt_version"),
         "real_delegate_calls": max(real_delegate_calls, monitored_calls),
         "required_expert_roles": sorted(required_experts),
         "completed_expert_roles": sorted(completed_experts),
